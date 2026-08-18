@@ -4,3 +4,4 @@ outputs/
 test-results/
 progress.log
 *.log
+CNAME.pending
