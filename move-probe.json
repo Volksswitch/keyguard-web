@@ -1,0 +1,4 @@
+{
+  "ready": false,
+  "note": "Set ready to true to arm the move from the old address. Read on every visit, so this arms and disarms with no release involved."
+}

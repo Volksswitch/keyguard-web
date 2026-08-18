@@ -1,0 +1,36 @@
+{
+  "name": "Keyguard Designer",
+  "short_name": "Keyguard",
+  "description": "Design keyguards for AAC tablets — runs entirely in Chrome or Edge, no software install required.",
+  "start_url": "./app.html",
+  "scope": "./",
+  "display": "standalone",
+  "theme_color": "#000000",
+  "background_color": "#f0f0f0",
+  "icons": [
+    {
+      "src": "./icons/keyguard.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "./icons/keyguard-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icons/keyguard-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icons/keyguard-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

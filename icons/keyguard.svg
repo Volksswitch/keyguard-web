@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- App icon for the Keyguard Designer.
+       The glyph is a keyguard: a rounded plate with a 2x2 grid of cell
+       openings cut through it, the shape the tool exists to produce.
+       White on a BLACK plate — the Volksswitch standard for an app served
+       from its own volksswitch.org subdomain, and the only pairing that
+       stays visible against any desktop colour scheme. The openings are the
+       plate showing through, which is why they are black rather than a hole.
+       Geometry carried over from the original green icon at 1/16 scale, so
+       the shape is unchanged and only the colours moved.
+       Public domain (CC0), as with the rest of this project. -->
+  <rect width="32" height="32" rx="6" fill="#000000"/>
+  <rect x="5" y="5" width="22" height="22" rx="3" fill="#ffffff"/>
+  <g fill="#000000">
+    <rect x="8"     y="8"     width="6.75" height="6.75" rx="1"/>
+    <rect x="17.25" y="8"     width="6.75" height="6.75" rx="1"/>
+    <rect x="8"     y="17.25" width="6.75" height="6.75" rx="1"/>
+    <rect x="17.25" y="17.25" width="6.75" height="6.75" rx="1"/>
+  </g>
+</svg>
