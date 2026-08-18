@@ -48,3 +48,21 @@ secure origin, so `localhost` or HTTPS — opening the file directly will not wo
 - `move-probe.json` — arms the move from the old address. `"ready": true` starts
   clinicians crossing on their next visit; `false` stops it. It is read on every
   visit, so arming and disarming need no release.
+
+## While it is still at the temporary address — a trap worth knowing
+
+Until `keyguard.volksswitch.org` is attached, this app is served from
+`volksswitch.github.io/keyguard-web/` — which is **the same origin as the old
+app** at `volksswitch.github.io/keyguard-designer-web/`. Browsers scope stored
+settings to the origin and ignore the path, so at the temporary address the two
+apps **share one set of settings**. A change made in one is seen by the other.
+
+Nothing is at risk — release 100 has no departure code in it, so it cannot mistake
+itself for the old address or move anyone anywhere, and it only takes delivery of
+settings when someone actually arrives with them.
+
+But it does mean **the temporary address cannot be used to test arriving**. "Did my
+settings come across?" has no meaning while both apps read the same storage; the
+answer is yes no matter what happens. Test that on the rehearsal rig, where the two
+addresses are genuinely separate origins — or wait until the domain is attached,
+which is the point at which the new address gets storage of its own.
