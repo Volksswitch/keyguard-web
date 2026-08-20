@@ -1,6 +1,6 @@
 {
-  "ready": false,
-  "note": "DISARMED 18 Aug 2026, while the cleanup page is corrected. Anyone already moved stays moved; nobody new is taken. Set ready back to true to arm again - read on every visit, so no release is involved either way.",
+  "ready": true,
+  "note": "ARMED 18 Aug 2026 (re-armed after the cleanup page's uninstall instructions were corrected). The old address moves each clinician across the next time they open it, provided they have saved a copy of their settings. Set ready back to false to stop that immediately - anyone already moved stays moved, but nobody new is taken. No release and no DNS change is involved either way.",
   "newOrigin": "https://keyguard.volksswitch.org",
-  "disarmedAt": "2026-08-18"
+  "armedAt": "2026-08-18"
 }
