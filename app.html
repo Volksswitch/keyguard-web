@@ -336,8 +336,11 @@
                     cursor: pointer; color: #555; padding: 0 2px; }
   #openings-body { flex: 1; overflow: auto; padding: 10px 12px; min-height: 0; }
   #openings-note { color: #555; margin-bottom: 10px; line-height: 1.5; }
-  #openings-warn { display: none; margin-bottom: 10px; padding: 7px 9px; line-height: 1.5;
+  #openings-warn { display: none; margin: 10px 12px 0; padding: 7px 9px; line-height: 1.5;
                    border: 1px solid #e0c060; background: #fdf6e0; border-radius: 3px; }
+  /* The by-eye panel sizes itself to its buttons, so a warning would otherwise
+     stretch it right across the viewport. */
+  #openings-panel.eye #openings-warn { max-width: 420px; margin: 8px 8px 0; }
   #openings-warn.err { border-color: #d99; background: #fdecec; }
   #openings-warn.show { display: block; }
   .og-sec { margin-bottom: 16px; }
@@ -359,6 +362,53 @@
   .og-rowbtn.on { background: #f9d3d3; border-color: #c88; }
   .og-empty { color: #888; font-style: italic; padding: 3px 4px; }
   .og-add { margin-top: 6px; padding: 3px 10px; font-size: 12px; cursor: pointer; }
+  /* ---------- Custom Openings: the two tabs ----------
+     Same openings, two ways of editing them. The tab strip sits between the
+     title bar and the body; the body swaps which pane it shows. The table pane
+     scrolls (grids get long); the by-eye pane does not — its canvas fills
+     whatever height is left, so resizing the panel resizes the drawing area. */
+  #openings-tabs { display: flex; gap: 2px; padding: 6px 10px 0; background: #e8e8e8;
+                   border-bottom: 1px solid #ccc; }
+  .og-tab { border: 1px solid #ccc; border-bottom: none; background: #dcdcdc;
+            border-radius: 4px 4px 0 0; padding: 4px 12px; font-size: 12px;
+            cursor: pointer; color: #444; margin-bottom: -1px; }
+  .og-tab:hover { background: #e4e4e4; }
+  .og-tab.on { background: #fafafa; color: #111; font-weight: bold; }
+  #openings-panel.eye { width: auto; min-width: 0; max-width: 92vw;
+                        height: auto; min-height: 0; }
+  #openings-panel.eye #openings-body { overflow: hidden; display: flex; padding: 6px 8px; }
+  #openings-panel.eye #openings-grip { display: none; }
+  #openings-panel.eye #oge-blocked { max-width: 380px; padding: 6px 2px; }
+  #openings-panel.eye #openings-title { padding: 5px 10px; font-size: 13px; }
+  #openings-panel.eye #openings-footer { padding: 5px 8px; }
+  #og-pane-eye { display: none; flex: 1; min-height: 0; flex-direction: column; gap: 6px; }
+  #openings-panel.eye #og-pane-table { display: none; }
+  #openings-panel.eye #og-pane-eye { display: flex; }
+
+  /* Toolbar above the drawing area. The readout is a live report of the shape
+     being dragged, in the clinician's own unit — the "by eye" answer to the
+     number boxes on the other tab. */
+  #oge-bar { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  #oge-bar button { padding: 3px 10px; font-size: 12px; cursor: pointer; }
+  #oge-bar button:disabled { color: #aaa; cursor: default; }
+  #oge-blocked { display: none; padding: 10px; line-height: 1.5; color: #555; }
+  #openings-panel.eye.oge-blocked #oge-blocked { display: block; }
+  #openings-panel.eye.oge-blocked #oge-bar { display: none; }
+
+  /* Handle overlay over the 3D viewport. Transparent to the mouse everywhere
+     except the handles themselves, so a drag that misses one still orbits the
+     model — the panel has never taken the viewport's mouse away and must not
+     start now. */
+  #oge-overlay { position: absolute; inset: 0; display: none; z-index: 5;
+                 pointer-events: none; overflow: visible; }
+  #oge-overlay.on { display: block; }
+  #oge-overlay .oge-outline { fill: none; stroke: #06c; stroke-width: 1.5;
+                              stroke-dasharray: 5 3; }
+  #oge-overlay .oge-handle { fill: #ffffff; stroke: #555; stroke-width: 1;
+                             pointer-events: auto; }
+  #oge-overlay .oge-radius { fill: #ffd24d; stroke: #a08000; stroke-width: 1;
+                             pointer-events: auto; cursor: move; }
+
   #openings-footer { padding: 8px 12px; border-top: 1px solid #ccc; background: #f0f0f0;
                      display: flex; align-items: center; gap: 8px; }
   #openings-footer .msg { color: #666; margin-right: auto; }
@@ -462,6 +512,12 @@
       <div id="viewport-wrap">
         <div id="viewport">
           <canvas id="three-canvas"></canvas>
+          <!-- Handles for the "by eye" openings tab. The openings themselves are
+               real pink geometry in the 3D scene, lying on the keyguard face;
+               only their handles live here, projected from those shapes' corners
+               each frame so they keep a constant on-screen size at any zoom.
+               Ignores the mouse except on a handle, so orbiting still works. -->
+          <svg id="oge-overlay"></svg>
           <div id="viewport-overlay">
             <div id="viewport-status">Click <b>Open Project…</b> to begin.</div>
           </div>
@@ -731,8 +787,13 @@
 
 <div id="openings-panel">
   <div id="openings-title">Custom Openings<span class="sp"></span><button id="openings-close" title="Close (Cancel)">✕</button></div>
+  <div id="openings-tabs">
+    <button class="og-tab on" data-tab="eye" type="button">by eye</button>
+    <button class="og-tab" data-tab="table" type="button">pixels or millimeters</button>
+  </div>
+  <div id="openings-warn"></div>
   <div id="openings-body">
-    <div id="openings-warn"></div>
+   <div id="og-pane-table">
     <div id="openings-note">
       Openings cut all the way through the keyguard (or the frame, if you have one).
       For a <b>circle</b>, the <b>height</b> is the diameter — width and corner radius are ignored.
@@ -750,6 +811,17 @@
       <table class="og-table" id="og-case"></table>
       <button class="og-add" data-grid="case">+ Add opening</button>
     </div>
+   </div>
+   <div id="og-pane-eye">
+    <div id="oge-bar">
+      <button id="oge-add-rect" type="button">+ Rectangle</button>
+      <button id="oge-add-circ" type="button">+ Circle</button>
+      <button id="oge-del" type="button" title="Delete the selected opening(s)">Delete</button>
+      <button id="oge-undo" type="button" title="Undo the last change (Ctrl+Z)">Undo</button>
+      <button id="oge-fit" type="button" title="Look at the keyguard face-on again">Face on</button>
+    </div>
+    <div id="oge-blocked"></div>
+   </div>
   </div>
   <div id="openings-footer">
     <span class="msg" id="openings-msg"></span>
@@ -1041,6 +1113,11 @@ resize();
 let gizmoOn = false;
 (function animate() {
   controls.update();
+  // The by-eye openings' handles are drawn over the viewport but positioned
+  // from the model, so they have to be repositioned whenever the view moves.
+  // ogeBooted is a var declared with that section, so it reads as undefined
+  // here on the early frames rather than throwing from its dead zone.
+  if (ogeBooted) ogeSyncHandles();
   renderer.render(scene, camera);
   if (gizmoOn) renderGizmo();
   requestAnimationFrame(animate);
@@ -1420,7 +1497,7 @@ const LEGACY_SETTINGS_KEY = 'keyguard-spike:settings';   // pre-rename
 // reads one ahead of what's deployed. sw.js CACHE_NAME is the SEPARATE
 // deployment cache key: it is NOT pre-bumped on dev, only at release, to match
 // this number. See RELEASING.md.
-const APP_RELEASE = 100;
+const APP_RELEASE = 101;
 
 // Clinician-facing "What's new" notes, keyed by app release. Bundled INTO the
 // app (not fetched) so the post-update notice works even on locked-down networks
@@ -1429,9 +1506,15 @@ const APP_RELEASE = 100;
 // scripts/apply-release-notes.mjs (trigger: "apply release notes") — do not edit
 // the block between the markers by hand; edit CHANGELOG.md and regenerate.
 // @@RELEASE_NOTES_START@@
-// Release 100 is the first release at this address, so there is nothing
-// a clinician here could have missed. Notes resume at the next release.
 const RELEASE_NOTES = {
+  "101": [
+    "Place screen openings by eye, on the keyguard itself. The Custom Openings panel now has two tabs and opens on the new by eye tab; the panel you already know is on pixels or millimeters beside it, unchanged. On the by eye tab your screen openings appear as translucent pink shapes lying on the keyguard in the viewport, and that is where you work on them. The panel shrinks to a small row of buttons so it keeps out of the way. Both tabs show the same openings, so anything you do on one appears on the other, and Save and Cancel work exactly as before.",
+    "Adding and shaping an opening. Choose + Rectangle or + Circle and one arrives in the middle of the screen, 10 mm across with a 2 mm corner. Drag it to move it, drag its handles to resize it, and drag the yellow dot to round a rectangle’s corners — the way you would in PowerPoint. The shape follows your mouse as you drag, and the hole itself is re-cut the moment you let go.",
+    "Working on several openings at once. Shift-click adds an opening to the selection so they move together. Hold Ctrl while dragging to leave a copy behind, and Shift while dragging to keep to a straight line. Ctrl+Z takes back a whole drag.",
+    "Nudging with the arrow keys. The arrow keys move whatever is selected a millimetre at a time, or ten millimetres with Shift held. Hold an arrow down and the openings slide along; Ctrl+Z afterwards puts them back where they started, rather than undoing one tap at a time.",
+    "Turning the keyguard while you work. Dragging anywhere other than an opening still turns the keyguard as it always did, and Face on squares the view up again when you want it. An opening can be dragged clear of the screen, which is how you reach the area around it.",
+    "What stays on the other tab. Case openings are measured from the case rather than the screen, so there is nothing for the keyguard to show them against — they stay on the pixels-or-millimeters tab. Working by eye in pixels also needs an up-to-date keyguard.scad; in millimetres it works with any."
+  ]
 };
 // @@RELEASE_NOTES_END@@
 
@@ -3376,6 +3459,18 @@ async function doRender() {
       const m4 = line.match(/kt\s*=\s*(-?\d+(?:\.\d+)?)/);
       if (m && m2 && m3 && m4) {
         project.dims = { swm: +m[1], shm: +m2[1], sat: +m3[1], kt: +m4[1] };
+        // The same screen area in PIXELS. swm/shm above are always millimetres;
+        // having both at once is what lets the by-eye editor draw in the
+        // clinician's chosen unit AND convert every opening when they switch
+        // unit, so the openings stay where they are. Only newer keyguard.scad
+        // files report them, so they stay optional — without them the editor
+        // works in millimetres and says why.
+        const mw = line.match(/(?:^|[\s,])swp\s*=\s*(-?\d+(?:\.\d+)?)/);
+        const mh = line.match(/(?:^|[\s,])shp\s*=\s*(-?\d+(?:\.\d+)?)/);
+        if (mw && mh) { project.dims.swp = +mw[1]; project.dims.shp = +mh[1]; }
+        // The by-eye openings canvas is drawn from these numbers, so a panel
+        // waiting on the first render can now show itself.
+        ogeRefresh();
       }
       // keyguard.scad also echoes the resolved viewport camera so the web
       // app can match OpenSCAD's keyguard_display_angle (which moves only
@@ -3644,7 +3739,15 @@ async function doRender() {
     const showBack  = cur.show_back_of_keyguard;
     const camKey    = `${dispAngle}|${showBack}`;
     const camChanged = camKey !== lastCamKey;
-    if (project.isFixture) {
+    if (ogeLive()) {
+      // The "by eye" tab is open and the clinician is placing openings on the
+      // keyguard by hand. Every drag ends in a render, and re-aiming the camera
+      // here would swing the view out from under them between one drag and the
+      // next — worst of all with a display angle set, where the branch below
+      // snaps back on EVERY render. While that tab is up the view is theirs:
+      // they can still orbit freely, and "Face on" squares it up on request.
+      cameraFitOnce = true;
+    } else if (project.isFixture) {
       // Visual/geometry harness applies its own explicit camera AFTER this
       // render (loadFixture); just frame once and never fight it.
       if (!cameraFitOnce) { fitCameraToObject(currentMesh); cameraFitOnce = true; }
@@ -5224,6 +5327,12 @@ container.addEventListener('change', async e => {
       e.target.dataset.paramName === 'starting_corner_for_screen_measurements') {
     ogSyncScreenUnits();
   }
+  // The by-eye openings canvas is drawn from several Customizer values besides
+  // those two — whether the screenshot is included and where it is nudged to —
+  // so it is simply redrawn after any change. It is a redraw of a handful of
+  // shapes, not a render, so there is nothing to be saved by being clever about
+  // which parameter moved.
+  ogeRefresh();
   scheduleRender();
 });
 
@@ -5235,6 +5344,7 @@ container.addEventListener('change', async e => {
     if (!project) return;
     project.selectedScreenshot = picker.value;
     await rescanScreenshot();
+    ogeRefresh();          // a different picture, under the same openings
     if (currentFormValues().include_screenshot === 'yes') triggerWatchRerender();
   });
 }
@@ -6826,9 +6936,47 @@ function ogSyncScreenUnits() {
       : `— millimetres, from the ${origin} corner of the screen`;
 
   if (unit !== ogState.screenUnit) {
+    const was = ogState.screenUnit;
     ogState.screenUnit = unit;
+    ogConvertScreenUnits(was, unit);
     ogRenderGrid('screen');
   }
+  ogeRefresh();
+}
+
+// Switching the screen's unit of measure re-scales every screen opening, so the
+// openings stay exactly where they are and exactly the size they were — the
+// clinician has changed the ruler, not the design. Without this the numbers
+// would be left alone and re-read in the new unit, which moves and resizes
+// every opening at once: a 300-pixel-wide opening silently becomes a 300 mm one.
+//
+// Only openings this panel manages are converted, and only while it is open.
+// Case openings are always millimetres, and rows written by hand in
+// openings_and_additions.txt belong to that file, not to the app.
+function ogConvertScreenUnits(from, to) {
+  if (!ogState || ogState.screen.error || from === to) return;
+  const dims = project && project.dims;
+  // Both sizes have to be known to convert between them. A keyguard.scad too old
+  // to report the pixel size is the realistic way to be here; leave the numbers
+  // untouched rather than scale them by a guess.
+  if (!dims || !(dims.swm > 0) || !(dims.swp > 0)) return;
+  const perMM = dims.swp / dims.swm;               // pixels per millimetre
+  const factor = to === 'mm' ? 1 / perMM : perMM;
+  const dp = to === 'px' ? 0 : 1;
+  const step = to === 'px' ? 1 : 0.1;
+  const r = v => parseFloat(((v || 0) * factor).toFixed(dp));
+  // Undoable as one step, like any other change made on the by-eye tab.
+  if (ogPanel.classList.contains('eye')) ogePush();
+  for (const row of ogState.screen.rows) {
+    row.x = r(row.x); row.y = r(row.y);
+    row.h = Math.max(step, r(row.h));
+    if (row.shape === 'c') { row.w = 0; row.cr = 0; continue; }
+    row.w  = Math.max(step, r(row.w));
+    row.cr = Math.min(Math.max(0, r(row.cr)), Math.min(row.w, row.h) / 2);
+  }
+  // The field the .scad reads is now in the new unit too, so the keyguard is
+  // cut in the same places it was before the switch.
+  ogPreview();
 }
 
 function ogPreview() {
@@ -6837,6 +6985,800 @@ function ogPreview() {
   ogMsgEl.textContent = 'Previewing — not saved yet.';
   doRender();
 }
+
+
+// ---- "By eye" tab --------------------------------------------------------
+// The same screen openings as the grid above, but edited on the keyguard
+// itself: each one appears as a translucent pink shape lying on the keyguard's
+// face in the viewport, with handles, and is dragged there. There is no second
+// copy of the data — this tab reads and writes the very same
+// ogState.screen.rows the grid does, so an opening added here appears there and
+// vice versa.
+//
+// Only SCREEN openings are drawn. Case openings are measured from a different
+// corner in a different unit and the app doesn't know the case opening's size,
+// so they stay on the grid tab. An opening in the case region is still
+// reachable here: nothing stops a shape being dragged clear of the screen area.
+//
+// WHY THE PINK SHAPE IS DRAWN BY THE APP AND NOT BY keyguard.scad.
+// A highlighted opening on the grid tab is pink because the .scad paints it
+// that way, which costs a render — around half a second. That is fine for a
+// button press and hopeless for a drag, which would become a slideshow. So
+// while an opening is being dragged the app draws the pink shape itself, in
+// the 3D scene, at the keyguard's face; the real hole is re-cut once, when the
+// drag ends. What the clinician sees is a shape that follows the mouse and a
+// hole that catches up on release.
+//
+// Two coordinate systems are in play:
+//   * MODEL space  - millimetres, as the 3D scene uses them: x to the right,
+//                    y up, with the screen area centred on the origin.
+//   * SCREEN space - what the clinician types: their unit (pixels or
+//                    millimetres), measured from the corner they chose.
+// Everything geometric below happens in model space; screen space is converted
+// to and from only when a row is read or written.
+const ogeOverlay = document.getElementById('oge-overlay');
+const ogeBlocked = document.getElementById('oge-blocked');
+const OGE_NS = 'http://www.w3.org/2000/svg';
+const OGE_HANDLE_PX = 9;    // resize handle side, in on-screen pixels
+const OGE_RADIUS_PX = 9;    // corner-radius dot diameter, in on-screen pixels
+const OGE_UNDO_MAX  = 80;
+const OGE_PINK      = 0xff4d4d;   // the highlight pink, as used by the grid tab
+
+const ogeGroup = new THREE.Group();   // the pink shapes, in scene coordinates
+ogeGroup.renderOrder = 2;
+ogeGroup.visible = false;
+scene.add(ogeGroup);
+
+let ogeSel     = new Set(); // selected indexes into ogState.screen.rows
+let ogeUndo    = [];        // snapshots, newest last
+let ogeDrag    = null;      // the gesture in progress, or null
+let ogeGeomKey = null;      // last-drawn screen size, to spot a unit change
+let ogeDragPendingDrop = null;   // shift-clicked an already-selected opening
+let ogeKeyRun = null;            // arrow keys held down: one undo step per run
+
+// How far one tap of an arrow key moves an opening, in MILLIMETRES — converted
+// to the clinician's unit at the time, so a tap moves the opening the same real
+// distance whether they are working in pixels or millimetres. A millimetre is
+// the smallest step that is worth having on a printed keyguard; ten is the
+// coarse step for crossing the screen.
+const OGE_NUDGE_MM = 1;
+const OGE_NUDGE_MM_BIG = 10;
+// Arrow directions in MODEL space (x right, y up), which is what the clinician
+// sees when the keyguard is face-on — the view this tab opens in and the one
+// "Face on" returns to. Deliberately not the stored coordinates' own axes: with
+// an upper-left origin the y number counts downward, and an up arrow that made
+// an opening travel down would be indefensible whatever the numbers did.
+const OGE_ARROWS = {
+  ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, 1], ArrowDown: [0, -1],
+};
+
+// Set true once this section has been evaluated - see the animate loop above.
+var ogeBooted = false;
+
+const ogeRay   = new THREE.Raycaster();
+const ogePlane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
+
+// True while this tab is the one on show and the panel is open.
+function ogeLive() {
+  return !!ogState && ogPanel.classList.contains('open') && ogPanel.classList.contains('eye');
+}
+
+// The screen area as this tab needs it: its size in the clinician's chosen
+// unit and in millimetres, which corner is (0,0), and the height of the
+// keyguard's face to lay the shapes on. Null when that can't be known — an
+// unreadable openings field, a design that hasn't rendered yet, or a
+// keyguard.scad too old to report the screen size in pixels.
+function ogeGeom() {
+  if (!ogState || ogState.screen.error) return null;
+  const dims = project && project.dims;
+  if (!dims || !(dims.swm > 0) || !(dims.shm > 0)) return null;
+  const vals   = currentFormValues();
+  const unit   = vals.unit_of_measure_for_screen === 'mm' ? 'mm' : 'px';
+  const origin = vals.starting_corner_for_screen_measurements === 'lower-left'
+    ? 'lower-left' : 'upper-left';
+  let sw, sh;
+  if (unit === 'mm') { sw = dims.swm; sh = dims.shm; }
+  else {
+    // The designer always knows the screen size in pixels for any design it will
+    // actually build (Ken, 2026-08-24) — a custom tablet missing its pixel sizes
+    // is refused outright, with the designer's own error, long before this. So in
+    // practice the only way to be here is a keyguard.scad too old to echo them.
+    // The test stays as a guard all the same: every conversion below divides by
+    // this, and a zero would silently scatter the openings rather than stop.
+    if (!(dims.swp > 0) || !(dims.shp > 0)) return null;
+    sw = dims.swp; sh = dims.shp;
+  }
+  // The face is measured from the model rather than computed from the reported
+  // thickness, so a frame, a sloped edge or a raised addition can't leave the
+  // shapes buried inside the keyguard.
+  let topZ = (dims.kt || 4) / 2;
+  if (currentMesh) {
+    const box = new THREE.Box3().setFromObject(currentMesh);
+    if (Number.isFinite(box.max.z)) topZ = box.max.z;
+  }
+  return {
+    unit, origin, sw, sh,
+    swm: dims.swm, shm: dims.shm,
+    topZ: topZ + 0.2,                     // just clear of the face
+    perMM: sw / dims.swm,                 // clinician units per millimetre
+    step: unit === 'px' ? 1 : 0.1,        // smallest number this tab will write
+    dp:   unit === 'px' ? 0 : 1,
+  };
+}
+
+// Why the openings can't be drawn, in the clinician's terms.
+function ogeBlockedText() {
+  if (ogState && ogState.screen.error) {
+    return 'The screen openings can’t be read, so they can’t be drawn on the keyguard. ' +
+           'Fix <b>my_screen_openings</b> in the Customizer, or press Cancel.';
+  }
+  const vals = currentFormValues();
+  const unit = vals.unit_of_measure_for_screen === 'mm' ? 'mm' : 'px';
+  const dims = project && project.dims;
+  if (!dims || !(dims.swm > 0)) {
+    return 'Waiting for the keyguard to finish rendering — that is what tells this ' +
+           'tab how big the screen is. It will appear on its own.';
+  }
+  if (unit === 'px' && !(dims.swp > 0)) {
+    return 'Working by eye in <b>pixels</b> needs the screen size in pixels, and this ' +
+           '<b>keyguard.scad</b> is not reporting one — it is an older version. Update it, ' +
+           'or set <b>unit of measure for screen</b> to <b>mm</b> in the meantime. The other tab ' +
+           'works either way.';
+  }
+  return 'The screen area can’t be measured yet.';
+}
+
+// ---- Screen space <-> model space ---------------------------------------
+// The screen area is centred on the model origin, so the clinician's corner is
+// half a screen away in each direction. Only the y axis differs between the two
+// starting corners: an upper-left origin counts downwards.
+function ogeToModel(row, g) {
+  const w = (row.shape === 'c' ? row.h : row.w) / g.perMM;
+  const h = row.h / g.perMM;
+  const cx = -g.swm / 2 + row.x / g.perMM;
+  const cy = g.origin === 'upper-left'
+    ?  g.shm / 2 - row.y / g.perMM
+    : -g.shm / 2 + row.y / g.perMM;
+  return { cx, cy, w, h, r: row.shape === 'c' ? 0 : row.cr / g.perMM };
+}
+function ogeFromModel(row, m, g) {
+  row.x = (m.cx + g.swm / 2) * g.perMM;
+  row.y = (g.origin === 'upper-left' ? (g.shm / 2 - m.cy) : (m.cy + g.shm / 2)) * g.perMM;
+  if (row.shape === 'c') row.h = Math.max(m.w, m.h) * g.perMM;
+  else { row.w = m.w * g.perMM; row.h = m.h * g.perMM; row.cr = m.r * g.perMM; }
+}
+
+// Numbers land on the same precision the grid tab uses, so a shape dragged here
+// reads as a clean number there: whole pixels, or tenths of a millimetre.
+function ogeRoundRow(row, g) {
+  const r = v => parseFloat((v || 0).toFixed(g.dp));
+  row.x = r(row.x); row.y = r(row.y);
+  row.h = Math.max(g.step, r(row.h));
+  if (row.shape === 'c') { row.w = 0; row.cr = 0; return; }
+  row.w  = Math.max(g.step, r(row.w));
+  row.cr = Math.min(Math.max(0, r(row.cr)), Math.min(row.w, row.h) / 2);
+}
+
+// ---- Undo ----------------------------------------------------------------
+// One entry per completed gesture: Ctrl+Z takes back the whole drag, not the
+// hundred mouse-moves it was made of. The stack is pushed at the START of a
+// gesture and only once the pointer has genuinely travelled, so a click that
+// merely selects something leaves no entry behind.
+function ogeSnapshot() {
+  return {
+    rows: ogState.screen.rows.map(r => ({ ...r })),
+    hl:   [...ogState.screen.hl],
+    sel:  [...ogeSel],
+  };
+}
+function ogePush() {
+  ogeUndo.push(ogeSnapshot());
+  if (ogeUndo.length > OGE_UNDO_MAX) ogeUndo.shift();
+}
+function ogeUndoOne() {
+  const snap = ogeUndo.pop();
+  if (!snap) return;
+  ogState.screen.rows = snap.rows;
+  ogState.screen.hl   = new Set(snap.hl);
+  ogeSel              = new Set(snap.sel);
+  ogeRender();
+  ogRenderGrid('screen');
+  ogPreview();
+}
+
+// ---- The pink shapes -----------------------------------------------------
+// Rebuilt whenever the openings change. They live in a scene-level group of
+// their own rather than inside the render's group, so a re-render replacing the
+// keyguard mesh doesn't take them with it.
+function ogeClearShapes() {
+  for (const child of [...ogeGroup.children]) {
+    ogeGroup.remove(child);
+    if (child.geometry) child.geometry.dispose();
+    if (child.material) child.material.dispose();
+  }
+}
+
+function ogeShapeGeometry(m) {
+  if (m.isCircle) return new THREE.CircleGeometry(Math.max(m.w, m.h) / 2, 64);
+  const w = m.w, h = m.h;
+  const r = Math.min(Math.max(m.r, 0), Math.min(w, h) / 2);
+  const s = new THREE.Shape();
+  const x0 = -w / 2, x1 = w / 2, y0 = -h / 2, y1 = h / 2;
+  if (r <= 0) {
+    s.moveTo(x0, y0); s.lineTo(x1, y0); s.lineTo(x1, y1); s.lineTo(x0, y1);
+  } else {
+    s.moveTo(x0 + r, y0);
+    s.lineTo(x1 - r, y0); s.quadraticCurveTo(x1, y0, x1, y0 + r);
+    s.lineTo(x1, y1 - r); s.quadraticCurveTo(x1, y1, x1 - r, y1);
+    s.lineTo(x0 + r, y1); s.quadraticCurveTo(x0, y1, x0, y1 - r);
+    s.lineTo(x0, y0 + r); s.quadraticCurveTo(x0, y0, x0 + r, y0);
+  }
+  s.closePath();
+  return new THREE.ShapeGeometry(s, 12);
+}
+
+function ogeBuildShapes(g) {
+  ogeClearShapes();
+  ogState.screen.rows.forEach((row, idx) => {
+    const m = ogeToModel(row, g);
+    m.isCircle = row.shape === 'c';
+    const mesh = new THREE.Mesh(
+      ogeShapeGeometry(m),
+      // Flat pink rather than a lit material: this is a marker on the surface,
+      // not a part of the design, and it must read the same however the
+      // keyguard happens to be turned to the light.
+      new THREE.MeshBasicMaterial({
+        color: OGE_PINK,
+        transparent: true,
+        opacity: ogeSel.has(idx) ? 0.62 : 0.42,
+        depthWrite: false,
+        side: THREE.DoubleSide,
+      })
+    );
+    mesh.position.set(m.cx, m.cy, g.topZ);
+    mesh.renderOrder = 2;
+    mesh.userData.ogeIdx = idx;
+    ogeGroup.add(mesh);
+  });
+  ogeGroup.visible = true;
+}
+
+// ---- Handles -------------------------------------------------------------
+// Drawn in an SVG laid over the viewport rather than as more 3D objects, so
+// they keep one size on screen however far the model is zoomed or turned, and
+// so the pointer can hit them precisely.
+const OGE_HANDLES = ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'];
+// Handle positions in model space: 'w'/'e' are the low/high x edges, 's'/'n'
+// the low/high y edges. With the keyguard face-on these are where they look.
+function ogeHandleAt(m, pos) {
+  const x = pos.indexOf('w') >= 0 ? m.cx - m.w / 2
+          : pos.indexOf('e') >= 0 ? m.cx + m.w / 2 : m.cx;
+  const y = pos.indexOf('s') >= 0 ? m.cy - m.h / 2
+          : pos.indexOf('n') >= 0 ? m.cy + m.h / 2 : m.cy;
+  return { x, y };
+}
+
+const ogeEl = (tag, attrs) => {
+  const el = document.createElementNS(OGE_NS, tag);
+  for (const k of Object.keys(attrs)) el.setAttribute(k, attrs[k]);
+  return el;
+};
+
+// Model point -> a position in the overlay, in viewport pixels.
+function ogeProject(x, y, z, rect) {
+  const v = new THREE.Vector3(x, y, z).project(camera);
+  return { x: (v.x * 0.5 + 0.5) * rect.width, y: (-v.y * 0.5 + 0.5) * rect.height };
+}
+
+// Rebuilt when the selection changes; repositioned every frame, because the
+// model can be turned and zoomed while the panel is open.
+let ogeHandleDefs = [];      // {pos|'radius', model {x,y}} for the selected shape
+let ogeOutlineIdx = [];      // rows to draw a selection outline around
+
+function ogeSyncHandles() {
+  if (!ogeOverlay.classList.contains('on')) return;
+  const g = ogeGeom();
+  if (!g) return;
+  // Projected against the CANVAS, not the viewport that contains it. The two
+  // are normally the same box, but the canvas can be given a size of its own
+  // (the test harness renders at a fixed resolution) and then it no longer
+  // fills its container. The camera renders into the canvas, so the canvas is
+  // what a projected point is relative to — measuring against the viewport
+  // instead leaves every handle sitting beside its opening rather than on it.
+  // The overlay still spans the viewport, so the canvas's offset within it is
+  // added back on.
+  const vrect = viewport.getBoundingClientRect();
+  const rect  = canvas.getBoundingClientRect();
+  const ox = rect.left - vrect.left, oy = rect.top - vrect.top;
+  ogeOverlay.setAttribute('viewBox', `0 0 ${vrect.width} ${vrect.height}`);
+  ogeOverlay.setAttribute('width', vrect.width);
+  ogeOverlay.setAttribute('height', vrect.height);
+  while (ogeOverlay.firstChild) ogeOverlay.removeChild(ogeOverlay.firstChild);
+
+  for (const idx of ogeOutlineIdx) {
+    const row = ogState.screen.rows[idx];
+    if (!row) continue;
+    const m = ogeToModel(row, g);
+    const pts = [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([sx, sy]) => {
+      const p = ogeProject(m.cx + sx * m.w / 2, m.cy + sy * m.h / 2, g.topZ, rect);
+      return `${p.x + ox},${p.y + oy}`;
+    });
+    ogeOverlay.appendChild(ogeEl('polygon', { class: 'oge-outline', points: pts.join(' ') }));
+  }
+
+  for (const def of ogeHandleDefs) {
+    const q = ogeProject(def.x, def.y, g.topZ, rect);
+    const p = { x: q.x + ox, y: q.y + oy };
+    if (def.pos === 'radius') {
+      const d = ogeEl('circle', { class: 'oge-radius', cx: p.x, cy: p.y, r: OGE_RADIUS_PX / 2 });
+      d.dataset.oge = 'radius';
+      ogeOverlay.appendChild(d);
+    } else {
+      const h = ogeEl('rect', {
+        class: 'oge-handle', x: p.x - OGE_HANDLE_PX / 2, y: p.y - OGE_HANDLE_PX / 2,
+        width: OGE_HANDLE_PX, height: OGE_HANDLE_PX, style: 'cursor:move',
+      });
+      h.dataset.oge = 'handle';
+      h.dataset.pos = def.pos;
+      ogeOverlay.appendChild(h);
+    }
+  }
+}
+
+// ---- Drawing the tab -----------------------------------------------------
+function ogeRender() {
+  if (!ogPanel.classList.contains('open')) return;
+  const live = ogeLive();
+  const g = live ? ogeGeom() : null;
+  ogPanel.classList.toggle('oge-blocked', live && !g);
+  if (!g) {
+    if (live) ogeBlocked.innerHTML = ogeBlockedText();
+    ogeGroup.visible = false;
+    ogeOverlay.classList.remove('on');
+    ogeUpdateBar();
+    return;
+  }
+  const key = `${g.unit}|${g.origin}|${g.sw}|${g.sh}`;
+  if (key !== ogeGeomKey) ogeGeomKey = key;
+
+  ogeBuildShapes(g);
+  ogeOverlay.classList.add('on');
+
+  // Handles belong to a single selected opening. With several selected the
+  // gesture on offer is "move them together", so eight resize handles on each
+  // would only invite a resize that isn't there — those get an outline instead.
+  ogeHandleDefs = [];
+  ogeOutlineIdx = [...ogeSel];
+  if (ogeSel.size === 1) {
+    const idx = [...ogeSel][0];
+    const row = ogState.screen.rows[idx];
+    if (row) {
+      const m = ogeToModel(row, g);
+      for (const pos of OGE_HANDLES) {
+        const p = ogeHandleAt(m, pos);
+        ogeHandleDefs.push({ pos, x: p.x, y: p.y });
+      }
+      // The corner-radius dot, on the top edge and offset in by the radius —
+      // the same control PowerPoint puts on a rounded rectangle. Circles have
+      // no corners, so they have no dot.
+      if (row.shape === 'r') {
+        const r = Math.min(Math.max(m.r, 0), Math.min(m.w, m.h) / 2);
+        ogeHandleDefs.push({ pos: 'radius', x: m.cx - m.w / 2 + r, y: m.cy + m.h / 2 });
+      }
+    }
+  }
+  ogeSyncHandles();
+  ogeUpdateBar();
+}
+
+// Which toolbar buttons are live. The measurements themselves are not repeated
+// here: the grid tab is one click away and shows every number for every
+// opening, and this panel sits over the keyguard the clinician is looking at.
+function ogeUpdateBar() {
+  document.getElementById('oge-del').disabled  = ogeSel.size === 0;
+  document.getElementById('oge-undo').disabled = ogeUndo.length === 0;
+}
+
+// Redraw after something outside this tab moved — a finished render (which is
+// what supplies the screen size and the height of the face), or a change of
+// unit or starting corner.
+function ogeRefresh() {
+  if (!ogeLive()) { ogeGroup.visible = false; ogeOverlay.classList.remove('on'); return; }
+  ogeRender();
+}
+
+// Everything this tab put in the scene, taken back out.
+function ogeTeardown() {
+  ogeDrag = null;
+  ogeKeyRun = null;
+  ogeClearShapes();
+  ogeGroup.visible = false;
+  ogeOverlay.classList.remove('on');
+  while (ogeOverlay.firstChild) ogeOverlay.removeChild(ogeOverlay.firstChild);
+  ogeHandleDefs = [];
+  ogeOutlineIdx = [];
+  if (controls) controls.enabled = true;
+}
+
+// ---- Pointing at the keyguard -------------------------------------------
+function ogeNDC(ev) {
+  const r = canvas.getBoundingClientRect();
+  return new THREE.Vector2(
+    ((ev.clientX - r.left) / r.width) * 2 - 1,
+    -((ev.clientY - r.top) / r.height) * 2 + 1);
+}
+
+// Where the pointer meets the plane the openings lie in. Null only when the
+// model is turned exactly edge-on, where the plane and the line of sight never
+// meet — and where dragging would be meaningless anyway.
+function ogePlanePoint(ev, g) {
+  ogeRay.setFromCamera(ogeNDC(ev), camera);
+  ogePlane.set(new THREE.Vector3(0, 0, 1), -g.topZ);
+  const out = new THREE.Vector3();
+  return ogeRay.ray.intersectPlane(ogePlane, out) ? out : null;
+}
+
+// The topmost pink shape under the pointer, or null.
+function ogePick(ev) {
+  ogeRay.setFromCamera(ogeNDC(ev), camera);
+  const hits = ogeRay.intersectObjects(ogeGroup.children, false);
+  return hits.length ? hits[0].object.userData.ogeIdx : null;
+}
+
+// ---- Gestures ------------------------------------------------------------
+function ogeCommit(g) {
+  for (const idx of ogeSel) {
+    const row = ogState.screen.rows[idx];
+    if (row) ogeRoundRow(row, g);
+  }
+  ogeRender();
+  ogRenderGrid('screen');
+  ogPreview();          // the hole itself catches up now the drag is over
+}
+
+// Resizing keeps the edges you are NOT dragging where they are, which is what
+// every drawing tool does and what the hand expects; the opening stays recorded
+// by its centre, so the centre simply follows. A circle has one dimension — its
+// diameter — so any handle sets that, anchored on the opposite side.
+function ogeResize(row, drag, p, g) {
+  const b = drag.model, pos = drag.pos, min = g.step / g.perMM;
+  const left = b.cx - b.w / 2, right = b.cx + b.w / 2;
+  const bottom = b.cy - b.h / 2, top = b.cy + b.h / 2;
+  let x0 = left, x1 = right, y0 = bottom, y1 = top;
+  if (pos.indexOf('w') >= 0) x0 = Math.min(p.x, right - min);
+  if (pos.indexOf('e') >= 0) x1 = Math.max(p.x, left + min);
+  if (pos.indexOf('s') >= 0) y0 = Math.min(p.y, top - min);
+  if (pos.indexOf('n') >= 0) y1 = Math.max(p.y, bottom + min);
+
+  if (row.shape === 'c') {
+    const horiz = pos.indexOf('e') >= 0 || pos.indexOf('w') >= 0;
+    const vert  = pos.indexOf('n') >= 0 || pos.indexOf('s') >= 0;
+    const d = Math.max(min, horiz && vert ? Math.max(x1 - x0, y1 - y0)
+                                          : horiz ? x1 - x0 : y1 - y0);
+    if (pos.indexOf('w') >= 0) x0 = right - d;
+    else if (pos.indexOf('e') < 0) x0 = b.cx - d / 2;
+    x1 = x0 + d;
+    if (pos.indexOf('s') >= 0) y0 = top - d;
+    else if (pos.indexOf('n') < 0) y0 = b.cy - d / 2;
+    y1 = y0 + d;
+  }
+  const m = { cx: (x0 + x1) / 2, cy: (y0 + y1) / 2, w: x1 - x0, h: y1 - y0, r: b.r };
+  // A corner radius can never exceed half the shorter side, so shrinking a
+  // rectangle takes its rounding down with it rather than producing a shape the
+  // .scad would refuse.
+  m.r = Math.min(m.r, Math.min(m.w, m.h) / 2);
+  ogeFromModel(row, m, g);
+}
+
+// Pointer down anywhere over the viewport. Taken in the capture phase on the
+// viewport container so that a gesture aimed at an opening is decided before
+// the orbit controls on the canvas below ever see it — miss an opening and the
+// event carries on to them untouched, which is what keeps the keyguard turnable
+// while this tab is open.
+viewport.addEventListener('pointerdown', ev => {
+  if (!ogeLive() || ev.button !== 0) return;
+  const g = ogeGeom();
+  if (!g) return;
+
+  const what = (ev.target && ev.target.dataset) ? ev.target.dataset.oge : null;
+  const p = ogePlanePoint(ev, g);
+  if (!p) return;
+
+  if (what === 'handle' || what === 'radius') {
+    const idx = [...ogeSel][0];
+    const row = ogState.screen.rows[idx];
+    if (!row) return;
+    ogeStart(ev, {
+      kind: what === 'radius' ? 'radius' : 'resize',
+      pos: ev.target.dataset.pos, idx, g, start: p, moved: false, pushed: false,
+      model: ogeToModel(row, g),
+    });
+    return;
+  }
+
+  const idx = ogePick(ev);
+  if (idx === null) {
+    // Empty keyguard: drop the selection, then let the event through so the
+    // drag turns the model as it always has.
+    if (!ev.shiftKey && ogeSel.size) { ogeSel = new Set(); ogeRender(); }
+    return;
+  }
+
+  let pushed = false;
+  // Ctrl leaves the original behind and drags a copy — PowerPoint's gesture.
+  if (ev.ctrlKey || ev.metaKey) {
+    ogePush();
+    pushed = true;
+    const src = ogeSel.has(idx) ? [...ogeSel].sort((a, b) => a - b) : [idx];
+    const made = [];
+    for (const i of src) {
+      const r = ogState.screen.rows[i];
+      if (!r) continue;
+      ogState.screen.rows.push({ ...r, id: 0 });
+      made.push(ogState.screen.rows.length - 1);
+    }
+    ogeSel = new Set(made);
+    ogeRender();
+  } else if (ev.shiftKey) {
+    // Shift on a shape is ambiguous until the mouse moves: a shift-CLICK adds
+    // that opening to the selection, a shift-DRAG moves the selection in a
+    // straight line. Both are honoured by deciding at pointerup.
+    if (!ogeSel.has(idx)) { ogeSel = new Set([...ogeSel, idx]); ogeRender(); }
+    else ogeDragPendingDrop = idx;
+  } else if (!ogeSel.has(idx)) {
+    ogeSel = new Set([idx]);
+    ogeRender();
+  }
+
+  ogeStart(ev, {
+    kind: 'move', g, start: p, moved: false, pushed, hit: idx,
+    from: [...ogeSel].map(i => ({ i, model: ogeToModel(ogState.screen.rows[i], g) })),
+  });
+}, true);
+
+// Taking the gesture: the orbit controls are switched off for its duration, and
+// the event is stopped here so they never begin one of their own.
+function ogeStart(ev, drag) {
+  ogeDrag = drag;
+  if (controls) controls.enabled = false;
+  ev.preventDefault();
+  ev.stopPropagation();
+  try { viewport.setPointerCapture(ev.pointerId); } catch (e) { /* no capture, fine */ }
+}
+
+viewport.addEventListener('pointermove', ev => {
+  if (!ogeDrag) return;
+  const g = ogeDrag.g;
+  const p = ogePlanePoint(ev, g);
+  if (!p) return;
+  let dx = p.x - ogeDrag.start.x, dy = p.y - ogeDrag.start.y;
+  if (!ogeDrag.moved) {
+    // A gesture only counts — and only costs an undo step — once the pointer
+    // has genuinely travelled. A twitch during a click is not a drag.
+    if (Math.hypot(dx, dy) < 0.4) return;
+    ogeDrag.moved = true;
+    ogeDragPendingDrop = null;
+    if (!ogeDrag.pushed) { ogePush(); ogeDrag.pushed = true; }
+  }
+
+  if (ogeDrag.kind === 'move') {
+    if (ev.shiftKey) { if (Math.abs(dx) >= Math.abs(dy)) dy = 0; else dx = 0; }
+    for (const f of ogeDrag.from) {
+      const row = ogState.screen.rows[f.i];
+      if (row) ogeFromModel(row, { ...f.model, cx: f.model.cx + dx, cy: f.model.cy + dy }, g);
+    }
+  } else if (ogeDrag.kind === 'radius') {
+    const row = ogState.screen.rows[ogeDrag.idx];
+    if (row) {
+      const b = ogeDrag.model;
+      const r = Math.min(Math.max(0, p.x - (b.cx - b.w / 2)), Math.min(b.w, b.h) / 2);
+      row.cr = r * g.perMM;
+    }
+  } else {
+    const row = ogState.screen.rows[ogeDrag.idx];
+    if (row) ogeResize(row, ogeDrag, p, g);
+  }
+  // Redrawn, not re-rendered: the pink shape follows the mouse while the hole
+  // it stands for waits for the drag to finish.
+  ogeRender();
+});
+
+function ogeEndDrag(ev) {
+  if (!ogeDrag) { ogeDragPendingDrop = null; return; }
+  const { g, moved, kind, pushed, hit } = ogeDrag;
+  ogeDrag = null;
+  if (controls) controls.enabled = true;
+  try { viewport.releasePointerCapture(ev.pointerId); } catch (e) { /* already gone */ }
+
+  if (!moved) {
+    // A click, not a drag. Shift-clicking an opening that was already selected
+    // takes it back out of the selection; a plain click on one of several
+    // narrows the selection down to it.
+    if (ogeDragPendingDrop !== null) {
+      ogeSel.delete(ogeDragPendingDrop);
+      ogeDragPendingDrop = null;
+      ogeRender();
+      return;
+    }
+    if (kind === 'move' && !ev.shiftKey && ogeSel.size > 1 && hit !== undefined && hit !== null) {
+      ogeSel = new Set([hit]);
+      ogeRender();
+      return;
+    }
+    // A Ctrl-click that made copies but never moved them: the copies are real,
+    // so they stand — commit them rather than leave the keyguard behind.
+    if (pushed) { ogeCommit(g); return; }
+    ogeUpdateBar();
+    return;
+  }
+  ogeDragPendingDrop = null;
+  ogeCommit(g);
+}
+viewport.addEventListener('pointerup', ogeEndDrag);
+viewport.addEventListener('pointercancel', ogeEndDrag);
+
+// ---- Toolbar actions -----------------------------------------------------
+// A new opening arrives at the size Ken specified — 10 mm square with a 2 mm
+// corner, or 10 mm across for a circle — converted into whatever unit the
+// clinician is working in, and dropped in the middle of the screen. If that
+// spot is taken it steps aside, so adding several in a row leaves a readable
+// staircase instead of one shape hiding four others.
+function ogeAdd(shape) {
+  const g = ogeGeom();
+  if (!g) return;
+  ogePush();
+  const mm = v => v * g.perMM;
+  let cx = g.sw / 2, cy = g.sh / 2;
+  const taken = () => ogState.screen.rows.some(r =>
+    Math.abs(r.x - cx) < g.step && Math.abs(r.y - cy) < g.step);
+  for (let n = 0; n < 40 && taken(); n++) { cx += mm(3); cy += mm(3); }
+  const row = shape === 'c'
+    ? { id: 0, shape: 'c', h: mm(10), w: 0, cr: 0, x: cx, y: cy }
+    : { id: 0, shape: 'r', h: mm(10), w: mm(10), cr: mm(2), x: cx, y: cy };
+  ogeRoundRow(row, g);
+  ogState.screen.rows.push(row);
+  ogeSel = new Set([ogState.screen.rows.length - 1]);
+  ogeCommit(g);
+}
+
+function ogeDelete() {
+  const g = ogeGeom();
+  if (!g || !ogeSel.size) return;
+  ogePush();
+  const gone = [...ogeSel].sort((a, b) => b - a);
+  for (const i of gone) ogState.screen.rows.splice(i, 1);
+  // Highlights are held as row positions, so every highlight above a deleted
+  // row slides down with it — the same bookkeeping the grid tab does.
+  ogState.screen.hl = new Set([...ogState.screen.hl]
+    .filter(i => !ogeSel.has(i))
+    .map(i => i - gone.filter(d => d < i).length));
+  ogeSel = new Set();
+  ogeRender();
+  ogRenderGrid('screen');
+  ogPreview();
+}
+
+document.getElementById('oge-add-rect').addEventListener('click', () => ogeAdd('r'));
+document.getElementById('oge-add-circ').addEventListener('click', () => ogeAdd('c'));
+document.getElementById('oge-del').addEventListener('click', ogeDelete);
+document.getElementById('oge-undo').addEventListener('click', ogeUndoOne);
+document.getElementById('oge-fit').addEventListener('click', () => ogeFaceOn());
+
+// Look at the keyguard face-on. Dragging a corner handle while the model is
+// turned edge-on is meaningless, so the tab starts from a square view — and
+// this puts it back after the clinician has turned the model to look at
+// something. Orbiting is never taken away; this is only a way back.
+function ogeFaceOn() {
+  if (!currentMesh) return;
+  frameObject(currentMesh, new THREE.Vector3(0, 0, 1), new THREE.Vector3(0, 1, 0));
+}
+
+// ---- Tabs ----------------------------------------------------------------
+// Both tabs edit the same openings, so switching is only a matter of redrawing
+// the one now on show. The undo history is per visit to the by-eye tab: the
+// grid tab can add and delete rows underneath it, which would leave the stack
+// describing openings that have since moved or gone.
+// A panel the clinician has resized by its grip carries inline width/height,
+// which would beat the compact sizing the by-eye tab asks for in CSS. So the
+// grid tab's size is set aside on the way in and handed back on the way out —
+// their resizing is remembered, it just doesn't apply to a tab that is one row
+// of buttons and has no grip of its own.
+let ogGridSize = null;
+
+function ogSwitchTab(name) {
+  const eye = name === 'eye';
+  if (eye && !ogGridSize) {
+    ogGridSize = { w: ogPanel.style.width, h: ogPanel.style.height };
+    ogPanel.style.width = '';
+    ogPanel.style.height = '';
+  } else if (!eye && ogGridSize) {
+    ogPanel.style.width = ogGridSize.w;
+    ogPanel.style.height = ogGridSize.h;
+    ogGridSize = null;
+  }
+  ogPanel.classList.toggle('eye', eye);
+  for (const btn of document.querySelectorAll('.og-tab')) {
+    btn.classList.toggle('on', btn.dataset.tab === name);
+  }
+  if (eye) {
+    ogeUndo = [];
+    ogeSel = new Set();
+    ogeGeomKey = null;
+    ogeRender();
+    ogeFaceOn();
+  } else {
+    ogeTeardown();
+    ogRenderGrid('screen');
+    ogRenderGrid('case');
+  }
+}
+for (const btn of document.querySelectorAll('.og-tab')) {
+  btn.addEventListener('click', () => ogSwitchTab(btn.dataset.tab));
+}
+ogeBooted = true;
+
+// Keyboard, while the by-eye tab is the one on show. Ctrl+Z takes back a whole
+// drag; Delete removes the selection; Escape lets go of the selection before it
+// closes the panel, so it takes two presses to leave with something selected.
+document.addEventListener('keydown', e => {
+  if (!ogeLive()) return;
+  const t = e.target;
+  if (t && (t.tagName === 'INPUT' || t.tagName === 'SELECT' || t.tagName === 'TEXTAREA')) return;
+  if ((e.ctrlKey || e.metaKey) && !e.shiftKey && String(e.key).toLowerCase() === 'z') {
+    // stopPropagation matters as much as preventDefault: the app's own undo is
+    // listening further along and would take back a Customizer change on top of
+    // this one, which is not what a clinician means by undoing a nudge.
+    e.preventDefault(); e.stopPropagation(); ogeUndoOne(); return;
+  }
+  if ((e.key === 'Delete' || e.key === 'Backspace') && ogeSel.size) {
+    e.preventDefault(); e.stopPropagation(); ogeDelete(); return;
+  }
+  const dir = OGE_ARROWS[e.key];
+  if (dir && ogeSel.size) {
+    const g = ogeGeom();
+    if (!g) return;
+    e.preventDefault(); e.stopPropagation();
+    // One undo step per RUN, not per tap: holding an arrow down auto-repeats,
+    // and Ctrl+Z afterwards should put the opening back where it started rather
+    // than walk it back one tap at a time. The run opens on the first key down
+    // and closes when every arrow has been let go.
+    if (!ogeKeyRun) { ogePush(); ogeKeyRun = new Set(); }
+    ogeKeyRun.add(e.key);
+    const mm = e.shiftKey ? OGE_NUDGE_MM_BIG : OGE_NUDGE_MM;
+    // Rounded to a whole step in the clinician's unit first, so repeated taps
+    // leave clean numbers instead of accumulating a fraction.
+    const units = Math.max(g.step, parseFloat((mm * g.perMM).toFixed(g.dp)));
+    const d = units / g.perMM;                      // back to millimetres
+    for (const idx of ogeSel) {
+      const row = ogState.screen.rows[idx];
+      if (!row) continue;
+      const m = ogeToModel(row, g);
+      m.cx += dir[0] * d;
+      m.cy += dir[1] * d;
+      ogeFromModel(row, m, g);
+      ogeRoundRow(row, g);
+    }
+    // Redrawn only. Like a drag, the hole is re-cut once the key is released —
+    // a render per tap of an auto-repeating key would be unusable.
+    ogeRender();
+    return;
+  }
+  if (e.key === 'Escape' && ogeSel.size) {
+    e.stopPropagation(); ogeSel = new Set(); ogeRender();
+  }
+}, true);
+
+// Letting go of the last arrow key closes the run: the openings stop moving and
+// the keyguard is re-cut where they finished.
+document.addEventListener('keyup', e => {
+  if (!ogeKeyRun || !OGE_ARROWS[e.key]) return;
+  ogeKeyRun.delete(e.key);
+  if (ogeKeyRun.size) return;
+  ogeKeyRun = null;
+  if (!ogeLive()) return;
+  const g = ogeGeom();
+  if (g) ogeCommit(g);
+}, true);
 
 // ---- Open / close --------------------------------------------------------
 function openOpenings() {
@@ -6878,7 +7820,16 @@ function openOpenings() {
   ogRenderGrid('case');
   ogRenderWarnings();
   ogMsgEl.textContent = '';
+  ogeUndo = [];
+  ogeSel = new Set();
+  ogeGeomKey = null;
+  ogGridSize = null;
   ogPanel.classList.add('open');
+  // Opens on the by-eye tab: placing an opening on the keyguard is the common
+  // errand, and the numbers are one click away. Note this squares the view up
+  // to face-on, since dragging a handle on a keyguard seen edge-on is
+  // meaningless; orbiting is never taken away.
+  ogSwitchTab('eye');
 }
 
 // Closing without saving drops the preview, so the viewport goes back to what
@@ -6888,6 +7839,7 @@ function closeOpenings(rerender = true) {
   const previewed = ogState && ogState.previewed;
   ogRenderOverride = null;
   ogPanel.classList.remove('open');
+  ogeTeardown();
   ogState = null;
   if (rerender && previewed && project) doRender();
 }
@@ -6903,6 +7855,7 @@ function saveOpenings() {
   updateDirty();
   commitHistory();              // one undo step for the whole edit
   ogPanel.classList.remove('open');
+  ogeTeardown();
   ogState = null;
   doRender();
 }
