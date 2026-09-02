@@ -1514,6 +1514,10 @@ const RELEASE_NOTES = {
     "Nudging with the arrow keys. The arrow keys move whatever is selected a millimetre at a time, or ten millimetres with Shift held. Hold an arrow down and the openings slide along; Ctrl+Z afterwards puts them back where they started, rather than undoing one tap at a time.",
     "Turning the keyguard while you work. Dragging anywhere other than an opening still turns the keyguard as it always did, and Face on squares the view up again when you want it. An opening can be dragged clear of the screen, which is how you reach the area around it.",
     "What stays on the other tab. Case openings are measured from the case rather than the screen, so there is nothing for the keyguard to show them against — they stay on the pixels-or-millimeters tab. Working by eye in pixels also needs an up-to-date keyguard.scad; in millimetres it works with any."
+  ],
+  "102": [
+    "Keyguard file updates now work on school networks. The offer to update your keyguard.scad used to come from GitHub, an address many school and hospital networks block by name. On those networks the app opened perfectly but never once offered you a newer keyguard file — and said nothing about it, so there was no way to tell. The keyguard file now comes from the same address as the app itself, which your network has already allowed if the app loaded at all. This matters most if you want to place openings by eye in pixels, which needs a recent keyguard file.",
+    "The Console now says what the update check found. It reports “either your keyguard file is up to date”, or that a newer one is available, or that it could not check — instead of staying silent in every case. Silence used to look identical whether you were current or simply could not reach the check."
   ]
 };
 // @@RELEASE_NOTES_END@@
@@ -1534,18 +1538,39 @@ function logVersionBanner(scadName, scadText) {
 }
 
 // --- Auto-update: how the app learns the current keyguard.scad version ---
-// A tiny manifest in the .scad source repo (Volksswitch/keyguard), served with
-// CORS by raw.githubusercontent.com. Expected shape:
-//   { "version": 78,
-//     "scad_filename": "keyguard_v78.scad",
-//     "scad_url": "https://raw.githubusercontent.com/Volksswitch/keyguard/main/keyguard.scad",
-//     "notes": "optional one-line summary shown in the update prompt" }
+// A tiny manifest served from THIS APP'S OWN ADDRESS, beside app.html, together
+// with the designer file it points at. Expected shape:
+//   { "version": 87,
+//     "scad_filename": "keyguard_v87.scad",
+//     "scad_url": "./keyguard_v87.scad",
+//     "notes": ["clinician-visible 'What's new' lines shown in the update prompt"] }
 // `version` MUST equal the keyguard_designer_version inside the .scad it points
 // at (the app re-reads the version from the downloaded bytes and refuses a
-// mismatch). On ANY fetch failure (offline, or a managed network that blocks
-// github.com) the check is a silent no-op — a clinician is never blocked from
-// working with the file they already have.
-const DESIGNER_MANIFEST_URL = 'https://raw.githubusercontent.com/Volksswitch/keyguard/main/latest_scad_version.json';
+// mismatch). Both files are written by scripts/publish-designer-file.mjs.
+//
+// ⚠ SERVED FROM THIS APP'S OWN ADDRESS, not from GitHub — the same reasoning as
+// APP_MANIFEST_URL below, and for a failure that was measured in the field.
+//
+// Until release 102 this check asked raw.githubusercontent.com. School networks
+// block that hostname by name; it is a well-known file-staging address. So a
+// clinician on such a network could open the app — the whole point of moving to
+// keyguard.volksswitch.org — and still never be offered a designer update, with
+// no error and no clue, because the check fails silently by design. Observed
+// 1 Sep 2026: an SLP inside a school network, holding v73, offered nothing while
+// v87 was current. Serving the designer file from the app's own address means it
+// arrives by the route that network has already allowed for the app itself.
+//
+// The cost, accepted deliberately (Ken, 1 Sep 2026): the two release streams are
+// welded together — a new designer version reaches clinicians only when the web
+// app is next released. The designer moves far slower than the app, so in
+// practice it rides along with a release the app was going to make anyway.
+//
+// ⚠ Both files are deliberately ABSENT from sw.js's SHELL precache list. A
+// precached designer file could never be replaced, which is the one failure that
+// would make this worse than what it replaced.
+//
+// Relative to the document, so it follows the app to whichever address serves it.
+const DESIGNER_MANIFEST_URL = './latest_scad_version.json';
 const UPDATE_SNOOZE_MS = 7 * 24 * 60 * 60 * 1000;   // "Remind me in a week"
 
 // Companion manifest for the WEB APP itself (parallel to the .scad one), living
@@ -2558,24 +2583,43 @@ async function openProject(presetHandle = null) {
 async function checkForDesignerUpdate() {
   if (!project || !project.dirHandle) return;     // only real, writable folder projects (not test fixtures)
   const loaded = parseDesignerVersion(project.scadText);
-  if (loaded == null) return;                      // can't read a version — don't nag
+  if (loaded == null) {
+    logLine('Keyguard file: no version number found inside it — not checking for updates.');
+    return;                                        // can't read a version — don't nag
+  }
 
+  // Every path below SAYS what happened. Silence used to be the only outcome a
+  // clinician ever saw here, and "we could not ask" was indistinguishable from
+  // "you are up to date" — for her, and for anyone she reported it to. The check
+  // still never blocks: whatever it finds, she keeps working with the file she has.
   let manifest;
   try {
     const resp = await fetch(DESIGNER_MANIFEST_URL + '?t=' + Date.now(), { cache: 'no-store' });
-    if (!resp.ok) return;
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
     manifest = await resp.json();
-  } catch {
-    return;   // offline, or github.com blocked on this network — silent no-op
+  } catch (e) {
+    logLine(`Keyguard file: couldn't check for a newer version (${e.message}) — `
+          + `you may be offline. Your keyguard file is unaffected.`);
+    return;
   }
 
   const latest = Number(manifest && manifest.version);
-  if (!Number.isFinite(latest) || latest <= loaded) return;   // already current
+  if (!Number.isFinite(latest)) {
+    logLine('Keyguard file: the published version list could not be read — skipping the update check.');
+    return;
+  }
+  if (latest <= loaded) {
+    logLine(`Keyguard file: up to date (v${loaded}).`);
+    return;
+  }
 
   // Honour an active "remind me in a week" — but a version newer than the one
   // the clinician postponed re-prompts immediately.
   const sn = settings.updateSnooze;
-  if (sn && sn.until > Date.now() && sn.forVersion >= latest) return;
+  if (sn && sn.until > Date.now() && sn.forVersion >= latest) {
+    logLine(`Keyguard file: v${latest} is available (you have v${loaded}) — reminder postponed.`);
+    return;
+  }
 
   const oldScad = project.scadName;
   const newScad = manifest.scad_filename || oldScad;

@@ -1,0 +1,8 @@
+{
+  "version": 87,
+  "scad_filename": "keyguard_v87.scad",
+  "scad_url": "./keyguard_v87.scad",
+  "notes": [
+    "Adds the information the Keyguard Designer web app’s new **by eye** opening editor needs in order to work when your screen measurements are in pixels. Nothing about the keyguard changes, and there is nothing different to see in OpenSCAD."
+  ]
+}
