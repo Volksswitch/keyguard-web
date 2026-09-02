@@ -2,9 +2,13 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "keyguard-web",
+      "name": "kgweb-live",
       "runtimeExecutable": "python",
-      "runtimeArgs": ["-m", "http.server", "8077"],
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8077"
+      ],
       "port": 8077
     }
   ]
