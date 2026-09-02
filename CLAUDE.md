@@ -18,9 +18,11 @@ appearing to serve this one). **Check `APP_RELEASE` in `app.html` before believi
 you are in the right place.**
 
 Things that still live ONLY in the old folder, and are still authoritative there:
-`SECURITY.md` + `SECURITY.pdf`, `RELEASING.md`, the Playwright test harness under
-`tests/`, and `KEYGUARD-MIGRATION-PLAN.docx`. Read them there; do not copy them
-here without deciding they should move.
+`RELEASING.md`, the Playwright test harness under `tests/`, and
+`KEYGUARD-MIGRATION-PLAN.docx`. Read them there; do not copy them here without
+deciding they should move. (`SECURITY.md` moved HERE on 1 Sep 2026 — it describes
+this app, and the frozen folder is the wrong home for a document that must change
+in lockstep with `app.html`.)
 
 ---
 
@@ -171,6 +173,7 @@ derive paths from `$env:OneDrive`, never hardcode `C:\Users\<name>`.
 |---|---|---|
 | **"bump keyguard designer"** | `node scripts/release-designer.mjs` | **RELEASES THE KEYGUARD DESIGNER TO CLINICIANS, end to end, with TWO pushes.** Phase 1 (.scad repo): finalize its changelog to `## Version N`, regenerate its manifest, commit, push, pre-bump to N+1. Phase 2 (here): wait for GitHub to serve vN, publish the file beside `app.html`, then the full web app release ritual and push, then pre-bump. Refuses if the app has unreleased work of its own, if vN has no clinician notes, if either repo is off `main`, or if release files are uncommitted — all checked BEFORE the first push. `--dry-run` prints the plan and changes nothing. |
 | **"publish the designer file"** | `node scripts/publish-designer-file.mjs` | The Phase 2 half on its own — fetches the PUBLISHED `keyguard.scad`, verifies the version, writes `keyguard_v<N>.scad` + `latest_scad_version.json`, removes the superseded copy, adds the changelog bullet, regenerates notes. Idempotent. Use only to repair a half-finished release; the normal path is "bump keyguard designer". |
+| **"build the security document"** | `python scripts/build-security-docx.py` | Renders `SECURITY.md` to `SECURITY.docx`. **Ken converts the .docx to PDF himself and uploads it** — the script deliberately stops at the .docx so he keeps editorial control. The .docx is an OUTPUT: never hand-edit it. Requires python-docx. |
 | **"bump keyguard web app"** | the ritual in `RELEASING.md` (sibling folder) | **RELEASES THIS APP TO CLINICIANS, through the push, with no second confirmation.** For the app's OWN work. Bumps `CACHE_NAME`, finalizes the changelog, regenerates notes, writes `latest_app_version.json`, commits, pushes, then pre-bumps `APP_RELEASE`. Ken issues it only after reading `CHANGELOG.md`. The retiring sibling has its own deliberately different phrase, "patch the retiring keyguard address" — confirm which folder you are in first. |
 | **"apply release notes"** | `node scripts/apply-release-notes.mjs` | Regenerates the bundled `RELEASE_NOTES` block in `app.html` from `CHANGELOG.md`. Run after EVERY changelog edit. <1 s. |
 | **"publish app version"** | `node scripts/publish-app-version.mjs` | Rewrites `latest_app_version.json` from `APP_RELEASE`. **RELEASE-TIME ONLY** — part of the release merge, never day-to-day. |
@@ -183,8 +186,8 @@ OneDrive syncs this file AND the other machine's session is restarted.
 copy; that one serves the retired app and is not used by this project.
 
 **Trigger phrases that still live in the sibling folder** (run them there):
-"build the security document", "update visual references", "compare visual
-references", and the RTP chunk/merge/membrane phrases.
+"update visual references", "compare visual references", and the RTP
+chunk/merge/membrane phrases.
 
 ---
 
@@ -277,16 +280,18 @@ Report what you verified.
   sibling folder and exercise *that* copy of `app.html` — i.e. the retired app. A
   change made here is currently covered only by a manual syntax check of the inline
   module. Moving or re-pointing the harness is unresolved.
-- **The security document lives in the sibling folder** and its source of truth is
-  unsettled — the repo holds `SECURITY.md` plus a PDF generator, while Ken's stated
-  process (1 Sep 2026) is that he generates the PDF himself from a `.docx` and
-  uploads it. **No keyguard security `.docx` exists anywhere on OneDrive as of that
-  date.** Resolve with Ken before editing that document again.
-  Whichever it turns out to be: whenever `app.html` changes what the app does on the
-  network, in browser storage, or with the clinician's files, that document must be
-  updated in the same change. Between May and August 2026 the published copy fell
-  three months behind the app, still promising IT teams the app contacted no third
-  party after the designer update check had shipped.
+- **The security document is settled (1 Sep 2026)** and now lives here. `SECURITY.md`
+  is the source; "build the security document" renders `SECURITY.docx`; **Ken does the
+  .docx → PDF conversion and the upload himself.** The old PDF generator is gone.
+  ⚠ **Whenever `app.html` changes what the app does on the network, in browser
+  storage, or with the clinician's files, update `SECURITY.md` and rebuild in the same
+  change** — the same lockstep rule as changelog-as-you-go, and for the same reason.
+  Between May and August 2026 the published copy fell three months behind the app,
+  still promising IT teams the app contacted no third party after the designer update
+  check had shipped. A security document that fails the test it invites the reader to
+  run costs more trust than having none. **It is only correct once Ken has uploaded
+  it** — and he replaces the file in place in WordPress, because a re-upload would be
+  renamed and break the FAQ link.
 - **WASM OOM on heavy / no-recess designs** — intermittent `memory access out of
   bounds` from wasm32 address-space fragmentation. Workaround for clinicians:
   `Ctrl-Shift-R`. Real fix needs an openscad-wasm rebuild with `-sIMPORTED_MEMORY`
