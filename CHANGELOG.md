@@ -13,6 +13,8 @@ notes, because nothing at this address could have been missed yet.
 
 ## Unreleased (next release)
 
+- **Updated keyguard designer file (v87).** This update to the web app is necessary to support an upgrade to the keyguard designer. Open your project and the app will offer you the new keyguard file.
+
 - **Keyguard file updates now work on school networks.** The offer to update your keyguard.scad used to come from GitHub, an address many school and hospital networks block by name. On those networks the app opened perfectly but never once offered you a newer keyguard file — and said nothing about it, so there was no way to tell. The keyguard file now comes from the same address as the app itself, which your network has already allowed if the app loaded at all. This matters most if you want to place openings **by eye** in pixels, which needs a recent keyguard file.
 
 - **The Console now says what the update check found.** It reports “either your keyguard file is up to date”, or that a newer one is available, or that it could not check — instead of staying silent in every case. Silence used to look identical whether you were current or simply could not reach the check.

@@ -1,5 +1,6 @@
 #!/usr/bin/env node
-// Publish the current PUBLIC keyguard designer file alongside the web app.
+// Publish the current PUBLIC keyguard designer file alongside the web app, and
+// queue the app release that delivers it.
 //
 // WHY THIS EXISTS
 // ---------------
@@ -13,15 +14,14 @@
 //
 // Serving the designer file from the app's own address fixes that: it arrives
 // by the same route as the app itself, which that network has already allowed.
-// The cost is that the two release streams are welded together — a new designer
-// version reaches clinicians only when the web app is next released. Ken's call
-// (1 Sep 2026): the designer moves far slower than the app, so this is cheap.
 //
-// WHAT IT WRITES (both beside app.html, both deliberately OUT of sw.js's SHELL
-// precache list — a precached designer file could never be replaced):
+// WHAT IT WRITES (all beside app.html; the first two deliberately OUT of sw.js's
+// SHELL precache list — a precached designer file could never be replaced):
 //   keyguard_v<N>.scad        byte-identical to the published file
 //   latest_scad_version.json  the version list the app reads, with a RELATIVE
 //                             scad_url so each address serves its own copy
+//   CHANGELOG.md              the clinician-facing bullet for the release
+//   app.html                  regenerated "What's new" notes (via apply-release-notes)
 //
 // The bytes come from GitHub rather than from the .scad project's working copy
 // on purpose: the working copy is pre-bumped one version ahead (the same
@@ -29,12 +29,13 @@
 // handed. The published manifest in the .scad project says which version is
 // public; this script fetches exactly that and refuses anything else.
 //
-// Run from the keyguard-web project root (trigger phrase: "publish the
-// designer file"). Publishing it to clinicians still needs an app release.
+// Run from the keyguard-web project root. Trigger phrase: "publish the designer
+// file". It stops short of pushing — see step 5.
 
 import { readFile, writeFile, readdir, unlink } from 'node:fs/promises';
 import { join, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { execFileSync } from 'node:child_process';
 
 const WEB_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -124,4 +125,60 @@ await writeFile(
 const kb = Math.round(scadText.length / 1024);
 console.log(`Wrote ${scadFilename} (${kb} KB) and latest_scad_version.json for v${version}.`);
 if (stale.length) console.log(`Removed superseded: ${stale.join(', ')}`);
-console.log(`Clinicians see v${version} only after the next web app release.`);
+
+// 5. Queue the app release that DELIVERS this file.
+//
+// A designer file sitting here reaches nobody. Clinicians only fetch it after
+// their app refreshes, and the app only refreshes on a release. So publishing
+// the file and releasing the app are ONE act, not two (Ken, 1 Sep 2026): a new
+// designer version must force an app upgrade, however trivial that upgrade is.
+//
+// This writes the clinician-facing bullet that makes the release legitimate
+// under changelog-as-you-go, then regenerates the bundled "What's new" notes.
+//
+// It deliberately stops short of pushing. "bump keyguard web app" is the single
+// authorization for a push, and RELEASING.md gives it a precondition: Ken reads
+// the pending changelog first. A designer publish that pushed by itself would
+// ship whatever else happened to be sitting in Unreleased — possibly unfinished
+// — without him ever seeing it. So this prints the pending list and stops.
+const CHANGELOG = join(WEB_ROOT, 'CHANGELOG.md');
+const NL = '\n';
+const UNRELEASED = '## Unreleased (next release)' + NL;
+const bullet = `- **Updated keyguard designer file (v${version}).** This update to the web app `
+  + `is necessary to support an upgrade to the keyguard designer. Open your project and the `
+  + `app will offer you the new keyguard file.` + NL;
+
+let changelog = await readFile(CHANGELOG, 'utf8');
+if (!changelog.includes(UNRELEASED)) {
+  die(`CHANGELOG.md has no "## Unreleased (next release)" heading to add the entry under.`);
+}
+
+// Drop any bullet this script wrote for an EARLIER version. Only the newest
+// designer version is worth telling a clinician about, and two of these in one
+// release would read as two separate updates.
+const priorBullet = /^- \*\*Updated keyguard designer file \(v\d+\)\.\*\*[^\n]*\n/gm;
+const superseded = changelog.match(priorBullet) || [];
+changelog = changelog.replace(priorBullet, '');
+
+if (!changelog.includes(bullet)) {
+  changelog = changelog.replace(UNRELEASED, UNRELEASED + NL + bullet);
+}
+changelog = changelog.replace(/\n{3,}/g, NL + NL);   // tidy any gap the removal left
+await writeFile(CHANGELOG, changelog, 'utf8');
+console.log(`Added the changelog entry for v${version}`
+  + (superseded.length ? ` (replacing ${superseded.length} for an earlier version).` : '.'));
+
+execFileSync(process.execPath, [join(WEB_ROOT, 'scripts', 'apply-release-notes.mjs')],
+  { cwd: WEB_ROOT, stdio: 'inherit' });
+
+// Show exactly what a release would ship — the thing Ken checks before
+// authorizing the push.
+const pending = (changelog.split(UNRELEASED)[1] || '').split(/^## /m)[0]
+  .split(NL).filter(l => l.startsWith('- '));
+console.log(`${NL}A release would ship ${pending.length} change(s):`);
+for (const line of pending) {
+  const m = line.match(/^- \*\*(.+?)\*\*/);
+  console.log(`  - ${m ? m[1] : line.slice(2, 80)}`);
+}
+console.log(`${NL}Nothing has reached clinicians yet. Say "bump keyguard web app" to release,`);
+console.log(`which refreshes everyone's app and lets it offer them keyguard v${version}.`);
