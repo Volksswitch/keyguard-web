@@ -14,8 +14,10 @@ Ken converts the .docx to PDF himself and uploads it, so this script stops at th
 .docx. That is deliberate: he keeps editorial control of the final document, and an
 earlier version of this tool that produced the PDF directly took that away.
 
-THE DOCX IS AN OUTPUT. Never hand-edit it - edit SECURITY.md and rebuild, or the
-next rebuild silently discards the change.
+THE DOCX IS AN OUTPUT, and is gitignored. Never hand-edit it - edit SECURITY.md and
+rebuild, or the next rebuild silently discards the change. It is not tracked because
+a .docx is a zip and embeds timestamps, so no two builds are byte-identical and every
+rebuild showed as a change.
 
 WHENEVER app.html changes what the app does on the network, in the browser's
 storage, or with the clinician's files, update SECURITY.md and rebuild in the same
