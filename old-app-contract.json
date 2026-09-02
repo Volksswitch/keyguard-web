@@ -1,0 +1,61 @@
+{
+  "_what": "What release 21 of the RETIRED web app needs from keyguard.scad.",
+  "_why": [
+    "The old address (volksswitch.github.io/keyguard-designer-web) is frozen at release",
+    "21 until 1 August 2027, but keyguard.scad keeps moving. Stragglers who have not",
+    "saved their settings stay on that frozen app AND are still offered every new",
+    "keyguard version, because release 21 asks GitHub directly. Ken's decision,",
+    "1 Sep 2026: leave that alone rather than release the old address again.",
+    "",
+    "So the risk is drift: a keyguard version that release 21 cannot drive, pulled by",
+    "a clinician we can no longer send a fix to. check-old-app-compat.mjs runs as a",
+    "preflight in the keyguard release and fails it before the push if that happens.",
+    "",
+    "Release 21 is FROZEN, so this list is fixed and never needs regenerating. It was",
+    "derived on 1 Sep 2026 from the live copy at the old address, not from the local",
+    "working copy (which is 24 commits ahead and will never ship)."
+  ],
+  "_severity": "'required' fails the release. 'advisory' prints a warning and continues.",
+
+  "required": {
+    "parameters": {
+      "_note": "Injected with -D on every render. A rename means the app sets nothing and the render is silently wrong.",
+      "names": [
+        "echo_dims",
+        "extend_through_cuts",
+        "ff",
+        "fudge",
+        "generate",
+        "include_screenshot",
+        "only_oa_highlights",
+        "show_oa_highlights",
+        "type_of_keyguard"
+      ]
+    },
+    "echo": {
+      "_note": "The app sizes the screenshot plane and places the camera from this line. Losing it breaks the viewport, not just a readout.",
+      "marker": "__KG_DIMS__",
+      "fields": ["swm", "shm", "sat", "kt", "vpt", "vpr", "vpd", "vrw", "hrw"]
+    },
+    "option_values": {
+      "_note": "Values release 21 sends or tests for by name. Other options may come and go freely — the Customizer reads them from the file.",
+      "generate": ["Customizer settings", "first layer for SVG/DXF file"],
+      "type_of_keyguard": ["Laser-Cut"]
+    },
+    "declarations": {
+      "_note": "The version line the updater and the console banner both read.",
+      "names": ["keyguard_designer_version"]
+    }
+  },
+
+  "advisory": {
+    "parameters": {
+      "_note": "Referenced only for on-screen help text. A rename costs a hint, not a render.",
+      "names": ["mounting_method"]
+    },
+    "echo_fields": {
+      "_note": "Added for the by-eye editor in v87. Release 21 has no by-eye feature and ignores these; listed so their loss is not mistaken for a break.",
+      "fields": ["swp", "shp"]
+    }
+  }
+}

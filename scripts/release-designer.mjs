@@ -138,6 +138,21 @@ if (appWork.length) {
     + `${NL}  Release that work first with "bump keyguard web app", then run this.`);
 }
 
+// Will the RETIRED app still cope with this keyguard? Stragglers on the old
+// address are still offered every new keyguard version (Ken chose to leave that
+// alone, 1 Sep 2026), and that address is never released again — so a version they
+// cannot drive is a fault we could never send them a fix for. Checked here, before
+// the first push, while it is still cheap.
+say(`${NL}Checking compatibility with the retired app (release 21):`);
+try {
+  execFileSync(process.execPath, [join(WEB_ROOT, 'scripts', 'check-old-app-compat.mjs')],
+    { cwd: WEB_ROOT, stdio: 'inherit' });
+} catch {
+  die(`this keyguard version would break the retired app — nothing has been pushed.${NL}`
+    + `  See the explanation above. Fix the .scad, or take the deliberate decision to`
+    + `${NL}  break release 21 (which means stopping it offering keyguard updates first).`);
+}
+
 const APP_RELEASE = parseInt(read(appPath).match(/const APP_RELEASE = (\d+)/)?.[1], 10);
 const cacheNow = parseInt(read(swPath).match(/const CACHE_NAME = 'keyguard-v(\d+)'/)?.[1], 10);
 if (!Number.isFinite(APP_RELEASE) || !Number.isFinite(cacheNow)) die('cannot read APP_RELEASE or CACHE_NAME.');
