@@ -1,7 +1,7 @@
 // Service worker for Keyguard Designer PWA.
 // Bump CACHE_NAME when deploying changes to any file in SHELL — the activate
 // handler purges old caches so clients get the new version on next load.
-const CACHE_NAME = 'keyguard-v101';
+const CACHE_NAME = 'keyguard-v102';
 
 const SHELL = [
   './',                    // the bare address: a bookmark to the folder rather than
