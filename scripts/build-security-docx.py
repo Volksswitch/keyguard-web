@@ -29,8 +29,9 @@ would break any link pointing at it and leave the stale copy live at the old
 address. Ken replaces the file IN PLACE via the Media Library so the existing link
 keeps working - which is also why the app deliberately contains no link to it.
 
-    python scripts/build-security-docx.py              -> ./SECURITY.docx
-    python scripts/build-security-docx.py out/foo.docx
+    python scripts/build-security-docx.py                 -> ./SECURITY.docx
+    python scripts/build-security-docx.py in.md           -> ./in.docx
+    python scripts/build-security-docx.py in.md out.docx
 
 Renders a deliberately plain, printable document: this is read by people deciding
 whether to trust the app, so it should look like a document, not like marketing.
@@ -53,8 +54,20 @@ except ImportError:
              "  Install it with:  python -m pip install python-docx")
 
 ROOT = Path(__file__).resolve().parent.parent
-SRC = ROOT / "SECURITY.md"
-OUT = Path(sys.argv[1]).resolve() if len(sys.argv) > 1 else ROOT / "SECURITY.docx"
+
+# Defaults render SECURITY.md, which is what the trigger phrase does. Both paths
+# are overridable so the same renderer can produce any of the project's markdown
+# as Word - Ken reads .docx, and several documents here are written for him.
+#     build-security-docx.py                       -> SECURITY.md  -> SECURITY.docx
+#     build-security-docx.py <in.md>               -> <in.md>      -> <in>.docx
+#     build-security-docx.py <in.md> <out.docx>    -> explicit both
+SRC = Path(sys.argv[1]).resolve() if len(sys.argv) > 1 else ROOT / "SECURITY.md"
+if len(sys.argv) > 2:
+    OUT = Path(sys.argv[2]).resolve()
+elif len(sys.argv) > 1:
+    OUT = SRC.with_suffix(".docx")
+else:
+    OUT = ROOT / "SECURITY.docx"
 
 if not SRC.exists():
     sys.exit(f"build-security-docx: {SRC} not found.")
@@ -129,7 +142,8 @@ def build():
         section.left_margin = section.right_margin = Inches(1.0)
         section.top_margin = section.bottom_margin = Inches(0.9)
 
-    counts = {"heading": 0, "paragraph": 0, "bullet": 0, "table": 0, "code": 0}
+    counts = {"heading": 0, "paragraph": 0, "bullet": 0, "numbered": 0,
+              "table": 0, "code": 0}
     i = 0
     while i < len(lines):
         line = lines[i]
@@ -206,6 +220,24 @@ def build():
             counts["table"] += 1
             continue
 
+        # --- numbered list (ordering is content, so it gets a real Word list) ---
+        m = re.match(r"^(\s*)\d+\.\s+(.*)$", line)
+        if m:
+            indent = len(m.group(1))
+            text = [m.group(2)]
+            i += 1
+            while i < len(lines):
+                nxt = lines[i]
+                if (not nxt.strip() or re.match(r"^\s*(\d+\.|[-*])\s+", nxt)
+                        or nxt.startswith("#")):
+                    break
+                text.append(nxt.strip())
+                i += 1
+            par = doc.add_paragraph(style="List Number" if indent < 2 else "List Number 2")
+            add_runs(par, " ".join(text))
+            counts["numbered"] += 1
+            continue
+
         # --- bullet (with continuation lines, and one nesting level) ---
         m = re.match(r"^(\s*)[-*]\s+(.*)$", line)
         if m:
@@ -214,7 +246,8 @@ def build():
             i += 1
             while i < len(lines):
                 nxt = lines[i]
-                if not nxt.strip() or re.match(r"^\s*[-*]\s+", nxt) or nxt.startswith("#"):
+                if (not nxt.strip() or re.match(r"^\s*(\d+\.|[-*])\s+", nxt)
+                        or nxt.startswith("#")):
                     break
                 text.append(nxt.strip())
                 i += 1
@@ -245,7 +278,7 @@ def build():
             nxt = lines[i]
             if (not nxt.strip() or nxt.startswith("#") or nxt.strip() == "---"
                     or nxt.strip().startswith(("|", "```", ">"))
-                    or re.match(r"^\s*[-*]\s+", nxt)):
+                    or re.match(r"^\s*(\d+\.|[-*])\s+", nxt)):
                 break
             text.append(nxt.strip())
             i += 1
@@ -262,5 +295,6 @@ def build():
 counts = build()
 print(f"Wrote {OUT}")
 print("  " + ", ".join(f"{v} {k}{'s' if v != 1 else ''}" for k, v in counts.items()))
-print("\nConvert to PDF yourself and replace the file IN PLACE in the WordPress Media")
-print("Library, so the existing link keeps working.")
+if SRC.name == "SECURITY.md":
+    print("\nConvert to PDF yourself and replace the file IN PLACE in the WordPress Media")
+    print("Library, so the existing link keeps working.")
