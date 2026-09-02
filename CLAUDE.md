@@ -83,13 +83,19 @@ this folder reaches nobody — clinicians fetch it only after their app refreshe
 the app refreshes only on a release. Publishing the file and releasing the app are
 therefore ONE act, not two (Ken, 1 Sep 2026), however trivial the app upgrade is.
 
-"publish the designer file" enforces this: it writes the clinician-facing changelog
-bullet for the new version and regenerates the "What's new" notes, so a release is
-queued and waiting. It stops short of pushing, because `RELEASING.md` requires Ken to
-read the pending changelog before authorizing one — a designer publish that pushed by
-itself would ship whatever else was sitting in Unreleased, possibly unfinished,
-without him seeing it. So the pair is always: **"publish the designer file"**, then
-**"bump keyguard web app"**. Never leave the second one undone.
+**There are exactly two release commands, and they must not be blurred together
+(Ken, 1 Sep 2026):**
+
+- **"bump keyguard designer"** — publishes the dev `keyguard.scad` AND ships the
+  trivial web app release that delivers it. One command, two pushes. Use this
+  whenever the keyguard itself changes.
+- **"bump keyguard web app"** — a considered release of the app's own work. Use this
+  when the APP changed.
+
+`release-designer.mjs` enforces the separation: it **refuses to run** when the web app
+has unreleased clinician-facing work of its own, and names it. That work deserves its
+own release, not a free ride on a keyguard delivery. Release it first, then publish the
+keyguard.
 
 **⚠ `keyguard_v<N>.scad` and `latest_scad_version.json` must stay OUT of `sw.js`'s
 `SHELL` precache list.** A precached designer file could never be replaced — the one
@@ -163,19 +169,22 @@ derive paths from `$env:OneDrive`, never hardcode `C:\Users\<name>`.
 
 | Ken says | Claude runs | What it does |
 |---|---|---|
-| **"publish the designer file"** | `node scripts/publish-designer-file.mjs` | Fetches the currently PUBLISHED `keyguard.scad`, verifies its version matches the .scad project's published manifest, writes `keyguard_v<N>.scad` + `latest_scad_version.json` here, removes the superseded copy, adds the changelog bullet and regenerates the notes. Idempotent; safe to re-run. Prints what a release would ship. Foreground, a few seconds. **Always follow it with the release phrase below.** |
-| **"bump keyguard web app"** | the ritual in `RELEASING.md` (sibling folder) | **RELEASES THIS APP TO CLINICIANS, through the push, with no second confirmation.** Bumps `CACHE_NAME`, finalizes the changelog, regenerates notes, writes `latest_app_version.json`, commits, pushes, then pre-bumps `APP_RELEASE`. Ken issues it only after reading `CHANGELOG.md`. The retiring sibling has its own deliberately different phrase, "patch the retiring keyguard address" — confirm which folder you are in first. |
+| **"bump keyguard designer"** | `node scripts/release-designer.mjs` | **RELEASES THE KEYGUARD DESIGNER TO CLINICIANS, end to end, with TWO pushes.** Phase 1 (.scad repo): finalize its changelog to `## Version N`, regenerate its manifest, commit, push, pre-bump to N+1. Phase 2 (here): wait for GitHub to serve vN, publish the file beside `app.html`, then the full web app release ritual and push, then pre-bump. Refuses if the app has unreleased work of its own, if vN has no clinician notes, if either repo is off `main`, or if release files are uncommitted — all checked BEFORE the first push. `--dry-run` prints the plan and changes nothing. |
+| **"publish the designer file"** | `node scripts/publish-designer-file.mjs` | The Phase 2 half on its own — fetches the PUBLISHED `keyguard.scad`, verifies the version, writes `keyguard_v<N>.scad` + `latest_scad_version.json`, removes the superseded copy, adds the changelog bullet, regenerates notes. Idempotent. Use only to repair a half-finished release; the normal path is "bump keyguard designer". |
+| **"bump keyguard web app"** | the ritual in `RELEASING.md` (sibling folder) | **RELEASES THIS APP TO CLINICIANS, through the push, with no second confirmation.** For the app's OWN work. Bumps `CACHE_NAME`, finalizes the changelog, regenerates notes, writes `latest_app_version.json`, commits, pushes, then pre-bumps `APP_RELEASE`. Ken issues it only after reading `CHANGELOG.md`. The retiring sibling has its own deliberately different phrase, "patch the retiring keyguard address" — confirm which folder you are in first. |
 | **"apply release notes"** | `node scripts/apply-release-notes.mjs` | Regenerates the bundled `RELEASE_NOTES` block in `app.html` from `CHANGELOG.md`. Run after EVERY changelog edit. <1 s. |
 | **"publish app version"** | `node scripts/publish-app-version.mjs` | Rewrites `latest_app_version.json` from `APP_RELEASE`. **RELEASE-TIME ONLY** — part of the release merge, never day-to-day. |
 
 Because `CLAUDE.md` is auto-loaded per project, a new phrase only works after
 OneDrive syncs this file AND the other machine's session is restarted.
 
+`publish-scad-version.mjs` now lives here too (copied from the sibling 1 Sep 2026), so
+"bump keyguard designer" runs entirely from this folder. The sibling still has its own
+copy; that one serves the retired app and is not used by this project.
+
 **Trigger phrases that still live in the sibling folder** (run them there):
 "build the security document", "update visual references", "compare visual
-references", and the RTP chunk/merge/membrane phrases. **"publish scad version"**
-belongs to the .scad project and is run there — it is the step that makes a new
-designer version public, and must happen BEFORE "publish the designer file" here.
+references", and the RTP chunk/merge/membrane phrases.
 
 ---
 
