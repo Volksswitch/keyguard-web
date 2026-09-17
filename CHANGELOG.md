@@ -13,6 +13,8 @@ notes, because nothing at this address could have been missed yet.
 
 ## Unreleased (next release)
 
+- **The app now understands keyguard inset mode.** If your design uses the new **keyguard inset mode** in the keyguard designer — where the app on the tablet has been shrunk to leave a white border around it — the **by eye** tab now places openings against the app rather than against the whole screen whenever your screen measurements are in millimeters, so an opening you place by eye lands in exactly the same spot as the same opening typed on the **pixels or millimeters** tab. Measurements in pixels still start at the corner of your screenshot, because that is where a graphics program measures from, and switching between the two units now carries your openings across correctly instead of leaving them out by the width of the border. The heading above the list of screen openings says which corner you are measuring from.
+
 ## Release 103
 
 - **Updated keyguard designer file (v88).** This update to the web app is necessary to support an upgrade to the keyguard designer. Open your project and the app will offer you the new keyguard file.

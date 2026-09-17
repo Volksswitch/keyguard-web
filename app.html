@@ -1521,6 +1521,9 @@ const RELEASE_NOTES = {
   ],
   "103": [
     "Updated keyguard designer file (v88). This update to the web app is necessary to support an upgrade to the keyguard designer. Open your project and the app will offer you the new keyguard file."
+  ],
+  "104": [
+    "The app now understands keyguard inset mode. If your design uses the new keyguard inset mode in the keyguard designer — where the app on the tablet has been shrunk to leave a white border around it — the by eye tab now places openings against the app rather than against the whole screen whenever your screen measurements are in millimeters, so an opening you place by eye lands in exactly the same spot as the same opening typed on the pixels or millimeters tab. Measurements in pixels still start at the corner of your screenshot, because that is where a graphics program measures from, and switching between the two units now carries your openings across correctly instead of leaving them out by the width of the border. The heading above the list of screen openings says which corner you are measuring from."
   ]
 };
 // @@RELEASE_NOTES_END@@
@@ -3515,6 +3518,15 @@ async function doRender() {
         const mw = line.match(/(?:^|[\s,])swp\s*=\s*(-?\d+(?:\.\d+)?)/);
         const mh = line.match(/(?:^|[\s,])shp\s*=\s*(-?\d+(?:\.\d+)?)/);
         if (mw && mh) { project.dims.swp = +mw[1]; project.dims.shp = +mh[1]; }
+        // The APP's size in millimetres. It equals swm/shm unless the design is in
+        // keyguard inset mode, where the app has been shrunk inside a border on the
+        // screen and millimetre coordinates are measured from the app rather than the
+        // screen. Only newer keyguard.scad files report it, so it stays optional —
+        // without it the editor measures from the screen, which is what an older
+        // keyguard.scad (with no inset mode) does anyway.
+        const ma = line.match(/(?:^|[\s,])awm\s*=\s*(-?\d+(?:\.\d+)?)/);
+        const mb = line.match(/(?:^|[\s,])ahm\s*=\s*(-?\d+(?:\.\d+)?)/);
+        if (ma && mb) { project.dims.awm = +ma[1]; project.dims.ahm = +mb[1]; }
         // The by-eye openings canvas is drawn from these numbers, so a panel
         // waiting on the first render can now show itself.
         ogeRefresh();
@@ -6977,10 +6989,16 @@ function ogSyncScreenUnits() {
   const origin = vals.starting_corner_for_screen_measurements === 'lower-left'
     ? 'lower-left' : 'upper-left';
 
+  // In keyguard inset mode the app does not fill the screen, and millimetres are
+  // measured from the app's corner while pixels stay on the screenshot's — so the
+  // label has to say which, or the numbers look wrong by the width of the border.
+  const d = project && project.dims;
+  const inset = !!(d && d.awm > 0 && d.shm > 0 &&
+                   (d.awm < d.swm - 0.05 || d.ahm < d.shm - 0.05));
   document.getElementById('og-screen-units').textContent =
     unit === 'px'
       ? `— pixels, from the ${origin} corner of the screen`
-      : `— millimetres, from the ${origin} corner of the screen`;
+      : `— millimetres, from the ${origin} corner of the ${inset ? 'app' : 'screen'}`;
 
   if (unit !== ogState.screenUnit) {
     const was = ogState.screenUnit;
@@ -7012,10 +7030,22 @@ function ogConvertScreenUnits(from, to) {
   const dp = to === 'px' ? 0 : 1;
   const step = to === 'px' ? 1 : 0.1;
   const r = v => parseFloat(((v || 0) * factor).toFixed(dp));
+  // Widths and heights only change scale, but POSITIONS also change which corner
+  // they are measured from: millimetres are measured from the app's corner, pixels
+  // from the screenshot's corner. Those are the same place unless the design is in
+  // keyguard inset mode, where the app sits inside a border on the screen. With no
+  // inset the border is zero and this adds nothing. The border is the same size on
+  // the top and the bottom, so the vertical shift is the same whichever corner the
+  // clinician measures from.
+  const insetX = (dims.swm - ((dims.awm > 0) ? dims.awm : dims.swm)) / 2;
+  const insetY = (dims.shm - ((dims.ahm > 0) ? dims.ahm : dims.shm)) / 2;
+  const rp = (v, inset) => parseFloat((to === 'mm'
+    ? (v || 0) / perMM - inset
+    : ((v || 0) + inset) * perMM).toFixed(dp));
   // Undoable as one step, like any other change made on the by-eye tab.
   if (ogPanel.classList.contains('eye')) ogePush();
   for (const row of ogState.screen.rows) {
-    row.x = r(row.x); row.y = r(row.y);
+    row.x = rp(row.x, insetX); row.y = rp(row.y, insetY);
     row.h = Math.max(step, r(row.h));
     if (row.shape === 'c') { row.w = 0; row.cr = 0; continue; }
     row.w  = Math.max(step, r(row.w));
@@ -7123,9 +7153,17 @@ function ogeGeom() {
   const unit   = vals.unit_of_measure_for_screen === 'mm' ? 'mm' : 'px';
   const origin = vals.starting_corner_for_screen_measurements === 'lower-left'
     ? 'lower-left' : 'upper-left';
-  let sw, sh;
-  if (unit === 'mm') { sw = dims.swm; sh = dims.shm; }
+  // Millimetre coordinates are measured against the app, pixel coordinates against
+  // the screen — the same rule keyguard.scad follows, because a pixel measurement is
+  // taken off a screenshot of the whole screen. The two are the same thing unless the
+  // design is in keyguard inset mode. owm/ohm is whichever of the two applies here,
+  // always in millimetres, since that is the unit the model itself is in.
+  const awm = (dims.awm > 0) ? dims.awm : dims.swm;
+  const ahm = (dims.ahm > 0) ? dims.ahm : dims.shm;
+  let sw, sh, owm, ohm;
+  if (unit === 'mm') { sw = owm = awm; sh = ohm = ahm; }
   else {
+    owm = dims.swm; ohm = dims.shm;
     // The designer always knows the screen size in pixels for any design it will
     // actually build (Ken, 2026-08-24) — a custom tablet missing its pixel sizes
     // is refused outright, with the designer's own error, long before this. So in
@@ -7145,9 +7183,9 @@ function ogeGeom() {
   }
   return {
     unit, origin, sw, sh,
-    swm: dims.swm, shm: dims.shm,
+    owm, ohm,
     topZ: topZ + 0.2,                     // just clear of the face
-    perMM: sw / dims.swm,                 // clinician units per millimetre
+    perMM: unit === 'mm' ? 1 : sw / dims.swm,  // clinician units per millimetre
     step: unit === 'px' ? 1 : 0.1,        // smallest number this tab will write
     dp:   unit === 'px' ? 0 : 1,
   };
@@ -7176,21 +7214,22 @@ function ogeBlockedText() {
 }
 
 // ---- Screen space <-> model space ---------------------------------------
-// The screen area is centred on the model origin, so the clinician's corner is
-// half a screen away in each direction. Only the y axis differs between the two
-// starting corners: an upper-left origin counts downwards.
+// The screen area is centred on the model origin, and so is the app inside it, so
+// the clinician's corner is half the measured rectangle (owm x ohm) away in each
+// direction. Only the y axis differs between the two starting corners: an
+// upper-left origin counts downwards.
 function ogeToModel(row, g) {
   const w = (row.shape === 'c' ? row.h : row.w) / g.perMM;
   const h = row.h / g.perMM;
-  const cx = -g.swm / 2 + row.x / g.perMM;
+  const cx = -g.owm / 2 + row.x / g.perMM;
   const cy = g.origin === 'upper-left'
-    ?  g.shm / 2 - row.y / g.perMM
-    : -g.shm / 2 + row.y / g.perMM;
+    ?  g.ohm / 2 - row.y / g.perMM
+    : -g.ohm / 2 + row.y / g.perMM;
   return { cx, cy, w, h, r: row.shape === 'c' ? 0 : row.cr / g.perMM };
 }
 function ogeFromModel(row, m, g) {
-  row.x = (m.cx + g.swm / 2) * g.perMM;
-  row.y = (g.origin === 'upper-left' ? (g.shm / 2 - m.cy) : (m.cy + g.shm / 2)) * g.perMM;
+  row.x = (m.cx + g.owm / 2) * g.perMM;
+  row.y = (g.origin === 'upper-left' ? (g.ohm / 2 - m.cy) : (m.cy + g.ohm / 2)) * g.perMM;
   if (row.shape === 'c') row.h = Math.max(m.w, m.h) * g.perMM;
   else { row.w = m.w * g.perMM; row.h = m.h * g.perMM; row.cr = m.r * g.perMM; }
 }
