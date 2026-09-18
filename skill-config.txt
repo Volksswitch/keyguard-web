@@ -1,0 +1,187 @@
+# ================================================================
+# Keyguard Designer — Skill Level Configuration
+# ================================================================
+# Edit this file to control which Customizer settings are visible
+# at each experience level.  After saving, run:
+#   node scripts/apply-skill-config.js
+# ================================================================
+
+# Valid levels (from least to most experience):
+#   beginner   intermediate   advanced
+#
+# A setting assigned to level X is visible to X and above.
+# Settings not listed are always visible (beginner default).
+
+
+# ---------------------------------------------------------------
+# Skill level descriptions
+# Shown in Settings > General next to each radio button.
+# ---------------------------------------------------------------
+
+beginner     = essential settings for a basic grid keyguard
+intermediate = adds pixel measurements, more grid, mounting, and split-keyguard options
+advanced     = all settings, frames, cell inserts, and engraved text
+
+
+# ---------------------------------------------------------------
+# Sections
+# Minimum skill level required to show each Customizer section.
+# Sections not listed here are always visible (beginner).
+# ---------------------------------------------------------------
+
+[sections]
+Keyguard Basics                          = beginner
+Tablet                                   = beginner
+Tablet Case                              = beginner
+App Layout in px                         = intermediate
+App Layout in mm                         = beginner
+Bar Info                                 = beginner
+Grid Info                                = beginner
+Grid Special Settings                    = intermediate
+Mounting Method                          = beginner
+Velcro Info                              = advanced
+Clip-on Straps Info                      = intermediate
+Posts Info                               = advanced
+Shelf Info                               = intermediate
+Slide-in Tabs Info                       = beginner
+Raised Tabs Info                         = advanced
+Keyguard Frame Info                      = advanced
+Split Keyguard Info                      = intermediate
+Sloped Keyguard Edge Info                = advanced
+Engraved/Embossed Text                   = advanced
+Cell Inserts                             = advanced
+Free-form and Hybrid Keyguard Openings   = intermediate
+Special Actions and Settings             = intermediate
+
+
+# ---------------------------------------------------------------
+# Individual parameters
+# Only list parameters whose threshold differs from their parent
+# section's level.  Uses the OpenSCAD variable name (underscores).
+# ---------------------------------------------------------------
+
+[params]
+type_of_keyguard                         = intermediate
+orientation                              = intermediate
+screen_area_thickness                    = intermediate
+home_button_edge_slope                   = intermediate
+rotate_tablet_180_degrees                = intermediate
+add_symmetric_openings                   = advanced
+expose_ambient_light_sensors             = intermediate
+
+have_a_case                              = intermediate
+case_height                              = intermediate
+case_width                               = intermediate
+case_thickness                           = intermediate
+case_corner_radius                       = intermediate
+case_to_screen_depth                     = intermediate
+top_edge_compensation_for_tight_cases    = intermediate
+bottom_edge_compensation_for_tight_cases = intermediate
+left_edge_compensation_for_tight_cases   = intermediate
+right_edge_compensation_for_tight_cases  = intermediate
+
+hide_app_region                          = advanced
+
+bar_edge_slope                           = intermediate
+bar_corner_radius                        = intermediate
+
+cell_shape                               = intermediate
+cell_height_in_px                        = intermediate
+cell_width_in_px                         = intermediate
+cell_diameter                            = intermediate
+
+cell_edge_slope                          = advanced
+cell_top_edge_slope                      = advanced
+cell_bottom_edge_slope                   = advanced
+top_padding                              = intermediate
+bottom_padding                           = intermediate
+left_padding                             = intermediate
+right_padding                            = intermediate
+hide_grid_region                         = advanced
+
+preferred_slide_in_tab_thickness         = intermediate
+horizontal_slide_in_tab_length           = intermediate
+vertical_slide_in_tab_length             = intermediate
+distance_between_horizontal_slide_in_tabs= intermediate
+distance_between_vertical_slide_in_tabs  = intermediate
+
+unequal_left_side_of_case_opening        = advanced
+unequal_bottom_side_of_case_opening      = advanced
+unequal_left_side_of_case                = advanced
+unequal_bottom_side_of_case              = advanced
+move_screenshot_horizontally             = advanced
+move_screenshot_vertically               = advanced
+hide_screen_region                       = advanced
+trim_to_rectangle_lower_left             = advanced
+trim_to_rectangle_upper_right            = advanced
+use_Laser_Cutting_best_practices         = advanced
+other_tablet_general_sizes               = advanced
+other_tablet_pixel_sizes                 = advanced
+my_screen_openings                       = intermediate
+my_case_openings                         = intermediate
+my_case_additions                        = advanced
+my_tablet_openings                       = advanced
+
+
+# ---------------------------------------------------------------
+# Dropdown options
+# Options to hide at lower skill levels.
+# Each [dropdown: param_name] block covers one pull-down list.
+# Options not listed are always visible.
+# ---------------------------------------------------------------
+
+[dropdown: generate]
+first half of keyguard                   = intermediate
+second half of keyguard                  = intermediate
+horizontal clip                          = intermediate
+vertical clip                            = intermediate
+horizontal mini clip                     = advanced
+vertical mini clip                       = advanced
+horizontal micro clip                    = advanced
+vertical micro clip                      = advanced
+keyguard frame                           = advanced
+first half of keyguard frame             = advanced
+second half of keyguard frame            = advanced
+cell insert                              = advanced
+
+[dropdown: mounting_method]
+Suction Cups                             = advanced
+Velcro                                   = advanced
+Screw-on Straps                          = advanced
+Clip-on Straps                           = intermediate
+Posts                                    = advanced
+Shelf                                    = intermediate
+Raised Tabs                              = advanced
+
+
+# ---------------------------------------------------------------
+# Dropdown filters (grep regex patterns)
+# Like [dropdown:] but uses grep-style regular expressions.
+# Patterns are case-insensitive.  Rules are checked top-to-bottom;
+# the first match wins.  Common patterns:
+#   ^iPad       starts with "iPad"
+#   iPad        contains "iPad"
+#   ^iPad.*Pro  starts with "iPad" and contains "Pro"
+#   .*          catch-all — matches everything not matched above
+# Without a catch-all, unmatched options remain visible to all.
+# ---------------------------------------------------------------
+
+[filter: type_of_tablet]
+^iPad                                    = beginner
+^Dynavox                                 = intermediate
+^NovaChat                                = intermediate
+^Accent                                  = intermediate
+^Via                                     = intermediate
+^GridPad                                 = intermediate
+.*                                       = advanced
+
+
+# ---------------------------------------------------------------
+# Hidden parameters
+# Parameters listed here are never shown in the web app,
+# regardless of skill level.  They remain available to desktop
+# OpenSCAD Customizer users.
+# ---------------------------------------------------------------
+
+[hidden]
+screenshot_filename
