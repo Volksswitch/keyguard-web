@@ -103,7 +103,10 @@ const webChangelog  = join(WEB_ROOT, 'CHANGELOG.md');
 const dirty = (root, ...files) =>
   git(root, 'status', '--porcelain', '--', ...files).split(NL).filter(Boolean);
 const scadDirty = dirty(SCAD_ROOT, 'keyguard.scad', 'CHANGELOG.md', 'latest_scad_version.json');
-const webDirty  = dirty(WEB_ROOT, 'app.html', 'sw.js', 'CHANGELOG.md', 'latest_app_version.json');
+// keyguard_v*.scad too: the release stages that whole pattern (see the commit
+// below), so a leftover change to one of them would ride along unannounced.
+const webDirty  = dirty(WEB_ROOT, 'app.html', 'sw.js', 'CHANGELOG.md', 'latest_app_version.json',
+                        'keyguard_v*.scad');
 if (scadDirty.length) die(`.scad repo has uncommitted changes to release files:${NL}  ${scadDirty.join(NL + '  ')}`);
 if (webDirty.length)  die(`web app repo has uncommitted changes to release files:${NL}  ${webDirty.join(NL + '  ')}`);
 
@@ -235,7 +238,13 @@ node(WEB_ROOT, join(WEB_ROOT, 'scripts', 'publish-app-version.mjs'));
 
 plan(`commit web app release ${APP_RELEASE}`);
 git(WEB_ROOT, 'add', 'app.html', 'sw.js', 'CHANGELOG.md', 'latest_app_version.json',
-    'latest_scad_version.json', `keyguard_v${N}.scad`);
+    'latest_scad_version.json');
+// The new keyguard file AND the removal of the one it supersedes, as a
+// pattern. publish-designer-file.mjs deletes superseded copies from disk;
+// staging only the new file by name left each deletion uncommitted, so every
+// old copy stayed on the live site (v87 and v88 were found that way,
+// 18 Sep 2026). -A on the pattern stages additions and removals, nothing else.
+git(WEB_ROOT, 'add', '-A', '--', 'keyguard_v*.scad');
 git(WEB_ROOT, 'commit', '-m',
   `Release Keyguard Designer web app ${APP_RELEASE}`
   + `${NL}${NL}Delivers keyguard designer v${N}, published moments earlier. This release`
