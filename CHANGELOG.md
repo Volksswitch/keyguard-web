@@ -13,6 +13,8 @@ notes, because nothing at this address could have been missed yet.
 
 ## Unreleased (next release)
 
+## Release 106
+
 - **The Keyguard update window no longer runs off the screen.** When a new version had a lot to say, the window grew so long and thin that its top was cut off and the **Update now**, **Remind me in a week** and **Skip** buttons were pushed out of reach, so it could not be answered at all. It is now wider, never taller than your screen, and when the notes are long they scroll inside it — the buttons always stay in view. The **What’s new** notice you see after the app updates works the same way.
 
 - Words meant to stand out in the update notes now show in **bold**, in both the Keyguard update window and the What’s new notice. They used to appear with asterisks around them.
