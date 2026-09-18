@@ -35,6 +35,7 @@ Tablet                                   = beginner
 Tablet Case                              = beginner
 App Layout in px                         = intermediate
 App Layout in mm                         = beginner
+Keyguard Inset Info                      = intermediate
 Bar Info                                 = beginner
 Grid Info                                = beginner
 Grid Special Settings                    = intermediate
