@@ -13,6 +13,12 @@ notes, because nothing at this address could have been missed yet.
 
 ## Unreleased (next release)
 
+- **The Keyguard update window no longer runs off the screen.** When a new version had a lot to say, the window grew so long and thin that its top was cut off and the **Update now**, **Remind me in a week** and **Skip** buttons were pushed out of reach, so it could not be answered at all. It is now wider, never taller than your screen, and when the notes are long they scroll inside it — the buttons always stay in view. The **What’s new** notice you see after the app updates works the same way.
+
+- Words meant to stand out in the update notes now show in **bold**, in both the Keyguard update window and the What’s new notice. They used to appear with asterisks around them.
+
+- The Keyguard update window no longer says the new file comes from GitHub. It has come from the app’s own address since release 102, which is what lets it work on school networks that block GitHub.
+
 ## Release 105
 
 - **Updated keyguard designer file (v89).** This update to the web app is necessary to support an upgrade to the keyguard designer. Open your project and the app will offer you the new keyguard file.

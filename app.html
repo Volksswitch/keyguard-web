@@ -432,16 +432,23 @@
   #update-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.35);
                     display: none; align-items: center; justify-content: center; z-index: 1150; }
   #update-overlay.open { display: flex; }
+  /* Never taller than the window: the notes scroll and the buttons stay pinned in
+     view. Release notes grew long enough (v89) that a fixed 470px panel ran off both
+     ends of the screen, hiding the heading and the buttons, so it could not be closed. */
   #update-modal { background: #fafafa; border: 1px solid #888; border-radius: 4px;
-                  width: 470px; max-width: 90vw; box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+                  width: min(720px, 92vw); max-height: 90vh; display: flex; flex-direction: column;
+                  box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+  #update-modal h3, #whatsnew-modal h3 { flex: none; }
   #update-modal h3 { margin: 0; padding: 10px 14px; border-bottom: 1px solid #ccc;
                      background: #e8e8e8; font-size: 14px; }
-  #update-msg { padding: 16px 14px; font-size: 12px; line-height: 1.5; }
+  #update-msg { padding: 16px 14px; font-size: 12px; line-height: 1.5;
+                flex: 1 1 auto; min-height: 0; overflow-y: auto; }
   #update-msg b { color: #06c; }
+  #update-msg li b, #whatsnew-msg li b { color: inherit; }  /* bold in a note is emphasis, not a version number */
   #update-msg code { background: #eee; border: 1px solid #ddd; border-radius: 3px;
                      padding: 0 3px; font-size: 11px; }
   #update-footer { padding: 8px 14px; border-top: 1px solid #ccc; text-align: right;
-                   background: #f0f0f0; }
+                   background: #f0f0f0; flex: none; }
   #update-footer button { padding: 4px 14px; font-size: 12px; cursor: pointer; margin-left: 8px; }
   #update-now { font-weight: bold; color: #185; }
 
@@ -450,15 +457,17 @@
                       display: none; align-items: center; justify-content: center; z-index: 1160; }
   #whatsnew-overlay.open { display: flex; }
   #whatsnew-modal { background: #fafafa; border: 1px solid #888; border-radius: 4px;
-                    width: 470px; max-width: 90vw; box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+                    width: min(720px, 92vw); max-height: 90vh; display: flex; flex-direction: column;
+                    box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
   #whatsnew-modal h3 { margin: 0; padding: 10px 14px; border-bottom: 1px solid #ccc;
                        background: #e8e8e8; font-size: 14px; }
-  #whatsnew-msg { padding: 16px 14px; font-size: 12px; line-height: 1.5; max-height: 60vh; overflow-y: auto; }
+  #whatsnew-msg { padding: 16px 14px; font-size: 12px; line-height: 1.5;
+                  flex: 1 1 auto; min-height: 0; overflow-y: auto; }
   #whatsnew-msg b { color: #06c; }
   #whatsnew-msg ul { margin: 4px 0 0; padding-left: 20px; color: #555; }
   #whatsnew-msg li { margin-bottom: 3px; }
   #whatsnew-msg .wn-relhead { margin-top: 12px; font-weight: bold; color: #444; }
-  #whatsnew-footer { padding: 8px 14px; border-top: 1px solid #ccc; text-align: right; background: #f0f0f0; }
+  #whatsnew-footer { padding: 8px 14px; border-top: 1px solid #ccc; text-align: right; background: #f0f0f0; flex: none; }
   #whatsnew-footer button { padding: 4px 14px; font-size: 12px; cursor: pointer; }
   #whatsnew-ok { font-weight: bold; color: #185; }
 
@@ -1524,6 +1533,11 @@ const RELEASE_NOTES = {
   ],
   "105": [
     "Updated keyguard designer file (v89). This update to the web app is necessary to support an upgrade to the keyguard designer. Open your project and the app will offer you the new keyguard file."
+  ],
+  "106": [
+    "The Keyguard update window no longer runs off the screen. When a new version had a lot to say, the window grew so long and thin that its top was cut off and the Update now, Remind me in a week and Skip buttons were pushed out of reach, so it could not be answered at all. It is now wider, never taller than your screen, and when the notes are long they scroll inside it — the buttons always stay in view. The What’s new notice you see after the app updates works the same way.",
+    "Words meant to stand out in the update notes now show in bold, in both the Keyguard update window and the What’s new notice. They used to appear with asterisks around them.",
+    "The Keyguard update window no longer says the new file comes from GitHub. It has come from the app’s own address since release 102, which is what lets it work on school networks that block GitHub."
   ]
 };
 // @@RELEASE_NOTES_END@@
@@ -5193,6 +5207,23 @@ function confirmDiscard(message) {
 // Three-button update prompt. Resolves to 'update' | 'snooze' | 'skip'
 // (Escape == 'skip'). Message is built with textContent/DOM nodes so nothing
 // from the manifest can inject markup.
+// Release notes are written in the changelogs' light markdown: **bold** and
+// `code`. Rendered here as real elements, built node by node and never through
+// innerHTML, so a manifest still cannot inject markup - the reason the notes were
+// inserted as plain text, which showed clinicians the raw ** and ` marks.
+function appendNoteText(el, text) {
+  const re = /\*\*(.+?)\*\*|`([^`]+)`/g;
+  let last = 0, m;
+  while ((m = re.exec(text))) {
+    if (m.index > last) el.append(text.slice(last, m.index));
+    const n = document.createElement(m[1] !== undefined ? 'b' : 'code');
+    n.textContent = m[1] !== undefined ? m[1] : m[2];
+    el.append(n);
+    last = re.lastIndex;
+  }
+  if (last < text.length) el.append(text.slice(last));
+}
+
 function showUpdateModal({ loaded, latest, notes, oldScad, newScad }) {
   return new Promise(resolve => {
     const ov  = document.getElementById('update-overlay');
@@ -5218,7 +5249,7 @@ function showUpdateModal({ loaded, latest, notes, oldScad, newScad }) {
       for (const it of noteItems) {
         const li = document.createElement('li');
         li.style.marginBottom = '3px';
-        li.textContent = String(it);
+        appendNoteText(li, String(it));
         ul.appendChild(li);
       }
       msg.appendChild(ul);
@@ -5228,7 +5259,7 @@ function showUpdateModal({ loaded, latest, notes, oldScad, newScad }) {
     p2.style.cssText = 'margin-top:12px;';
     const oc = document.createElement('code'); oc.textContent = oldScad;
     const nc = document.createElement('code'); nc.textContent = newScad;
-    p2.append('“Update now” will download the new file from GitHub, replace ', oc,
+    p2.append('“Update now” will download the new file, replace ', oc,
               ' with ', nc, ', carry your saved presets forward, and reload the project.');
     msg.appendChild(p2);
 
@@ -5294,7 +5325,7 @@ function showWhatsNewModal(groups) {
     const ul = document.createElement('ul');
     for (const it of g.notes) {
       const li = document.createElement('li');
-      li.textContent = String(it);
+      appendNoteText(li, String(it));
       ul.appendChild(li);
     }
     msg.appendChild(ul);
