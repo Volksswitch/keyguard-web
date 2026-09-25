@@ -13,8 +13,6 @@ notes, because nothing at this address could have been missed yet.
 
 ## Unreleased (next release)
 
-- **Updated keyguard designer file (v90).** This update to the web app is necessary to support an upgrade to the keyguard designer. Open your project and the app will offer you the new keyguard file.
-
 ## Release 106
 
 - **The Keyguard update window no longer runs off the screen.** When a new version had a lot to say, the window grew so long and thin that its top was cut off and the **Update now**, **Remind me in a week** and **Skip** buttons were pushed out of reach, so it could not be answered at all. It is now wider, never taller than your screen, and when the notes are long they scroll inside it — the buttons always stay in view. The **What’s new** notice you see after the app updates works the same way.

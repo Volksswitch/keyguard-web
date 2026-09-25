@@ -7,29 +7,35 @@
 // Publishing a keyguard version used to be three separate acts across two
 // repositories, and the middle one could be forgotten silently. Since release 102
 // the web app serves the designer file from its own address (so school networks
-// that block GitHub can still receive it), which means a keyguard release reaches
-// nobody until the WEB APP is also released. Ken, 1 Sep 2026: one command should
-// take the latest dev .scad, make it public, and trigger the trivial web app
-// update that delivers it.
+// that block GitHub can still receive it), so a version pushed to GitHub and
+// nowhere else has reached NOBODY. Ken, 1 Sep 2026: one command should take the
+// latest dev .scad, make it public, and put it where clinicians actually fetch it.
 //
 // WHAT IT DOES, in order:
 //   .scad repo   finalize CHANGELOG -> "## Version N", regenerate the manifest,
 //                commit, PUSH, then pre-bump to N+1 locally (unpushed)
-//   web app      publish keyguard_vN.scad + version list beside app.html, add the
-//                clinician bullet, then run the full release ritual: CACHE_NAME,
-//                changelog, notes, app manifest, commit, PUSH, pre-bump
+//   web app      publish keyguard_vN.scad + version list beside app.html,
+//                commit JUST those files, PUSH
+//
+// ⚠ NO WEB APP RELEASE. APP_RELEASE, CACHE_NAME, the app's changelog and
+// latest_app_version.json are NOT touched. Publishing a keyguard file is not an
+// app change and does not need one: both designer files are deliberately kept out
+// of sw.js's SHELL precache, so a running app fetches them from the network on
+// every check and picks up the new version without refreshing itself. Until
+// 24 Sep 2026 this script also shipped a token app release on the belief that it
+// had to; Ken's call to separate them. "bump keyguard web app" releases the app.
 //
 // Both rituals are transcribed from their own RELEASING.md files. Read those
 // before changing anything here; this script must not invent process.
 //
-// ⚠ TWO PUSHES. Each is a release to real clinicians. The trigger phrase is the
-// single authorization, exactly as both RELEASING.md files specify for their own
-// phrase — Ken issues it only after verifying the changelogs.
+// ⚠ TWO PUSHES. Each reaches real clinicians. The trigger phrase is the single
+// authorization, exactly as both RELEASING.md files specify for their own phrase —
+// Ken issues it only after verifying the changelog.
 //
-// ⚠ THIS COMMAND IS FOR A TRIVIAL WEB APP UPDATE ONLY. It refuses to run when the
-// web app has unreleased clinician-facing work of its own, because that work
-// deserves its own considered release: "bump keyguard web app". That separation is
-// the whole point of having two commands (Ken, 1 Sep 2026).
+// ⚠ IT MUST NEVER CARRY THE APP'S OWN WORK. Pushing keyguard-web's main deploys
+// whatever is committed there, so this refuses to run when the app has unreleased
+// clinician-facing changes, or unpushed commits touching anything but the designer
+// files. That work deserves its own considered release (Ken, 1 Sep 2026).
 //
 //   node scripts/release-designer.mjs            -> the real thing, two pushes
 //   node scripts/release-designer.mjs --dry-run  -> prints the plan, changes nothing
@@ -48,6 +54,9 @@ const NL = '\n';
 const UNRELEASED = '## Unreleased (next release)' + NL;
 const PUBLISHED_SCAD_URL =
   'https://raw.githubusercontent.com/Volksswitch/keyguard/main/keyguard.scad';
+// Where clinicians actually look. A release is not out until THIS reports N.
+const LIVE_MANIFEST_URL =
+  'https://keyguard.volksswitch.org/latest_scad_version.json';
 
 const steps = [];
 function say(msg)  { console.log(msg); }
@@ -94,8 +103,6 @@ for (const [name, root] of [['.scad', SCAD_ROOT], ['web app', WEB_ROOT]]) {
 const scadPath      = join(SCAD_ROOT, 'keyguard.scad');
 const scadChangelog = join(SCAD_ROOT, 'CHANGELOG.md');
 const scadManifest  = join(SCAD_ROOT, 'latest_scad_version.json');
-const appPath       = join(WEB_ROOT, 'app.html');
-const swPath        = join(WEB_ROOT, 'sw.js');
 const webChangelog  = join(WEB_ROOT, 'CHANGELOG.md');
 
 // Uncommitted edits to the files a release rewrites would be silently swept into
@@ -156,16 +163,28 @@ try {
     + `${NL}  break release 21 (which means stopping it offering keyguard updates first).`);
 }
 
-const APP_RELEASE = parseInt(read(appPath).match(/const APP_RELEASE = (\d+)/)?.[1], 10);
-const cacheNow = parseInt(read(swPath).match(/const CACHE_NAME = 'keyguard-v(\d+)'/)?.[1], 10);
-if (!Number.isFinite(APP_RELEASE) || !Number.isFinite(cacheNow)) die('cannot read APP_RELEASE or CACHE_NAME.');
-if (APP_RELEASE <= cacheNow) {
-  die(`APP_RELEASE is ${APP_RELEASE} but CACHE_NAME is already keyguard-v${cacheNow}.`
-    + `${NL}  The dev copy must lead the last release by one; refusing to reuse a cache number.`);
+// Pushing this repo deploys whatever is committed on its main, so anything sitting
+// there unpushed would ride out with the designer file — unannounced, unversioned and
+// unreleased. The app's standing pre-bump commit (the APP_RELEASE constant alone) is
+// the one exception: it lives there permanently between releases and shows nobody
+// anything. Everything else must go out as its own considered release.
+const unpushed = git(WEB_ROOT, 'log', '--format=%h %s', 'origin/main..main')
+  .split(NL).filter(Boolean);
+if (unpushed.length) {
+  const touched = new Set(git(WEB_ROOT, 'diff', '--name-only', 'origin/main..main')
+    .split(NL).filter(Boolean));
+  const prebumpOnly = unpushed.every(l => /pre-bump/i.test(l));
+  touched.delete('app.html');
+  if (touched.size || !prebumpOnly) {
+    die(`the web app has unpushed commits, which this release would deploy:${NL}`
+      + unpushed.map(l => '    ' + l).join(NL)
+      + `${NL}${NL}  Pushing that repo serves whatever is on its main. Release that work`
+      + `${NL}  deliberately with "bump keyguard web app" first, then run this.`);
+  }
 }
 
 say(`Keyguard designer v${publishedNow} -> v${N}   (${scadBullets.length} clinician note(s))`);
-say(`Web app release ${APP_RELEASE}, cache keyguard-v${cacheNow} -> keyguard-v${APP_RELEASE}`);
+say(`The web app is NOT released by this command and does not change.`);
 say(`${NL}Phase 1 — publish the keyguard designer:`);
 
 // ─── Phase 1: release the .scad ────────────────────────────────────────────
@@ -213,32 +232,17 @@ if (!DRY) {
   }
   if (seen !== N) {
     die(`GitHub is still serving v${seen} two minutes after the push.${NL}`
-      + `  The .scad release IS out; only the web-app half is unfinished. Re-run\n`
-      + `  "publish the designer file" and then "bump keyguard web app" once it appears.`);
+      + `  The file IS published; only the delivery half is unfinished, so clinicians are`
+      + `${NL}  still on the old version. Once v${N} appears on GitHub, finish it: run`
+      + `${NL}  "publish the designer file", then commit and push this repo.`);
   }
 }
 
-plan('publish the designer file beside app.html + add the clinician bullet');
+plan('publish the designer file beside app.html');
 node(WEB_ROOT, join(WEB_ROOT, 'scripts', 'publish-designer-file.mjs'));
 
-plan(`CACHE_NAME keyguard-v${cacheNow} -> keyguard-v${APP_RELEASE}`);
-write(swPath, read(swPath).replace(
-  `const CACHE_NAME = 'keyguard-v${cacheNow}';`,
-  `const CACHE_NAME = 'keyguard-v${APP_RELEASE}';`));
-
-plan(`CHANGELOG: "Unreleased" -> "## Release ${APP_RELEASE}", open a fresh Unreleased`);
-write(webChangelog, read(webChangelog).replace(
-  UNRELEASED, UNRELEASED + NL + `## Release ${APP_RELEASE}` + NL, 1));
-
-plan('regenerate the bundled "What\'s new" notes');
-node(WEB_ROOT, join(WEB_ROOT, 'scripts', 'apply-release-notes.mjs'));
-
-plan(`write latest_app_version.json = ${APP_RELEASE}`);
-node(WEB_ROOT, join(WEB_ROOT, 'scripts', 'publish-app-version.mjs'));
-
-plan(`commit web app release ${APP_RELEASE}`);
-git(WEB_ROOT, 'add', 'app.html', 'sw.js', 'CHANGELOG.md', 'latest_app_version.json',
-    'latest_scad_version.json');
+plan(`commit the v${N} designer file in the web app repo`);
+git(WEB_ROOT, 'add', 'latest_scad_version.json');
 // The new keyguard file AND the removal of the one it supersedes, as a
 // pattern. publish-designer-file.mjs deletes superseded copies from disk;
 // staging only the new file by name left each deletion uncommitted, so every
@@ -246,22 +250,39 @@ git(WEB_ROOT, 'add', 'app.html', 'sw.js', 'CHANGELOG.md', 'latest_app_version.js
 // 18 Sep 2026). -A on the pattern stages additions and removals, nothing else.
 git(WEB_ROOT, 'add', '-A', '--', 'keyguard_v*.scad');
 git(WEB_ROOT, 'commit', '-m',
-  `Release Keyguard Designer web app ${APP_RELEASE}`
-  + `${NL}${NL}Delivers keyguard designer v${N}, published moments earlier. This release`
-  + `${NL}exists to carry that file: clinicians fetch it from this app's own address,`
-  + `${NL}so it reaches them only when the app itself is released.`);
+  `Publish keyguard designer v${N} beside the app`
+  + `${NL}${NL}Clinicians fetch the designer file and its version list from this app's own`
+  + `${NL}address, not from GitHub, so this is the push that actually reaches them.`
+  + `${NL}${NL}Not an app release: APP_RELEASE, CACHE_NAME, the changelog and`
+  + `${NL}latest_app_version.json are untouched. Both files sit outside sw.js's SHELL`
+  + `${NL}precache, so a running app fetches them from the network and needs no refresh.`);
 
-plan('PUSH the web app — this is the release clinicians receive');
+plan('PUSH the web app repo — this is the push clinicians actually receive');
 git(WEB_ROOT, 'push', 'origin', 'main');
 
-plan(`pre-bump APP_RELEASE ${APP_RELEASE} -> ${APP_RELEASE + 1} (local only)`);
-write(appPath, read(appPath).replace(
-  `const APP_RELEASE = ${APP_RELEASE};`, `const APP_RELEASE = ${APP_RELEASE + 1};`));
-git(WEB_ROOT, 'add', 'app.html');
-git(WEB_ROOT, 'commit', '-m', `Local release ${APP_RELEASE + 1} pre-bump (dev leads public by one)`);
+// Don't declare the release done on a push alone — that is precisely the mistake
+// this command exists to prevent. GitHub Pages serves the new bytes within a few
+// minutes; wait and confirm the live address really reports N.
+plan(`confirm the live address reports v${N}`);
+if (!DRY) {
+  let live = null;
+  for (let i = 0; i < 45; i++) {
+    try {
+      const resp = await fetch(LIVE_MANIFEST_URL + '?t=' + Date.now(), { cache: 'no-store' });
+      if (resp.ok) { live = (await resp.json()).version; if (live === N) break; }
+    } catch { /* transient — keep waiting */ }
+    await new Promise(r => setTimeout(r, 20000));
+  }
+  if (live !== N) {
+    die(`both pushes are done, but the live address still reports v${live} after 15 minutes.`
+      + `${NL}  Nothing is necessarily broken — GitHub Pages can be slow — but do not tell Ken`
+      + `${NL}  the release is out until ${LIVE_MANIFEST_URL} reports v${N}.`);
+  }
+}
 
 say(`${NL}${DRY ? `Plan only — ${steps.length} steps, nothing changed.`
-  : `Done. Keyguard designer v${N} and web app release ${APP_RELEASE} are both public.`}`);
+  : `Done. Keyguard designer v${N} is live and confirmed at that address.`}`);
 if (!DRY) {
-  say(`Clinicians refresh to app ${APP_RELEASE} on their next visit, then get offered keyguard v${N}.`);
+  say(`Clinicians are offered v${N} the next time they open a project.`);
+  say(`The web app itself was not changed or re-released.`);
 }
