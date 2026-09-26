@@ -13,6 +13,10 @@ notes, because nothing at this address could have been missed yet.
 
 ## Unreleased (next release)
 
+- **A damaged file of saved designs is now named as damaged, instead of quietly appearing empty.** If the file holding your saved designs has been broken — most often by opening it in a text editor and leaving a stray line behind — the app used to open the project as normal with none of your designs listed, giving no hint that anything was wrong. It now tells you the file is damaged and what is wrong with it, and you can carry on designing from the standard settings in the meantime.
+
+- **And in that state the app will not write to that file, so your designs cannot be lost.** Saving, renaming, deleting or importing a design rewrites the whole file, so saving into a file the app had failed to read would have replaced every design in it with the one design you had open. Those actions are now refused with an explanation, and the file is left exactly as it is until you repair or replace it.
+
 ## Release 106
 
 - **The Keyguard update window no longer runs off the screen.** When a new version had a lot to say, the window grew so long and thin that its top was cut off and the **Update now**, **Remind me in a week** and **Skip** buttons were pushed out of reach, so it could not be answered at all. It is now wider, never taller than your screen, and when the notes are long they scroll inside it — the buttons always stay in view. The **What’s new** notice you see after the app updates works the same way.

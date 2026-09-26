@@ -735,7 +735,7 @@
 <!-- ============ Unsaved-changes confirm modal ============ -->
 <div id="confirm-overlay">
   <div id="confirm-modal">
-    <h3>Unsaved changes</h3>
+    <h3 id="confirm-title">Unsaved changes</h3>
     <div id="confirm-msg"></div>
     <div id="confirm-footer">
       <button id="confirm-cancel">Cancel</button>
@@ -1535,6 +1535,10 @@ const RELEASE_NOTES = {
     "The Keyguard update window no longer runs off the screen. When a new version had a lot to say, the window grew so long and thin that its top was cut off and the Update now, Remind me in a week and Skip buttons were pushed out of reach, so it could not be answered at all. It is now wider, never taller than your screen, and when the notes are long they scroll inside it — the buttons always stay in view. The What’s new notice you see after the app updates works the same way.",
     "Words meant to stand out in the update notes now show in bold, in both the Keyguard update window and the What’s new notice. They used to appear with asterisks around them.",
     "The Keyguard update window no longer says the new file comes from GitHub. It has come from the app’s own address since release 102, which is what lets it work on school networks that block GitHub."
+  ],
+  "107": [
+    "A damaged file of saved designs is now named as damaged, instead of quietly appearing empty. If the file holding your saved designs has been broken — most often by opening it in a text editor and leaving a stray line behind — the app used to open the project as normal with none of your designs listed, giving no hint that anything was wrong. It now tells you the file is damaged and what is wrong with it, and you can carry on designing from the standard settings in the meantime.",
+    "And in that state the app will not write to that file, so your designs cannot be lost. Saving, renaming, deleting or importing a design rewrites the whole file, so saving into a file the app had failed to read would have replaced every design in it with the one design you had open. Those actions are now refused with an explanation, and the file is left exactly as it is until you repair or replace it."
   ]
 };
 // @@RELEASE_NOTES_END@@
@@ -2518,13 +2522,20 @@ async function openProject(presetHandle = null) {
 
   // Parse presets — keep raw (creation) order; apply user-chosen ordering separately
   let rawPresetNames = ['design default values'];
+  let jsonFault = null;
   if (jsonText) {
     try {
       const j = JSON.parse(jsonText);
-      const sets = Object.keys(j.parameterSets || {});
-      rawPresetNames = ['design default values', ...sets];
-      logLine(`  loaded ${sets.length} preset(s) from ${jsonName}`);
+      jsonFault = presetFileFault(jsonText, j);
+      if (jsonFault) {
+        logLine(`  ERROR: ${jsonName} is damaged — ${jsonFault}`);
+      } else {
+        const sets = Object.keys(j.parameterSets);
+        rawPresetNames = ['design default values', ...sets];
+        logLine(`  loaded ${sets.length} preset(s) from ${jsonName}`);
+      }
     } catch (e) {
+      jsonFault = `it is not valid JSON (${e.message}).`;
       logLine(`  ERROR parsing ${jsonName}: ${e.message}`);
     }
   } else {
@@ -2538,7 +2549,7 @@ async function openProject(presetHandle = null) {
   logLine(`  parsed Customizer: ${customizer.length} sections, ${totalParams} parameters`);
 
   const jsonFileHandle = jsonName ? (fileHandles[jsonName] || null) : null;
-  project = { dirHandle, scadName, scadText, jsonName, jsonText, jsonFileHandle, oaText, oaMtime, oaHash, files,
+  project = { dirHandle, scadName, scadText, jsonName, jsonText, jsonFault, jsonFileHandle, oaText, oaMtime, oaHash, files,
               rawPresetNames, presetNames, currentPreset: presetNames[0], customizer, baselineParams: {},
               screenshotName: null, screenshotBytes: null, screenshotTexture: null,
               imageNames: [], selectedScreenshot: null, imgListSig: null,
@@ -2582,6 +2593,15 @@ async function openProject(presetHandle = null) {
   resetHistory();   // fresh project → empty undo/redo stack
 
   updateDelPresetButton();
+  // Say it where she is looking. Reporting this only in the log left the clinician
+  // with a project that opened normally and simply had none of her designs in it.
+  if (jsonFault) {
+    showNotice('Saved designs file is damaged',
+      `"${jsonName}" opened, but ${jsonFault} None of the designs in it can be `
+      + `shown, and the app will not write to it, so nothing inside it is at risk. `
+      + `Repair or replace the file and open the project again — the design settings `
+      + `themselves are still in the file.`);
+  }
   logLine(`Project ready — auto-rendering "${project.currentPreset}"...`);
   await doRender();
   startWatcher();
@@ -3227,11 +3247,15 @@ async function loadFixture(fixturePath, scadName, preset, oaOverride, openscadCa
   const oaText = oaBytes ? dec.decode(oaBytes) : '';
 
   let rawPresetNames = ['design default values'];
+  let jsonFault = null;
   if (jsonText) {
     try {
       const j = JSON.parse(jsonText);
-      rawPresetNames = ['design default values', ...Object.keys(j.parameterSets || {})];
+      jsonFault = presetFileFault(jsonText, j);
+      if (jsonFault) logLine(`  ERROR: ${jsonName} is damaged — ${jsonFault}`);
+      else rawPresetNames = ['design default values', ...Object.keys(j.parameterSets)];
     } catch (e) {
+      jsonFault = `it is not valid JSON (${e.message}).`;
       logLine(`  ERROR parsing ${jsonName}: ${e.message}`);
     }
   }
@@ -3246,7 +3270,7 @@ async function loadFixture(fixturePath, scadName, preset, oaOverride, openscadCa
     dirHandle: null,
     scadName, scadText,
     jsonName: jsonBytes ? jsonName : null,
-    jsonText, oaText, oaMtime: null, oaHash: null, files,
+    jsonText, jsonFault, oaText, oaMtime: null, oaHash: null, files,
     rawPresetNames, presetNames, currentPreset,
     customizer, baselineParams: {},
     screenshotName: null, screenshotBytes: null, screenshotTexture: null,
@@ -4737,7 +4761,7 @@ function applyValuesToForm(values) {
 
 function populateFormFromPreset(presetName) {
   if (!project || !project.customizer) return;
-  const presets = project.jsonText ? (JSON.parse(project.jsonText).parameterSets || {}) : {};
+  const presets = presetSetsInMemory();
   const presetVals = presets[presetName] || null;
 
   // Build a full value map: preset value where present, else the .scad default
@@ -4862,7 +4886,7 @@ function captureHiddenValues(values) {
 function allParamValues() {
   if (!project || !project.customizer) return currentFormValues();
   const dom = currentFormValues();
-  const presets = project.jsonText ? (JSON.parse(project.jsonText).parameterSets || {}) : {};
+  const presets = presetSetsInMemory();
   const saved = presets[project.currentPreset] || {};
   const out = {};
   for (const sec of project.customizer) {
@@ -5177,12 +5201,19 @@ function isDirty() {
 // page's transient user activation, which would then make the folder
 // picker / requestPermission throw in openProject(). The modal's button
 // click is itself a fresh user gesture, so the picker still works after it.
-function confirmDiscard(message) {
+// One overlay serves both a two-button question and a one-button notice: pass
+// cancel: null and only OK is shown (Escape then means OK, since there is
+// nothing to decide).
+function askConfirm({ title, message, ok: okLabel, cancel: cancelLabel }) {
   return new Promise(resolve => {
     const ov = document.getElementById('confirm-overlay');
+    document.getElementById('confirm-title').textContent = title;
     document.getElementById('confirm-msg').textContent = message;
     const ok = document.getElementById('confirm-ok');
     const cancel = document.getElementById('confirm-cancel');
+    ok.textContent = okLabel;
+    cancel.textContent = cancelLabel || 'Cancel';
+    cancel.style.display = cancelLabel ? '' : 'none';
     function cleanup(val) {
       ov.classList.remove('open');
       ok.removeEventListener('click', onOk);
@@ -5192,13 +5223,22 @@ function confirmDiscard(message) {
     }
     function onOk() { cleanup(true); }
     function onCancel() { cleanup(false); }
-    function onKey(e) { if (e.key === 'Escape') cleanup(false); }
+    function onKey(e) { if (e.key === 'Escape') cleanup(!cancelLabel); }
     ok.addEventListener('click', onOk);
     cancel.addEventListener('click', onCancel);
     document.addEventListener('keydown', onKey);
     ov.classList.add('open');
-    cancel.focus();
+    (cancelLabel ? cancel : ok).focus();
   });
+}
+
+function confirmDiscard(message) {
+  return askConfirm({ title: 'Unsaved changes', message,
+                      ok: 'Discard changes', cancel: 'Cancel' });
+}
+
+function showNotice(title, message) {
+  return askConfirm({ title, message, ok: 'OK', cancel: null });
 }
 
 // Three-button update prompt. Resolves to 'update' | 'snooze' | 'skip'
@@ -5748,6 +5788,7 @@ function stepPreset(delta) {
 async function renamePreset(newName) {
   if (!project) return;
   const oldName = project.currentPreset;
+  if (await presetWritesBlocked('Renaming a design')) { presetInput.value = oldName; return; }
   newName = (newName || '').trim();
   if (!newName || newName === oldName) { presetInput.value = oldName; return; }
   if (oldName === 'design default values') {
@@ -5924,12 +5965,53 @@ async function pickJsonFile() {
   return { text: await file.text(), name: file.name };
 }
 
+// A preset file can be damaged in a way that still reads as valid JSON, and then
+// every saved design in it silently disappears. The case seen in the field
+// (Sep 2026): a second, empty list of designs left at the end of the file by
+// hand-editing. JSON rules say the LAST one wins, so a file holding sixteen
+// designs presents as holding none. Name the fault in words a clinician can act
+// on — "damaged, here is why" — instead of showing her an empty list.
+// Returns null when the file is fine (including legitimately empty).
+function presetFileFault(text, parsed) {
+  const sets = parsed ? parsed.parameterSets : undefined;
+  if (sets && typeof sets === 'object' && !Array.isArray(sets)) return null;
+  const listedTwice = (text.match(/^\s*"parameterSets"\s*:/gm) || []).length > 1;
+  return listedTwice
+    ? 'it lists its saved designs twice, and the second list — an empty one — is '
+      + 'the one that counts, so every design in the file is hidden. That is almost '
+      + 'always left behind by editing the file in a text editor.'
+    : 'it holds no usable list of saved designs.';
+}
+
+// The designs the app currently has in hand. Empty whenever the file could not be
+// read, so no display path has to parse defensively and none of them can mistake
+// a damaged file for an empty one.
+function presetSetsInMemory() {
+  if (!project || !project.jsonText || project.jsonFault) return {};
+  try { return JSON.parse(project.jsonText).parameterSets || {}; } catch { return {}; }
+}
+
+// Every write rebuilds the whole file from the designs the app is holding. If the
+// file was never read, that is nothing — so a save would replace the clinician's
+// entire library with the one design she has open. A file we could not read is
+// never written to.
+async function presetWritesBlocked(action) {
+  if (!project || !project.jsonFault) return false;
+  const what = project.jsonName || 'the preset file';
+  logLine(`${action}: refused — ${what} is damaged and was not read.`);
+  await showNotice('Saved designs file is damaged',
+    `${action} was cancelled because "${what}" is damaged and could not be read: `
+    + `${project.jsonFault} Nothing was written, so the designs inside it are `
+    + `untouched. Repair or replace the file, then open the project again.`);
+  return true;
+}
+
 function parseJsonPresets(text) {
   let j;
   try { j = JSON.parse(text); } catch { throw new Error('File is not valid JSON'); }
-  const sets = j.parameterSets;
-  if (!sets || typeof sets !== 'object') throw new Error('No parameterSets found in file');
-  return sets;
+  const fault = presetFileFault(text, j);
+  if (fault) throw new Error('This file is damaged — ' + fault);
+  return j.parameterSets;
 }
 
 // ===== Open JSON: switch the active preset file =====
@@ -5960,6 +6042,7 @@ document.getElementById('open-json-btn').addEventListener('click', async () => {
   } catch (e) {
     if (e && e.name === 'AbortError') return;
     logLine('Open JSON failed: ' + e.message);
+    if (/damaged/.test(e.message)) await showNotice('Saved designs file is damaged', e.message);
     console.error(e);
   }
 });
@@ -5967,6 +6050,7 @@ document.getElementById('open-json-btn').addEventListener('click', async () => {
 // ===== Import preset: merge presets from a JSON file into the current file =====
 document.getElementById('import-preset-btn').addEventListener('click', async () => {
   if (!project) return;
+  if (await presetWritesBlocked('Importing designs')) return;
   // Request write permission BEFORE the file picker — the picker consumes the
   // user gesture, so requestPermission() would fail if called afterwards.
   if (project.dirHandle && !(await ensureWritePermission())) {
@@ -6017,6 +6101,7 @@ document.getElementById('import-preset-btn').addEventListener('click', async () 
   } catch (e) {
     if (e && e.name === 'AbortError') return;
     logLine('Import preset failed: ' + e.message);
+    if (/damaged/.test(e.message)) await showNotice('Saved designs file is damaged', e.message);
     console.error(e);
   }
 });
@@ -6050,6 +6135,7 @@ function buildPresetJson(parameterSets) {
 // Writes the current form values into parameterSets under `presetName` and
 // flushes the .json to disk. Used by both Save Preset and Add Preset.
 async function writePresetToDisk(presetName) {
+  if (await presetWritesBlocked('Saving a design')) return false;
   if (!(await ensureWritePermission())) {
     logLine('Write permission was not granted.');
     return false;
@@ -6108,6 +6194,7 @@ document.getElementById('del-preset-btn').addEventListener('click', async () => 
   if (!project) return;
   const name = project.currentPreset;
   if (name === 'design default values') return;
+  if (await presetWritesBlocked('Deleting a design')) return;
   // Request write permission BEFORE confirm(); confirm() consumes user activation
   // and would cause requestPermission() to throw.
   if (!(await ensureWritePermission())) {
