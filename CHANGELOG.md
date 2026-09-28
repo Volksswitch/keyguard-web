@@ -13,6 +13,8 @@ notes, because nothing at this address could have been missed yet.
 
 ## Unreleased (next release)
 
+## Release 108
+
 - **Openings placed by eye now show their real shape.** The pink marker on each of your Custom Openings used to be a flat patch lying on the keyguard's face, which told you where the opening was but nothing about how it was formed. It is now the opening's actual shape, so chamfers, slopes and rounded corners are all visible as you work. While you are dragging an opening it goes back to a flat patch — that is what lets it keep up with your hand — and it settles into the real shape the moment you let go.
 
 - **You can now see the screenshot through a highlighted opening.** Highlighting an opening on the openings-and-additions list marked it with a solid pink shape, which hid the very part of the screenshot you were trying to check it against. The pink is now see-through, matching the shapes shown when you place openings by eye, so you can tell at a glance whether an opening sits where it should.
