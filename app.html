@@ -1033,6 +1033,7 @@ function buildOrbitControls() {
 buildOrbitControls();
 
 let currentMesh = null;          // Group containing keyguard + highlights meshes
+let oaHighlightMesh = null;      // the pink overlay inside it, or null
 let cameraFitOnce = false;       // true after we've framed the scene at least once for this project
 let lastCamKey = null;           // camera-affecting params at last frame (re-apply when they change)
 
@@ -1539,6 +1540,10 @@ const RELEASE_NOTES = {
   "107": [
     "A damaged file of saved designs is now named as damaged, instead of quietly appearing empty. If the file holding your saved designs has been broken — most often by opening it in a text editor and leaving a stray line behind — the app used to open the project as normal with none of your designs listed, giving no hint that anything was wrong. It now tells you the file is damaged and what is wrong with it, and you can carry on designing from the standard settings in the meantime.",
     "And in that state the app will not write to that file, so your designs cannot be lost. Saving, renaming, deleting or importing a design rewrites the whole file, so saving into a file the app had failed to read would have replaced every design in it with the one design you had open. Those actions are now refused with an explanation, and the file is left exactly as it is until you repair or replace it."
+  ],
+  "108": [
+    "Openings placed by eye now show their real shape. The pink marker on each of your Custom Openings used to be a flat patch lying on the keyguard's face, which told you where the opening was but nothing about how it was formed. It is now the opening's actual shape, so chamfers, slopes and rounded corners are all visible as you work. While you are dragging an opening it goes back to a flat patch — that is what lets it keep up with your hand — and it settles into the real shape the moment you let go.",
+    "You can now see the screenshot through a highlighted opening. Highlighting an opening on the openings-and-additions list marked it with a solid pink shape, which hid the very part of the screenshot you were trying to check it against. The pink is now see-through, matching the shapes shown when you place openings by eye, so you can tell at a glance whether an opening sits where it should."
   ]
 };
 // @@RELEASE_NOTES_END@@
@@ -3757,29 +3762,43 @@ async function doRender() {
     if (hlBytes && hlBytes.length > 200) {
       const hlGeom = loader.parse(toAB(hlBytes));
       hlGeom.computeVertexNormals();
-      // A highlight is normally SOLID pink. A highlighted case addition is pink
-      // geometry occupying the very same space as the keyguard body, so a
-      // translucent overlay there just blends pink into the item colour — the
-      // result reads purple over Blue, grey-green over Turquoise, and pink only
-      // where the highlight happens to sit over a hole. Painting the pink object
-      // itself makes a highlight read the same everywhere.
+      // A highlight is TRANSLUCENT pink, matching the shapes the by-eye pane
+      // draws: the whole point of marking an opening is to check it against the
+      // screenshot underneath, so the picture has to show through the marker.
+      // Flat (unlit) rather than shaded, again like the by-eye shapes, so a
+      // highlight reads the same however the keyguard is turned to the light.
       //
-      // The exception is the frame's ghost keyguard, which keyguard.scad emits
-      // into this same highlight mesh: there the transparency IS the feature —
-      // it is how the frame shows through the keyguard sitting in it.
+      // The frame's ghost keyguard, which keyguard.scad emits into this same
+      // highlight mesh, is translucent for its own reason — it is how the frame
+      // shows through the keyguard sitting in it — and keeps its own value.
+      //
+      // Two differences from the by-eye shapes, both forced by this mesh being
+      // real solid geometry from keyguard.scad rather than a flat plane:
+      //   * FRONT FACES ONLY. A solid has a far side as well as a near one, and
+      //     drawing both would blend the pink over itself — 0.42 twice reads
+      //     near 0.66, so the marker would come out much darker here than in
+      //     the by-eye pane for the same setting.
+      //   * NUDGED FORWARD. A highlight's face can sit exactly level with the
+      //     keyguard's own, and two surfaces at identical depth flicker against
+      //     each other in patches. The offset settles it.
       const ghostInPlay = cur.generate === 'keyguard frame' &&
                           cur.show_keyguard_with_frame === 'yes';
-      const hlMat = new THREE.MeshPhongMaterial({
+      const hlMat = new THREE.MeshBasicMaterial({
         color: 0xff4d4d,
-        shininess: 10,
-        ...(ghostInPlay
-          ? { opacity: 0.45, transparent: true, depthWrite: false }
-          // Coincident with the body's own faces, so bias it forward to win the
-          // depth test cleanly instead of z-fighting with the surface beneath.
-          : { polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }),
+        transparent: true,
+        opacity: ghostInPlay ? 0.45 : 0.42,
+        depthWrite: false,
+        ...(ghostInPlay ? {} : {
+          polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1,
+        }),
       });
       const hlMesh = new THREE.Mesh(hlGeom, hlMat);
       hlMesh.renderOrder = 1;        // draw overlays after the keyguard
+      // Remembered so the by-eye pane can hide it for the length of a drag:
+      // it shows each opening where it WAS at the last render, which would sit
+      // there in the same pink as the shape being dragged away from it.
+      hlMesh.userData.oaHighlight = true;
+      oaHighlightMesh = hlMesh;
       group.add(hlMesh);
     }
 
@@ -7063,13 +7082,26 @@ function ogRenderWarnings() {
 // WOULD hold. Highlight included — "#" in the ID column IS the O&A format's
 // highlight marker, so a highlighted row carries a "#" ID and a row whose
 // highlight is off carries its own.
-function ogFieldText() {
+// `forPreview` marks every screen opening as highlighted while the by-eye pane
+// is open, so keyguard.scad paints them all pink and the clinician sees each
+// one's REAL shape — chamfers, slopes and rounded corners included — instead of
+// the flat sheet the app draws for itself.
+//
+// ⚠ This must NEVER reach saveOpenings(): that writes the Customizer fields for
+// real, and a "#" written there would permanently mark every one of the
+// clinician's openings as highlighted. Hence the flag — the marking exists for
+// the duration of a render and nowhere else.
+function ogFieldText(forPreview = false) {
   const out = {};
+  const eyeAll = forPreview && ogeLive();
   for (const grid of ['screen', 'case']) {
     const st = ogState[grid];
     if (st.error) continue;                // unreadable → never rewrite it
+    const hl = (eyeAll && grid === 'screen')
+      ? new Set([...st.hl, ...st.rows.keys()])
+      : st.hl;
     out[grid === 'screen' ? 'my_screen_openings' : 'my_case_openings'] =
-      ogSerialize(st.rows, st.hl);
+      ogSerialize(st.rows, hl);
   }
   return out;
 }
@@ -7173,7 +7205,7 @@ function ogConvertScreenUnits(from, to) {
 }
 
 function ogPreview() {
-  ogRenderOverride = ogFieldText();
+  ogRenderOverride = ogFieldText(true);
   ogState.previewed = true;
   ogMsgEl.textContent = 'Previewing — not saved yet.';
   doRender();
@@ -7429,10 +7461,23 @@ function ogeBuildShapes(g) {
       // Flat pink rather than a lit material: this is a marker on the surface,
       // not a part of the design, and it must read the same however the
       // keyguard happens to be turned to the light.
+      //
+      // These flat sheets are only SEEN during a drag. At rest the pink comes
+      // from keyguard.scad's own highlight geometry, which is the real opening
+      // shape; a flat sheet laid over it would hide the very chamfer it exists
+      // to show. Rebuilding that real shape costs about half a second, which is
+      // fine on release and hopeless under the hand — so the sheet takes over
+      // for the drag and stands down again once it ends.
+      //
+      // Stood down means INVISIBLE, not absent: these are also what the pointer
+      // hits when an opening is clicked or dragged. Three.js skips hidden
+      // objects when working out what was clicked, so `visible = false` here
+      // would quietly make the openings unpickable — a zero opacity leaves them
+      // in play.
       new THREE.MeshBasicMaterial({
         color: OGE_PINK,
         transparent: true,
-        opacity: ogeSel.has(idx) ? 0.62 : 0.42,
+        opacity: ogeDrag ? (ogeSel.has(idx) ? 0.62 : 0.42) : 0,
         depthWrite: false,
         side: THREE.DoubleSide,
       })
@@ -7738,10 +7783,25 @@ viewport.addEventListener('pointerdown', ev => {
   });
 }, true);
 
+// While a gesture is under way the flat sheets take over the display: they are
+// the only thing that can keep up with the hand. The real pink shapes from
+// keyguard.scad stand down for its duration — they mark where each opening was
+// at the last render, so leaving them up would show the opening in two places at
+// once, in the same pink. Both come back on release, when the rebuild lands.
+function ogeDragVisuals() {
+  const dragging = !!ogeDrag;
+  ogeGroup.children.forEach(mesh => {
+    const idx = mesh.userData.ogeIdx;
+    mesh.material.opacity = dragging ? (ogeSel.has(idx) ? 0.62 : 0.42) : 0;
+  });
+  if (oaHighlightMesh) oaHighlightMesh.visible = !dragging;
+}
+
 // Taking the gesture: the orbit controls are switched off for its duration, and
 // the event is stopped here so they never begin one of their own.
 function ogeStart(ev, drag) {
   ogeDrag = drag;
+  ogeDragVisuals();
   if (controls) controls.enabled = false;
   ev.preventDefault();
   ev.stopPropagation();
@@ -7789,6 +7849,7 @@ function ogeEndDrag(ev) {
   if (!ogeDrag) { ogeDragPendingDrop = null; return; }
   const { g, moved, kind, pushed, hit } = ogeDrag;
   ogeDrag = null;
+  ogeDragVisuals();
   if (controls) controls.enabled = true;
   try { viewport.releasePointerCapture(ev.pointerId); } catch (e) { /* already gone */ }
 
@@ -7912,6 +7973,16 @@ function ogSwitchTab(name) {
     ogeTeardown();
     ogRenderGrid('screen');
     ogRenderGrid('case');
+  }
+  // Entering the pane makes every Custom Opening pink; leaving takes the pink
+  // away again. Either way the keyguard has to be rebuilt to say so. This is
+  // NOT a preview of an edit — nothing has been changed — so it deliberately
+  // leaves the "not saved yet" message and the Cancel behaviour alone, and
+  // records itself separately so closing the panel knows to put things back.
+  if (ogState && !ogState.screen.error && project) {
+    ogState.eyeRendered = true;
+    ogRenderOverride = ogFieldText(true);
+    doRender();
   }
 }
 for (const btn of document.querySelectorAll('.og-tab')) {
@@ -8038,7 +8109,7 @@ function openOpenings() {
 // the (untouched) fields say — hence the re-render.
 function closeOpenings(rerender = true) {
   if (!ogPanel.classList.contains('open')) return;
-  const previewed = ogState && ogState.previewed;
+  const previewed = ogState && (ogState.previewed || ogState.eyeRendered);
   ogRenderOverride = null;
   ogPanel.classList.remove('open');
   ogeTeardown();
