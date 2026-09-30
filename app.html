@@ -452,6 +452,25 @@
   #update-footer button { padding: 4px 14px; font-size: 12px; cursor: pointer; margin-left: 8px; }
   #update-now { font-weight: bold; color: #185; }
 
+  /* ---------- "Set up this folder" prompt (mirrors the update modal) ---------- */
+  #setup-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.35);
+                   display: none; align-items: center; justify-content: center; z-index: 1155; }
+  #setup-overlay.open { display: flex; }
+  #setup-modal { background: #fafafa; border: 1px solid #888; border-radius: 4px;
+                 width: min(640px, 92vw); max-height: 90vh; display: flex; flex-direction: column;
+                 box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+  #setup-modal h3 { margin: 0; padding: 10px 14px; border-bottom: 1px solid #ccc;
+                    background: #e8e8e8; font-size: 14px; flex: none; }
+  #setup-msg { padding: 16px 14px; font-size: 12px; line-height: 1.5;
+               flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+  #setup-msg b { color: #06c; }
+  #setup-msg code { background: #eee; border: 1px solid #ddd; border-radius: 3px;
+                    padding: 0 3px; font-size: 11px; }
+  #setup-footer { padding: 8px 14px; border-top: 1px solid #ccc; text-align: right;
+                  background: #f0f0f0; flex: none; }
+  #setup-footer button { padding: 4px 14px; font-size: 12px; cursor: pointer; margin-left: 8px; }
+  #setup-go { font-weight: bold; color: #185; }
+
   /* ---------- "What's new" post-update notice (mirrors the update modal) ---------- */
   #whatsnew-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.35);
                       display: none; align-items: center; justify-content: center; z-index: 1160; }
@@ -663,7 +682,7 @@
       <div id="cust-header" class="no-project no-recents">
         <div style="display:flex; align-items:center; gap:6px; margin-bottom:6px; position:relative;">
           <h2 style="margin:0; flex:1;">Customizer</h2>
-          <button id="open-project-btn" title="Pick a folder containing keyguard.scad and openings_and_additions.txt"
+          <button id="open-project-btn" title="Pick a project folder — an empty new folder is fine, the app offers to set it up"
                   style="font-size:11px; padding:3px 8px; cursor:pointer;">Open Project…</button>
           <ul id="change-project-menu" role="listbox"></ul>
         </div>
@@ -753,6 +772,18 @@
       <button id="update-skip">Skip</button>
       <button id="update-snooze">Remind me in a week</button>
       <button id="update-now">Update now</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ Empty project folder — offer to set it up ============ -->
+<div id="setup-overlay">
+  <div id="setup-modal">
+    <h3>This folder has no keyguard designer file</h3>
+    <div id="setup-msg"></div>
+    <div id="setup-footer">
+      <button id="setup-cancel">Cancel</button>
+      <button id="setup-go">Set it up</button>
     </div>
   </div>
 </div>
@@ -1544,6 +1575,10 @@ const RELEASE_NOTES = {
   "108": [
     "Openings placed by eye now show their real shape. The pink marker on each of your Custom Openings used to be a flat patch lying on the keyguard's face, which told you where the opening was but nothing about how it was formed. It is now the opening's actual shape, so chamfers, slopes and rounded corners are all visible as you work. While you are dragging an opening it goes back to a flat patch — that is what lets it keep up with your hand — and it settles into the real shape the moment you let go.",
     "You can now see the screenshot through a highlighted opening. Highlighting an opening on the openings-and-additions list marked it with a solid pink shape, which hid the very part of the screenshot you were trying to check it against. The pink is now see-through, matching the shapes shown when you place openings by eye, so you can tell at a glance whether an opening sits where it should."
+  ],
+  "109": [
+    "You can now start a project with nothing but an empty folder. Until now you had to go and find the keyguard designer file, and usually an openings-and-additions file, and put them somewhere before the app was any use. Make a new empty folder, point the app at it with Open Project…, and the app tells you the folder has no keyguard designer file and offers to set it up with the current one. Accept, and it puts that file — and an openings-and-additions file to start from, if there isn't one already — straight into your folder and opens the project.",
+    "Nothing already in the folder is ever replaced, so an openings-and-additions file you have already written is left exactly as it is. If the folder happens to hold saved designs from an earlier keyguard version, they are renamed to go with the new file, the same way they are when you accept a keyguard update. And because the app names the folder in the question, a folder chosen by mistake can be caught before anything is written to it."
   ]
 };
 // @@RELEASE_NOTES_END@@
@@ -2332,7 +2367,7 @@ async function resetToNoProject() {
   const opBtn = document.getElementById('open-project-btn');
   if (opBtn) {
     opBtn.textContent = 'Open Project…';
-    opBtn.title = 'Pick a folder containing keyguard.scad and openings_and_additions.txt';
+    opBtn.title = 'Pick a project folder — an empty new folder is fine, the app offers to set it up';
   }
   document.getElementById('project-folder-label').innerHTML = '<i>no project folder open</i>';
   document.getElementById('watch-status').textContent = '';
@@ -2487,8 +2522,23 @@ async function openProject(presetHandle = null) {
     throw e;
   }
   if (!scadName) {
-    setStatus('No .scad file found in selected folder.', 'error');
-    logLine('  ERROR: project folder must contain exactly one .scad file');
+    // A folder with no keyguard file is not necessarily a mistake any more: it
+    // is how a clinician starts. Offer to set it up rather than turning her
+    // away — she should never have to go and find the files herself first.
+    // 'done' means the folder was set up and re-opened by that call; anything
+    // else falls through to the long-standing "this isn't a project" ending.
+    const outcome = await offerStarterSetup(dirHandle, files);
+    if (outcome === 'done') return;
+    if (outcome === 'declined') {
+      setStatus('No keyguard designer file in that folder.', 'error');
+      logLine('  Folder left untouched — nothing was downloaded.');
+    } else if (outcome === 'failed') {
+      // offerStarterSetup has already said what went wrong, and why the folder
+      // is unchanged.
+    } else {
+      setStatus('No .scad file found in selected folder.', 'error');
+      logLine('  ERROR: project folder must contain exactly one .scad file');
+    }
     // Folder turned out not to be a project — make sure it isn't remembered
     // (it never was persisted above, but a previously-valid handle might be
     // lingering) so the next "Open Project…" click goes straight to the picker
@@ -2752,6 +2802,143 @@ async function applyDesignerUpdate(manifest) {
   //    rebuild from the new file.
   if (settings.updateSnooze) setSetting('updateSnooze', null);
   await openProject(dir);
+}
+
+// --- Starting from an empty folder ---------------------------------------
+// A clinician used to need the keyguard designer file (and usually an openings
+// file) in hand BEFORE the app was any use: pick a folder without them and the
+// app simply refused it. That put a download-and-unpack step in front of the
+// one thing this app exists to remove. Now an empty folder is treated as the
+// beginning of a project — the app offers to put the current designer file into
+// it, and an openings file if there is none, from the SAME address it serves
+// itself from (so a school network that allows the app allows these too).
+//
+// Three rules, all deliberate:
+//   • It ASKS first. Writing files into a folder she just picked is a surprise,
+//     and a mis-picked folder (Documents, a whole OneDrive) must not be
+//     littered. The prompt names the folder so she can see what she chose.
+//   • It never touches an openings file that already exists. That file is her
+//     own work, and this path only ever fills in what is absent.
+//   • A presets file is carried forward only when it is plainly one of ours
+//     (keyguard_v<N>.json) and there is exactly one. Anything else is left
+//     alone rather than guessed at and renamed.
+//
+// Returns 'done' (folder set up and re-opened), 'declined', or 'failed'.
+const OA_FILENAME = 'openings_and_additions.txt';
+async function offerStarterSetup(dirHandle, files) {
+  if (!dirHandle) return 'skip';                 // fixtures and other read-only paths
+
+  let manifest;
+  try {
+    const resp = await fetch(DESIGNER_MANIFEST_URL + '?t=' + Date.now(), { cache: 'no-store' });
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    manifest = await resp.json();
+  } catch (e) {
+    logLine(`  This folder has no keyguard designer file, and the current one couldn't be `
+          + `downloaded (${e.message}) — you may be offline. Nothing was changed.`);
+    setStatus('Empty folder, and the keyguard file could not be downloaded — try again when connected.', 'error');
+    return 'failed';
+  }
+  const version  = Number(manifest && manifest.version);
+  const scadName = manifest && manifest.scad_filename;
+  if (!Number.isFinite(version) || !scadName) {
+    logLine('  This folder has no keyguard designer file, and the published version list '
+          + 'could not be read. Nothing was changed.');
+    setStatus('Empty folder, and the published keyguard file could not be identified.', 'error');
+    return 'failed';
+  }
+
+  const needsOa = !files[OA_FILENAME];
+  // Exactly one presets file that is clearly ours — otherwise leave every file
+  // in the folder alone.
+  const ourJsons = Object.keys(files).filter(n => /^keyguard_v\d+\.json$/i.test(n));
+  const oldJson  = ourJsons.length === 1 ? ourJsons[0] : null;
+  const newJson  = oldJson ? scadName.replace(/\.scad$/i, '') + '.json' : null;
+
+  const ok = await showSetupModal({
+    folder: dirHandle.name, version, scadName, needsOa,
+    oldJson, newJson: (newJson && newJson !== oldJson) ? newJson : null,
+  });
+  if (!ok) return 'declined';
+
+  setStatus('Setting up the folder…', 'rendering');
+  // Everything this path reports is collected and logged AFTER the re-open
+  // below, because opening a project clears the console — logged here, the
+  // record of what was just written to her folder would vanish a second later.
+  const done = [];
+
+  // Download everything BEFORE writing anything, so a failure part-way leaves
+  // the folder exactly as she left it.
+  let scadBytes;
+  try {
+    const resp = await fetch(manifest.scad_url || ('./' + scadName), { cache: 'no-store' });
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    scadBytes = new Uint8Array(await resp.arrayBuffer());
+  } catch (e) {
+    logLine(`  ERROR downloading the keyguard file: ${e.message} — no changes made.`);
+    setStatus('Setup failed (download error) — your folder is unchanged.', 'error');
+    return 'failed';
+  }
+  const dl = parseDesignerVersion(new TextDecoder().decode(scadBytes));
+  if (dl !== version) {
+    logLine(`  ERROR: downloaded file is v${dl}, the version list promised v${version} — `
+          + `aborting, no changes made.`);
+    setStatus('Setup failed (version mismatch) — your folder is unchanged.', 'error');
+    return 'failed';
+  }
+
+  // The openings file is a starter, not a version-checked artefact: if it can't
+  // be fetched the project still works (the app renders with an empty one), so
+  // this half never aborts the setup.
+  let oaBytes = null;
+  if (needsOa) {
+    try {
+      const resp = await fetch(manifest.oa_url || ('./' + OA_FILENAME), { cache: 'no-store' });
+      if (!resp.ok) throw new Error('HTTP ' + resp.status);
+      oaBytes = new Uint8Array(await resp.arrayBuffer());
+      if (!oaBytes.length) throw new Error('the downloaded file was empty');
+    } catch (e) {
+      oaBytes = null;
+      logLine(`  WARNING: couldn't download the starter openings file (${e.message}). `
+            + `The keyguard file is still being installed; you can add openings later.`);
+    }
+  }
+
+  stopWatcher();   // the folder is about to gain files; a poll mid-write is noise
+
+  try {
+    const sh = await dirHandle.getFileHandle(scadName, { create: true });
+    const sw = await sh.createWritable();
+    await sw.write(scadBytes);
+    await sw.close();
+    if ((await sh.getFile()).size === 0) throw new Error('the written keyguard file is empty');
+    done.push(`added ${scadName} (v${version})`);
+
+    if (oaBytes) {
+      const oh = await dirHandle.getFileHandle(OA_FILENAME, { create: true });
+      const ow = await oh.createWritable();
+      await ow.write(oaBytes);
+      await ow.close();
+      done.push(`added ${OA_FILENAME}`);
+    }
+
+    // Write-before-delete, the same ordering the update path uses.
+    if (oldJson && newJson && newJson !== oldJson) {
+      const bytes = new Uint8Array(await (await (await dirHandle.getFileHandle(oldJson)).getFile()).arrayBuffer());
+      const nh = await dirHandle.getFileHandle(newJson, { create: true });
+      const nw = await nh.createWritable();
+      await nw.write(bytes);
+      await nw.close();
+      await dirHandle.removeEntry(oldJson);
+      done.push(`renamed ${oldJson} to ${newJson} so your saved designs stay with the keyguard file`);
+    }
+  } catch (e) {
+    done.push(`WARNING during setup: ${e.message}`);
+  }
+
+  await openProject(dirHandle);
+  for (const line of done) logLine(`  This folder was just set up: ${line}.`);
+  return 'done';
 }
 
 // --- Web-app self-update -------------------------------------------------
@@ -5278,6 +5465,70 @@ function appendNoteText(el, text) {
     last = re.lastIndex;
   }
   if (last < text.length) el.append(text.slice(last));
+}
+
+// Asked when a chosen folder holds no keyguard designer file. Names the folder
+// on purpose: this is the one moment a mis-picked folder can still be caught,
+// before the app writes anything into it. Resolves true to go ahead.
+function showSetupModal({ folder, version, scadName, needsOa, oldJson, newJson }) {
+  return new Promise(resolve => {
+    const ov  = document.getElementById('setup-overlay');
+    const msg = document.getElementById('setup-msg');
+    msg.textContent = '';
+
+    const p1 = document.createElement('div');
+    const f = document.createElement('b'); f.textContent = folder;
+    const v = document.createElement('b'); v.textContent = 'v' + version;
+    p1.append('The folder ', f, ' doesn’t contain a keyguard designer file. ',
+              'Set it up with the current keyguard designer file (', v, ')?');
+    msg.appendChild(p1);
+
+    const intro = document.createElement('div');
+    intro.style.cssText = 'margin-top:10px; color:#555;';
+    intro.textContent = 'This will add:';
+    msg.appendChild(intro);
+
+    const ul = document.createElement('ul');
+    ul.style.cssText = 'margin:4px 0 0; padding-left:20px; color:#555;';
+    const item = (...parts) => {
+      const li = document.createElement('li');
+      li.style.marginBottom = '3px';
+      li.append(...parts);
+      ul.appendChild(li);
+    };
+    const code = t => { const c = document.createElement('code'); c.textContent = t; return c; };
+    item(code(scadName), ' — the keyguard designer itself');
+    if (needsOa) item(code(OA_FILENAME), ' — an empty openings-and-additions file to start from');
+    if (oldJson && newJson) {
+      item('your saved designs in ', code(oldJson), ' renamed to ', code(newJson),
+           ' so they stay with the keyguard file');
+    }
+    msg.appendChild(ul);
+
+    const p2 = document.createElement('div');
+    p2.style.cssText = 'margin-top:12px; color:#555;';
+    p2.textContent = 'Nothing already in the folder is replaced. '
+                   + 'If this isn’t the folder you meant, click Cancel and choose another.';
+    msg.appendChild(p2);
+
+    const go     = document.getElementById('setup-go');
+    const cancel = document.getElementById('setup-cancel');
+    function cleanup(val) {
+      ov.classList.remove('open');
+      go.removeEventListener('click', onGo);
+      cancel.removeEventListener('click', onCancel);
+      document.removeEventListener('keydown', onKey);
+      resolve(val);
+    }
+    function onGo()     { cleanup(true); }
+    function onCancel() { cleanup(false); }
+    function onKey(e)   { if (e.key === 'Escape') cleanup(false); }
+    go.addEventListener('click', onGo);
+    cancel.addEventListener('click', onCancel);
+    document.addEventListener('keydown', onKey);
+    ov.classList.add('open');
+    go.focus();
+  });
 }
 
 function showUpdateModal({ loaded, latest, notes, oldScad, newScad }) {

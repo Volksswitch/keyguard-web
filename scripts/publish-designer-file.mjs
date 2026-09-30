@@ -17,9 +17,16 @@
 //
 // WHAT IT WRITES (all beside app.html; the first two deliberately OUT of sw.js's
 // SHELL precache list — a precached designer file could never be replaced):
-//   keyguard_v<N>.scad        byte-identical to the published file
-//   latest_scad_version.json  the version list the app reads, with a RELATIVE
-//                             scad_url so each address serves its own copy
+//   keyguard_v<N>.scad          byte-identical to the published file
+//   openings_and_additions.txt  the starter openings file, byte-identical to
+//                               the published one — what the app puts into an
+//                               empty folder for a clinician starting out
+//   latest_scad_version.json    the version list the app reads, with RELATIVE
+//                               urls so each address serves its own copies
+//
+// The openings file is published by this same act ON PURPOSE: its columns and
+// shapes are defined by the keyguard file, so the two must never be able to
+// disagree about which version a clinician was handed.
 //
 // Nothing else. Because both files sit OUTSIDE the precache, a running app
 // fetches them from the network and offers the new version without an app
@@ -48,6 +55,9 @@ const SCAD_ROOT = process.env.KEYGUARD_DESIGNER_ROOT
 
 const PUBLISHED_SCAD_URL =
   'https://raw.githubusercontent.com/Volksswitch/keyguard/main/keyguard.scad';
+const PUBLISHED_OA_URL =
+  'https://raw.githubusercontent.com/Volksswitch/keyguard/main/openings_and_additions.txt';
+const OA_FILENAME = 'openings_and_additions.txt';
 
 function die(msg) {
   console.error(`publish-designer-file: ${msg}`);
@@ -106,6 +116,24 @@ if (got !== version) {
 const scadFilename = srcManifest.scad_filename || `keyguard_v${version}.scad`;
 await writeFile(join(WEB_ROOT, scadFilename), scadText, 'utf8');
 
+// The starter openings file rides along with the keyguard file it belongs to.
+// Unversioned by nature, so there is no version to prove — but it must not be
+// published empty or half-written, which would leave a beginner with a file
+// that cannot be parsed.
+console.log('Fetching published openings_and_additions.txt…');
+let oaText;
+try {
+  const resp = await fetch(PUBLISHED_OA_URL, { cache: 'no-store' });
+  if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+  oaText = await resp.text();
+} catch (e) {
+  die(`could not download the published openings file: ${e.message}`);
+}
+if (!/screen_openings\s*=/.test(oaText)) {
+  die(`the published openings file does not look like one (no screen_openings). Nothing written.`);
+}
+await writeFile(join(WEB_ROOT, OA_FILENAME), oaText, 'utf8');
+
 const stale = (await readdir(WEB_ROOT))
   .filter(f => /^keyguard_v\d+\.scad$/i.test(f) && f !== scadFilename);
 for (const f of stale) await unlink(join(WEB_ROOT, f));
@@ -116,6 +144,8 @@ const outManifest = {
   version,
   scad_filename: scadFilename,
   scad_url: `./${scadFilename}`,
+  oa_filename: OA_FILENAME,
+  oa_url: `./${OA_FILENAME}`,
   notes,
 };
 await writeFile(
@@ -126,12 +156,12 @@ await writeFile(
 
 const NL = '\n';
 const kb = Math.round(scadText.length / 1024);
-console.log(`Wrote ${scadFilename} (${kb} KB) and latest_scad_version.json for v${version}.`);
+console.log(`Wrote ${scadFilename} (${kb} KB), ${OA_FILENAME} and latest_scad_version.json for v${version}.`);
 if (stale.length) console.log(`Removed superseded: ${stale.join(', ')}`);
 
 // 5. That is the whole job.
 //
-// This file and latest_scad_version.json are BOTH deliberately absent from
+// These files and latest_scad_version.json are ALL deliberately absent from
 // sw.js's SHELL precache, so a running app fetches them from the network every
 // time it checks a project. It therefore picks up a new designer version on its
 // own, with no app refresh and no app release. Publishing the keyguard and

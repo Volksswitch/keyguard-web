@@ -14,7 +14,7 @@
 // WHAT IT DOES, in order:
 //   .scad repo   finalize CHANGELOG -> "## Version N", regenerate the manifest,
 //                commit, PUSH, then pre-bump to N+1 locally (unpushed)
-//   web app      publish keyguard_vN.scad + version list beside app.html,
+//   web app      publish keyguard_vN.scad + starter openings file + version list beside app.html,
 //                commit JUST those files, PUSH
 //
 // ⚠ NO WEB APP RELEASE. APP_RELEASE, CACHE_NAME, the app's changelog and
@@ -113,7 +113,7 @@ const scadDirty = dirty(SCAD_ROOT, 'keyguard.scad', 'CHANGELOG.md', 'latest_scad
 // keyguard_v*.scad too: the release stages that whole pattern (see the commit
 // below), so a leftover change to one of them would ride along unannounced.
 const webDirty  = dirty(WEB_ROOT, 'app.html', 'sw.js', 'CHANGELOG.md', 'latest_app_version.json',
-                        'keyguard_v*.scad');
+                        'keyguard_v*.scad', 'openings_and_additions.txt');
 if (scadDirty.length) die(`.scad repo has uncommitted changes to release files:${NL}  ${scadDirty.join(NL + '  ')}`);
 if (webDirty.length)  die(`web app repo has uncommitted changes to release files:${NL}  ${webDirty.join(NL + '  ')}`);
 
@@ -243,6 +243,10 @@ node(WEB_ROOT, join(WEB_ROOT, 'scripts', 'publish-designer-file.mjs'));
 
 plan(`commit the v${N} designer file in the web app repo`);
 git(WEB_ROOT, 'add', 'latest_scad_version.json');
+// The starter openings file the app puts into an empty folder. Published in the
+// same act as the keyguard file it belongs to, so a beginner can never be given
+// an openings file from a different version of the designer.
+git(WEB_ROOT, 'add', 'openings_and_additions.txt');
 // The new keyguard file AND the removal of the one it supersedes, as a
 // pattern. publish-designer-file.mjs deletes superseded copies from disk;
 // staging only the new file by name left each deletion uncommitted, so every

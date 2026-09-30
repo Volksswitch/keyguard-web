@@ -25,7 +25,8 @@ below can be independently verified in the source:
 - **No third-party contact at all.** The app talks only to the address you host it
   on — the one address you would allowlist to let it load in the first place. It asks
   that same address whether a newer version of the keyguard designer file exists, and
-  downloads it from there if a clinician accepts. The request carries no data about
+  downloads it — or, for a brand-new empty project folder, the starter files that
+  folder needs — from there if a clinician accepts. The request carries no data about
   the clinician or their work. There is no second hostname to review; §4 describes
   the whole footprint.
 - The heavy lifting (the OpenSCAD CAD engine) runs inside the browser's
@@ -108,6 +109,12 @@ Everything the app fetches comes from there:
   clinician explicitly accepts the offer, the app downloads the replacement from that
   same origin into the folder they chose. This never happens without a click, and it
   can be deferred.
+- **Setting up an empty project folder, only on acceptance.** A clinician may start by
+  creating an empty folder rather than by obtaining the designer file first. When the
+  folder they choose contains no designer file, the app offers to put the current one
+  into it, together with a starter openings-and-additions file if that is absent too;
+  both come from the same origin, and both are written only after an explicit click.
+  Files already in the folder are never replaced.
 - **Any failure is harmless.** If the check cannot complete — offline, say — the app
   says so in its Console and carries on. The clinician keeps working with the file
   they already have; nothing retries or degrades.
