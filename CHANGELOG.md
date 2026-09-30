@@ -13,6 +13,8 @@ notes, because nothing at this address could have been missed yet.
 
 ## Unreleased (next release)
 
+## Release 109
+
 - **You can now start a project with nothing but an empty folder.** Until now you had to go and find the keyguard designer file, and usually an openings-and-additions file, and put them somewhere before the app was any use. Make a new empty folder, point the app at it with **Open Project…**, and the app tells you the folder has no keyguard designer file and offers to set it up with the current one. Accept, and it puts that file — and an openings-and-additions file to start from, if there isn't one already — straight into your folder and opens the project.
 
 - Nothing already in the folder is ever replaced, so an openings-and-additions file you have already written is left exactly as it is. If the folder happens to hold saved designs from an earlier keyguard version, they are renamed to go with the new file, the same way they are when you accept a keyguard update. And because the app names the folder in the question, a folder chosen by mistake can be caught before anything is written to it.
