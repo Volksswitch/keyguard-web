@@ -5480,7 +5480,7 @@ function showSetupModal({ folder, version, scadName, needsOa, oldJson, newJson }
     const f = document.createElement('b'); f.textContent = folder;
     const v = document.createElement('b'); v.textContent = 'v' + version;
     p1.append('The folder ', f, ' doesn’t contain a keyguard designer file. ',
-              'Set it up with the current keyguard designer file (', v, ')?');
+              'Would you like to set it up with the current keyguard designer file (', v, ')?');
     msg.appendChild(p1);
 
     const intro = document.createElement('div');
@@ -5508,7 +5508,7 @@ function showSetupModal({ folder, version, scadName, needsOa, oldJson, newJson }
     const p2 = document.createElement('div');
     p2.style.cssText = 'margin-top:12px; color:#555;';
     p2.textContent = 'Nothing already in the folder is replaced. '
-                   + 'If this isn’t the folder you meant, click Cancel and choose another.';
+                   + 'If this isn’t the folder you wanted, click Cancel and choose another.';
     msg.appendChild(p2);
 
     const go     = document.getElementById('setup-go');
