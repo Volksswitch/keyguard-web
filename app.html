@@ -1579,6 +1579,9 @@ const RELEASE_NOTES = {
   "109": [
     "You can now start a project with nothing but an empty folder. Until now you had to go and find the keyguard designer file, and usually an openings-and-additions file, and put them somewhere before the app was any use. Make a new empty folder, point the app at it with Open Project…, and the app tells you the folder has no keyguard designer file and offers to set it up with the current one. Accept, and it puts that file — and an openings-and-additions file to start from, if there isn't one already — straight into your folder and opens the project.",
     "Nothing already in the folder is ever replaced, so an openings-and-additions file you have already written is left exactly as it is. If the folder happens to hold saved designs from an earlier keyguard version, they are renamed to go with the new file, the same way they are when you accept a keyguard update. And because the app names the folder in the question, a folder chosen by mistake can be caught before anything is written to it."
+  ],
+  "110": [
+    "A project folder without an openings-and-additions file is now given one. Opening a folder that holds a keyguard designer file but no openings_and_additions.txt used to leave the folder as it was and carry on as though the file were there but empty — so there was nothing on disk to edit, and nothing to read about how to write an opening by hand. The app now puts a blank one into the folder as it opens the project. It is an empty starter file: it cuts nothing and changes no keyguard, and it carries the notes explaining what each column means. A file you have already written is never touched, and if the app cannot fetch or write the file it says so in the Console and opens the project exactly as before."
   ]
 };
 // @@RELEASE_NOTES_END@@
@@ -2567,12 +2570,29 @@ async function openProject(presetHandle = null) {
   logVersionBanner(scadName, scadText);
   logLine(`Opening project folder "${dirHandle.name}"...`);
 
-  if (files['openings_and_additions.txt']) {
-    const oaBytes = files['openings_and_additions.txt'];
+  if (files[OA_FILENAME]) {
+    const oaBytes = files[OA_FILENAME];
     oaText = dec.decode(oaBytes);
     oaHash = await sha1Hex(oaBytes);
   } else {
-    logLine('  no openings_and_additions.txt in folder — will use an empty one');
+    // No openings file: put one there rather than asking. Most clinicians have
+    // never heard of this file and cannot answer a question about whether they
+    // want one, so a prompt would only transfer a decision they have no way to
+    // make. Nothing is lost by it arriving: what lands is an empty template —
+    // placeholder rows that cut nothing, plus the column documentation — so it
+    // changes no keyguard, and that documentation is the one thing she would
+    // otherwise have to go and find before she could write a row by hand.
+    const planted = await plantStarterOaFile(dirHandle);
+    if (planted) {
+      files[OA_FILENAME]       = planted.bytes;
+      fileHandles[OA_FILENAME] = planted.handle;
+      oaText  = dec.decode(planted.bytes);
+      oaHash  = await sha1Hex(planted.bytes);
+      oaMtime = planted.mtime;
+      logLine(`  no ${OA_FILENAME} in folder — added an empty one you can edit`);
+    } else {
+      logLine(`  no ${OA_FILENAME} in folder — will use an empty one`);
+    }
   }
 
   // Parse presets — keep raw (creation) order; apply user-chosen ordering separately
@@ -2825,6 +2845,38 @@ async function applyDesignerUpdate(manifest) {
 //
 // Returns 'done' (folder set up and re-opened), 'declined', or 'failed'.
 const OA_FILENAME = 'openings_and_additions.txt';
+
+// Fetches the starter openings file from this app's own address and writes it
+// into a project folder that hasn't got one. Used by the ordinary project-open
+// path (a folder with a keyguard file but no openings file) and kept separate
+// from the empty-folder setup below, which has to download the keyguard file
+// and this one together before writing either.
+//
+// Deliberately SILENT on every failure — offline, a folder that turns out not
+// to be writable, a blocked fetch. Opening the project must not depend on this
+// succeeding: the app renders perfectly well with an empty openings file in
+// memory, which is exactly what it did before. Returns the bytes, the handle
+// and the file's timestamp so the caller can open the project with the file it
+// just planted (and the watcher track it), or null if nothing was written.
+async function plantStarterOaFile(dirHandle) {
+  if (!dirHandle) return null;                   // fixtures and other read-only paths
+  let bytes;
+  try {
+    const resp = await fetch('./' + OA_FILENAME + '?t=' + Date.now(), { cache: 'no-store' });
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    bytes = new Uint8Array(await resp.arrayBuffer());
+    if (!bytes.length) throw new Error('empty');
+  } catch { return null; }
+  try {
+    const handle = await dirHandle.getFileHandle(OA_FILENAME, { create: true });
+    const w = await handle.createWritable();
+    await w.write(bytes);
+    await w.close();
+    const f = await handle.getFile();
+    if (f.size === 0) throw new Error('empty');
+    return { bytes, handle, mtime: f.lastModified };
+  } catch { return null; }
+}
 async function offerStarterSetup(dirHandle, files) {
   if (!dirHandle) return 'skip';                 // fixtures and other read-only paths
 
