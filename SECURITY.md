@@ -39,8 +39,9 @@ below can be independently verified in the source:
 If your main question is *"can this app exfiltrate patient data or reach into the
 machine?"* — the architecture is designed so that it structurally cannot: there is
 no server to send designs to, and design content is never part of any request the
-app makes. The one outbound request it does make (§4) is a version check that
-carries nothing but the request itself.
+app makes. The only requests it makes (§4) go to the address you host it on, asking
+for the app's own files and for the current copy of the keyguard designer document;
+they carry nothing but the request itself.
 
 ---
 
@@ -142,8 +143,10 @@ Everything the app fetches comes from there:
   from the app entirely.
 
 You can confirm all of the above in the browser's DevTools **Network** tab or via a
-proxy/firewall log: beyond the app's own files you will see, at most, the single
-version check described above.
+proxy/firewall log: beyond the app's own files you will see, at most, the version
+check described above and the designer or openings-and-additions file it brings down
+from that same address. Every one of them is a plain request for a file, and all of
+them are to the single origin you allowlisted.
 
 ---
 
@@ -242,8 +245,9 @@ Notes:
 
 - **Source code:** <https://github.com/Volksswitch/keyguard-web> (CC0).
 - **Network behavior:** open the app, then in DevTools → Network, confirm that the
-  only traffic is the app's own files plus — at project open — the single designer
-  version check described in §4; or observe firewall/proxy logs.
+  only traffic is the app's own files plus — at project open — the designer version
+  check described in §4 and any starter or updated file it fetches from that same
+  origin; or observe firewall/proxy logs. There is no request to any other host.
 - **Storage:** DevTools → Application → Storage shows the local IndexedDB/handle and
   preferences described in §3.
 
