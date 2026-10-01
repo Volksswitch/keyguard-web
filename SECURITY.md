@@ -1,6 +1,6 @@
 # Keyguard Designer (web) — Security Overview for IT
 
-_Last updated: 2026-09-01_
+_Last updated: 2026-09-30_
 
 This document is written for IT / information-security teams evaluating whether the
 **Keyguard Designer** web app is safe for clinicians to use on managed workstations.
@@ -9,7 +9,7 @@ footprint, the threat model, and recommended hosting hardening.
 
 The app is open source and released to the **public domain (CC0)**, so everything
 below can be independently verified in the source:
-<https://github.com/Volksswitch/keyguard-designer-web>
+<https://github.com/Volksswitch/keyguard-web>
 
 ---
 
@@ -230,7 +230,7 @@ Notes:
 
 ## 9. Verifying these claims
 
-- **Source code:** <https://github.com/Volksswitch/keyguard-designer-web> (CC0).
+- **Source code:** <https://github.com/Volksswitch/keyguard-web> (CC0).
 - **Network behavior:** open the app, then in DevTools → Network, confirm that the
   only traffic is the app's own files plus — at project open — the single designer
   version check described in §4; or observe firewall/proxy logs.
