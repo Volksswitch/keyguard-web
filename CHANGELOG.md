@@ -13,6 +13,8 @@ notes, because nothing at this address could have been missed yet.
 
 ## Unreleased (next release)
 
+- **Saved designs are no longer lost when you set up a folder that has a presets file but no keyguard designer file.** If that file was named anything other than the app's own pattern — for example `keyguard.json` — setting up the folder left it with its old name, and the project then opened with only the design default values, as though you had no saved designs at all. The app now renames whatever presets file it finds to go with the new keyguard designer file, so your designs are there when the project opens. In the rare case of a folder holding more than one, the first one found is used.
+
 ## Release 110
 
 - **A project folder without an openings-and-additions file is now given one.** Opening a folder that holds a keyguard designer file but no `openings_and_additions.txt` used to leave the folder as it was and carry on as though the file were there but empty — so there was nothing on disk to edit, and nothing to read about how to write an opening by hand. The app now puts a blank one into the folder as it opens the project. It is an empty starter file: it cuts nothing and changes no keyguard, and it carries the notes explaining what each column means. A file you have already written is never touched, and if the app cannot fetch or write the file it says so in the Console and opens the project exactly as before.

@@ -1582,6 +1582,9 @@ const RELEASE_NOTES = {
   ],
   "110": [
     "A project folder without an openings-and-additions file is now given one. Opening a folder that holds a keyguard designer file but no openings_and_additions.txt used to leave the folder as it was and carry on as though the file were there but empty — so there was nothing on disk to edit, and nothing to read about how to write an opening by hand. The app now puts a blank one into the folder as it opens the project. It is an empty starter file: it cuts nothing and changes no keyguard, and it carries the notes explaining what each column means. A file you have already written is never touched, and if the app cannot fetch or write the file it says so in the Console and opens the project exactly as before."
+  ],
+  "111": [
+    "Saved designs are no longer lost when you set up a folder that has a presets file but no keyguard designer file. If that file was named anything other than the app's own pattern — for example keyguard.json — setting up the folder left it with its old name, and the project then opened with only the design default values, as though you had no saved designs at all. The app now renames whatever presets file it finds to go with the new keyguard designer file, so your designs are there when the project opens. In the rare case of a folder holding more than one, the first one found is used."
   ]
 };
 // @@RELEASE_NOTES_END@@
@@ -2839,9 +2842,9 @@ async function applyDesignerUpdate(manifest) {
 //     littered. The prompt names the folder so she can see what she chose.
 //   • It never touches an openings file that already exists. That file is her
 //     own work, and this path only ever fills in what is absent.
-//   • A presets file is carried forward only when it is plainly one of ours
-//     (keyguard_v<N>.json) and there is exactly one. Anything else is left
-//     alone rather than guessed at and renamed.
+//   • A presets file already in the folder is renamed to match the new keyguard
+//     file, whatever it was called — otherwise it is silently ignored and her
+//     saved designs seem to have vanished. With several, the first one wins.
 //
 // Returns 'done' (folder set up and re-opened), 'declined', or 'failed'.
 const OA_FILENAME = 'openings_and_additions.txt';
@@ -2901,10 +2904,13 @@ async function offerStarterSetup(dirHandle, files) {
   }
 
   const needsOa = !files[OA_FILENAME];
-  // Exactly one presets file that is clearly ours — otherwise leave every file
-  // in the folder alone.
-  const ourJsons = Object.keys(files).filter(n => /^keyguard_v\d+\.json$/i.test(n));
-  const oldJson  = ourJsons.length === 1 ? ourJsons[0] : null;
+  // Any .json in the folder is taken to be her presets, whatever it is called
+  // (a folder emptied of an old keyguard file often keeps a "keyguard.json").
+  // If there are several — rare — the first one found is used; guessing wrong
+  // there was judged cheaper than handling it (Ken, 3 Oct 2026). The app's own
+  // settings copy is never a presets file and is left where it is.
+  const jsons   = Object.keys(files).filter(n => /\.json$/i.test(n) && n !== SETTINGS_FILE);
+  const oldJson = jsons.length ? jsons[0] : null;
   const newJson  = oldJson ? scadName.replace(/\.scad$/i, '') + '.json' : null;
 
   const ok = await showSetupModal({
