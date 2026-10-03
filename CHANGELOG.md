@@ -13,6 +13,8 @@ notes, because nothing at this address could have been missed yet.
 
 ## Unreleased (next release)
 
+## Release 111
+
 - **Saved designs are no longer lost when you set up a folder that has a presets file but no keyguard designer file.** If that file was named anything other than the app's own pattern — for example `keyguard.json` — setting up the folder left it with its old name, and the project then opened with only the design default values, as though you had no saved designs at all. The app now renames whatever presets file it finds to go with the new keyguard designer file, so your designs are there when the project opens. In the rare case of a folder holding more than one, the first one found is used.
 
 ## Release 110
