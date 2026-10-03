@@ -15,7 +15,8 @@
 //   .scad repo   finalize CHANGELOG -> "## Version N", regenerate the manifest,
 //                commit, PUSH, then pre-bump to N+1 locally (unpushed)
 //   web app      publish keyguard_vN.scad + starter openings file + version list beside app.html,
-//                commit JUST those files, PUSH
+//                commit JUST those files, PUSH that commit alone (the app's
+//                unreleased APP_RELEASE pre-bump stays local)
 //
 // ⚠ NO WEB APP RELEASE. APP_RELEASE, CACHE_NAME, the app's changelog and
 // latest_app_version.json are NOT touched. Publishing a keyguard file is not an
@@ -166,8 +167,9 @@ try {
 // Pushing this repo deploys whatever is committed on its main, so anything sitting
 // there unpushed would ride out with the designer file — unannounced, unversioned and
 // unreleased. The app's standing pre-bump commit (the APP_RELEASE constant alone) is
-// the one exception: it lives there permanently between releases and shows nobody
-// anything. Everything else must go out as its own considered release.
+// the one exception: it lives there permanently between releases, so it is allowed
+// to sit under the designer commit — and is held back at the push (see Phase 2).
+// Everything else must go out as its own considered release.
 const unpushed = git(WEB_ROOT, 'log', '--format=%h %s', 'origin/main..main')
   .split(NL).filter(Boolean);
 if (unpushed.length) {
@@ -261,8 +263,56 @@ git(WEB_ROOT, 'commit', '-m',
   + `${NL}latest_app_version.json are untouched. Both files sit outside sw.js's SHELL`
   + `${NL}precache, so a running app fetches them from the network and needs no refresh.`);
 
+// ⚠ PUSH ONLY THE DESIGNER COMMIT, never the app's standing pre-bump beneath it.
+// Pushing local main as-is carried that pre-bump out with every keyguard version
+// (v91, v92): the live app.html then claimed the NEXT release while running this
+// one, so About showed a number that did not exist yet, and when that release
+// really shipped the app's update check believed it was already current and did
+// not refresh (Ken, 3 Oct 2026). So the commit that goes out is rebuilt on top of
+// what is live, holding the designer files alone; local main is then re-stacked
+// as live + pre-bump, with exactly the files on disk it had before.
 plan('PUSH the web app repo — this is the push clinicians actually receive');
-git(WEB_ROOT, 'push', 'origin', 'main');
+plan('  (the designer files alone; the app\'s unreleased pre-bump stays local)');
+if (!DRY) {
+  const D       = git(WEB_ROOT, 'rev-parse', 'HEAD');
+  const live    = git(WEB_ROOT, 'rev-parse', 'origin/main');
+  const between = git(WEB_ROOT, 'rev-list', '--reverse', `${live}..${D}^`).split(NL).filter(Boolean);
+  if (!between.length) {
+    git(WEB_ROOT, 'push', 'origin', 'main');      // nothing to hold back
+  } else {
+    const tmpIndex = join(WEB_ROOT, '.git', 'release-designer.index');
+    const env = { ...process.env, GIT_INDEX_FILE: tmpIndex };
+    const run = (args, input) => execFileSync('git', args,
+      { cwd: WEB_ROOT, encoding: 'utf8', env, input }).trim();
+    try {
+      run(['read-tree', live]);
+      run(['apply', '--cached', '--binary'], git(WEB_ROOT, 'diff', '--binary', `${D}^`, D) + NL);
+      const tree = run(['write-tree']);
+      const msg  = git(WEB_ROOT, 'log', '-1', '--format=%B', D);
+      const P = execFileSync('git', ['commit-tree', tree, '-p', live, '-F', '-'],
+        { cwd: WEB_ROOT, encoding: 'utf8', input: msg }).trim();
+      git(WEB_ROOT, 'push', 'origin', `${P}:refs/heads/main`);
+      // Re-stack local main: live designer commit, then the held-back commits.
+      // Their combined tree is D's tree, so the files on disk do not change.
+      let parent = P;
+      for (const c of between) {
+        const cmsg = git(WEB_ROOT, 'log', '-1', '--format=%B', c);
+        // Tree = parent's tree plus this commit's own change.
+        run(['read-tree', parent]);
+        run(['apply', '--cached', '--binary'], git(WEB_ROOT, 'diff', '--binary', `${c}^`, c) + NL);
+        parent = execFileSync('git', ['commit-tree', run(['write-tree']), '-p', parent, '-F', '-'],
+          { cwd: WEB_ROOT, encoding: 'utf8', input: cmsg }).trim();
+      }
+      if (git(WEB_ROOT, 'rev-parse', `${parent}^{tree}`) !== git(WEB_ROOT, 'rev-parse', `${D}^{tree}`)) {
+        die(`the designer file is pushed and live, but re-stacking local main came out`
+          + `${NL}  different from before. Local main was left as it was (${D.slice(0, 7)}); tell Ken.`);
+      }
+      git(WEB_ROOT, 'update-ref', 'refs/heads/main', parent, D);
+    } finally {
+      try { unlinkSync(tmpIndex); } catch { /* never created */ }
+    }
+  }
+}
 
 // Don't declare the release done on a push alone — that is precisely the mistake
 // this command exists to prevent. GitHub Pages serves the new bytes within a few
