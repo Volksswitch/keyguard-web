@@ -391,6 +391,8 @@
   #oge-bar { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
   #oge-bar button { padding: 3px 10px; font-size: 12px; cursor: pointer; }
   #oge-bar button:disabled { color: #aaa; cursor: default; }
+  #oge-bar button.on { background: #cfe0f5; border-color: #6a8fc0; }
+  #viewport.oge-drawing, #viewport.oge-drawing canvas { cursor: crosshair; }
   #oge-blocked { display: none; padding: 10px; line-height: 1.5; color: #555; }
   #openings-panel.eye.oge-blocked #oge-blocked { display: block; }
   #openings-panel.eye.oge-blocked #oge-bar { display: none; }
@@ -856,6 +858,7 @@
     <div id="oge-bar">
       <button id="oge-add-rect" type="button">+ Rectangle</button>
       <button id="oge-add-circ" type="button">+ Circle</button>
+      <button id="oge-add-ridge" type="button" title="Then click on the keyguard for a 10 mm ridge, or drag to draw one">+ Ridge</button>
       <button id="oge-del" type="button" title="Delete the selected opening(s)">Delete</button>
       <button id="oge-undo" type="button" title="Undo the last change (Ctrl+Z)">Undo</button>
       <button id="oge-fit" type="button" title="Look at the keyguard face-on again">Face on</button>
@@ -1585,6 +1588,12 @@ const RELEASE_NOTES = {
   ],
   "111": [
     "Saved designs are no longer lost when you set up a folder that has a presets file but no keyguard designer file. If that file was named anything other than the app's own pattern — for example keyguard.json — setting up the folder left it with its old name, and the project then opened with only the design default values, as though you had no saved designs at all. The app now renames whatever presets file it finds to go with the new keyguard designer file, so your designs are there when the project opens. In the rare case of a folder holding more than one, the first one found is used."
+  ],
+  "112": [
+    "You can now add ridges to the screen by eye. The by eye tab of Custom Openings has a new + Ridge button. Press it, then click on the keyguard for a 10 mm horizontal ridge starting where you clicked, or press and drag to draw one from that point in the direction you drag, in steps of 45°. Every ridge is 2 mm thick and 2 mm tall, and is built the same way as a ridge written in your openings-and-additions file.",
+    "Working with a ridge works the way it does for openings. Click a ridge to select it — you don't have to hit it exactly — and a handle appears at each end. Drag a handle to lengthen, shorten or swing that end, again in steps of 45°, or drag the middle to move it. Copying with Ctrl, deleting, Shift-click, the arrow keys and Ctrl+Z all work as they do for rectangles and circles, and a ridge can be dragged off the screen the same way. To make several ridges alike, copy one.",
+    "Ridges are on the pixels or millimeters tab too. They are listed with your screen openings, with a new angle column. A ridge's x and y are its left end, or its bottom end if it stands upright — the same rule the openings-and-additions file uses.",
+    "Custom Openings no longer throws away what it can't show. If you had typed something into the custom openings field yourself that the panel can't draw — text, an SVG, a sloped edge, a ridge of another size — clicking Save used to remove it. It is now kept exactly as you typed it; the panel tells you it is there, and you still change it in the Customizer field itself."
   ]
 };
 // @@RELEASE_NOTES_END@@
@@ -7012,10 +7021,12 @@ document.querySelectorAll('#settings-cats .cat').forEach(c => {
 //
 // The panel only ever reads and writes the SIMPLE subset of that format —
 // rectangles ("r") and circles ("c") that cut straight through (cut/build = 0,
-// no slopes, no surface, no depth override). Everything else in those fields
-// (text, SVG, ridges, build-ups…) is reported as unsupported and left to the
-// clinician to edit in the Customizer field itself; Save would drop it, which
-// is why the warning says so and Cancel is the way out.
+// no slopes, no surface, no depth override), and on the screen, straight
+// "ridge" rows 2 mm thick and 2 mm tall at a multiple of 45°, anchored at
+// their left end ("L"). Everything else in those fields (text, SVG, other
+// ridges, build-ups…) is reported as beyond the panel and KEPT: written back
+// exactly as it was typed, after the rows the panel manages. (Until release
+// 112 Save dropped it.)
 //
 // Positions are CENTRE-anchored (the V2 "c" anchor). A hand-written row with
 // no anchor is corner-anchored, so it is converted to a centre on load — the
@@ -7028,7 +7039,7 @@ const ogWarnEl = document.getElementById('openings-warn');
 const ogMsgEl  = document.getElementById('openings-msg');
 const ogSaveBtn = document.getElementById('openings-save');
 
-// {rows, error, dropped, converted} per grid, plus the pre-edit field values.
+// {rows, kept, error, converted} per grid, plus the pre-edit field values.
 let ogState = null;
 
 function ogFieldInput(name) {
@@ -7067,15 +7078,19 @@ function parseOAText(text) {
     return parseScalar();
   }
   function parseList() {
+    const start = i;
     i++;                                   // consume '['
     const out = []; out.isList = true;
+    // The row exactly as written, so one the panel can't edit can be written
+    // back character for character rather than rebuilt from what was parsed.
+    const done = () => { out.raw = s.slice(start, i); return out; };
     ws();
-    if (s[i] === ']') { i++; return out; }
+    if (s[i] === ']') { i++; return done(); }
     for (;;) {
       out.push(parseValue());
       ws();
       if (s[i] === ',') { i++; continue; }
-      if (s[i] === ']') { i++; return out; }
+      if (s[i] === ']') { i++; return done(); }
       throw new Error('expected "," or "]"');
     }
   }
@@ -7141,11 +7156,102 @@ function parseOAText(text) {
 const ogStr = t => (t && typeof t.s === 'string') ? t.s : null;
 const ogNum = t => (t && typeof t.n === 'number') ? t.n : null;
 
+// Ridges are the keyguard file's straight "ridge" addition at one fixed size:
+// 2 mm thick and 2 mm tall (Ken, 15 Oct 2026). Their x,y is the LEFT end of the
+// ridge — the bottom end for a vertical one — which is the "L" anchor the
+// openings file uses, so a ridge only ever points right, up-right, up or
+// down-right: 0, 45, 90 or -45 degrees.
+const OG_RIDGE_MM = 2;
+const OG_RIDGE_ANGLES = [0, 45, 90, -45];
+
+// Clinician units per millimetre for the screen grid, or null when it can't be
+// known (pixels, with a keyguard.scad too old to report the screen in pixels).
+function ogScreenPerMM() {
+  const vals = currentFormValues();
+  if (vals.unit_of_measure_for_screen === 'mm') return 1;
+  const d = project && project.dims;
+  return (d && d.swp > 0 && d.swm > 0) ? d.swp / d.swm : null;
+}
+
+// A ridge row the panel can manage, or null. Only the ridges this panel itself
+// makes qualify; a thicker one, a centre-anchored one or one at another angle
+// is somebody's hand-typed design and is kept exactly as written.
+function ogSimplifyRidge(row, perMM) {
+  if (!perMM || row.length < 14) return null;
+  const x = ogNum(row[5]), y = ogNum(row[6]), rh = ogNum(row[7]);
+  const len = ogNum(row[10]), th = ogNum(row[11]);
+  if ([x, y, rh, len, th].some(v => v === null) || !(len > 0)) return null;
+  const anchor = ogStr(row[8]), surface = ogStr(row[9]);
+  if (anchor === null || !['', 'L', 'l'].includes(anchor)) return null;
+  if (surface === null || !['', 'T', 't'].includes(surface)) return null;
+  const near2 = v => Math.abs(v / perMM - OG_RIDGE_MM) <= 0.05;
+  if (!near2(rh) || !near2(th)) return null;
+  const es = row[12], sp = row[13];
+  if (!es || !es.isList || es.length) return null;
+  if (!sp || !sp.isList || sp.length !== 1 || ogNum(sp[0]) === null) return null;
+  // 315 and -45 are the same direction; the panel writes -45.
+  const a = ((ogNum(sp[0]) % 360) + 360) % 360;
+  const ang = a === 315 ? -45 : a;
+  if (!OG_RIDGE_ANGLES.includes(ang)) return null;
+  const id = ogStr(row[0]) !== null ? ogStr(row[0]) : ogNum(row[0]);
+  if (id === null) return null;
+  return { id, shape: 'ridge', h: 0, w: 0, cr: 0, x, y, len, ang, th, rh };
+}
+
+// A new ridge's fixed thickness and height, in the clinician's unit.
+function ogRidgeSize(row, perMM) {
+  row.th = OG_RIDGE_MM * perMM;
+  row.rh = OG_RIDGE_MM * perMM;
+  return row;
+}
+
+// The shortest ridge the keyguard file will build (1 mm), in the clinician's
+// unit and rounded UP to the precision the panel writes, so it never lands a
+// hair under.
+function ogRidgeMinLen(perMM, dp) {
+  const f = 10 ** dp;
+  return Math.ceil(perMM * f - 1e-9) / f;
+}
+
+// The shape dropdown on the grid tab. Rectangles and circles share the same
+// numbers; a ridge does not, so a change to or from one carries its size and
+// place across: a ridge is laid horizontally through where the opening's
+// centre was, and an opening is centred where the ridge's middle was. False if
+// it can't be done (pixels, with the pixel size of the screen unknown).
+function ogChangeShape(row, to) {
+  if (to === row.shape) return true;
+  const perMM = ogScreenPerMM();
+  if (to === 'ridge' || row.shape === 'ridge') {
+    if (!perMM) return false;
+    const dp = ogState.screenUnit === 'px' ? 0 : 1;
+    const down = currentFormValues().starting_corner_for_screen_measurements !== 'lower-left';
+    if (to === 'ridge') {
+      // A new blank row has no size yet: it becomes the standard 10 mm ridge.
+      const src = row.shape === 'c' ? row.h : row.w;
+      const len = src > 0 ? Math.max(src, ogRidgeMinLen(perMM, dp)) : 10 * perMM;
+      row.len = parseFloat(len.toFixed(dp));
+      row.x = parseFloat((row.x - row.len / 2).toFixed(dp));
+      row.ang = 0;
+      row.h = 0; row.w = 0; row.cr = 0;
+      ogRidgeSize(row, perMM);
+    } else {
+      const rad = row.ang * Math.PI / 180;
+      row.x = parseFloat((row.x + Math.cos(rad) * row.len / 2).toFixed(dp));
+      row.y = parseFloat((row.y + (down ? -1 : 1) * Math.sin(rad) * row.len / 2).toFixed(dp));
+      row.h = row.len; row.w = row.len; row.cr = 0;
+      delete row.len; delete row.ang; delete row.th; delete row.rh;
+    }
+  }
+  row.shape = to;
+  return true;
+}
+
 // Reduce one parsed row to the simple {shape,h,w,cr,x,y} the grid can edit, or
 // null if the row uses anything the panel doesn't model.
-function ogSimplify(row, grid, screenOrigin) {
+function ogSimplify(row, grid, screenOrigin, perMM) {
   if (!row || !row.isList || row.length < 7) return null;
   const shape = ogStr(row[1]);
+  if (shape === 'ridge') return grid === 'screen' ? ogSimplifyRidge(row, perMM) : null;
   if (shape !== 'r' && shape !== 'c') return null;
 
   const h = ogNum(row[2]), w = ogNum(row[3]), cr = ogNum(row[4]);
@@ -7196,28 +7302,39 @@ const ogFmt = v => String(Number(v.toFixed(4)));   // 2.5000000001 → 2.5
 // One subvector per opening, comma-separated, with a trailing comma — the same
 // shape a clinician writes by hand. No outer vector. `highlighted` is the set of
 // row indexes to mark with a "#" ID; any number of them may be highlighted.
-function ogSerialize(rows, highlighted) {
-  if (!rows.length) return '';
+// `kept` is the rows the panel can't edit, as typed, written back after its own.
+function ogSerialize(rows, highlighted, kept = []) {
   return rows.map((r, idx) => {
     const rawId = highlighted.has(idx) ? '#' : r.id;
     const id = typeof rawId === 'string' ? `"${rawId.replace(/"/g, '\\"')}"` : String(rawId);
+    if (r.shape === 'ridge') {
+      // The keyguard file's straight ridge: height in the cut/build column,
+      // then length, thickness and the angle as its one special parameter.
+      return `[${id},"ridge",0,0,0,${ogFmt(r.x)},${ogFmt(r.y)},${ogFmt(r.rh)},"L","",` +
+             `${ogFmt(r.len)},${ogFmt(r.th)},[],[${r.ang}]],`;
+    }
     const w  = r.shape === 'c' ? 0 : r.w;
     const cr = r.shape === 'c' ? 0 : r.cr;
     return `[${id},"${r.shape}",${ogFmt(r.h)},${ogFmt(w)},${ogFmt(cr)},` +
            `${ogFmt(r.x)},${ogFmt(r.y)},0,"c","",0,0,[],[]],`;
-  }).join('');
+  }).join('') + kept.map(raw => `${raw},`).join('');
 }
 
 // ---- Grid rendering ------------------------------------------------------
 const OG_HEADERS = ['shape', 'height', 'width', 'corner radius', 'x', 'y', '', ''];
+const OG_HEADERS_SCREEN = ['shape', 'height', 'width / length', 'corner radius', 'angle',
+                           'x', 'y', '', ''];
 
 function ogRenderGrid(grid) {
   const st = ogState[grid];
   const table = document.getElementById(grid === 'screen' ? 'og-screen' : 'og-case');
   table.innerHTML = '';
 
+  // Ridges are screen-only, so only the screen grid has an angle column.
+  const isScreen = grid === 'screen';
+  const headers = isScreen ? OG_HEADERS_SCREEN : OG_HEADERS;
   const head = document.createElement('tr');
-  for (const h of OG_HEADERS) {
+  for (const h of headers) {
     const th = document.createElement('th');
     th.textContent = h;
     head.appendChild(th);
@@ -7228,7 +7345,7 @@ function ogRenderGrid(grid) {
   if (!st.rows.length) {
     const tr = document.createElement('tr');
     const td = document.createElement('td');
-    td.colSpan = OG_HEADERS.length;
+    td.colSpan = headers.length;
     td.className = 'og-empty';
     td.textContent = 'No openings.';
     tr.appendChild(td);
@@ -7248,15 +7365,17 @@ function ogRenderGrid(grid) {
 
     const shapeTd = document.createElement('td');
     const sel = document.createElement('select');
-    for (const [val, label] of [['r', 'rectangle'], ['c', 'circle']]) {
+    const shapes = [['r', 'rectangle'], ['c', 'circle']];
+    if (isScreen) shapes.push(['ridge', 'ridge']);
+    for (const [val, label] of shapes) {
       const o = document.createElement('option');
       o.value = val; o.textContent = label;
       sel.appendChild(o);
     }
     sel.value = row.shape;
     sel.addEventListener('change', () => {
-      row.shape = sel.value;
-      ogRenderGrid(grid);        // width/corner enable-state follows the shape
+      if (!ogChangeShape(row, sel.value)) { sel.value = row.shape; return; }
+      ogRenderGrid(grid);        // which boxes are live follows the shape
       ogPreview();
     });
     shapeTd.appendChild(sel);
@@ -7264,22 +7383,41 @@ function ogRenderGrid(grid) {
 
     // A circle takes its diameter from the height column, so its width and
     // corner radius are inert — grey them out rather than let a clinician type
-    // a value that the .scad will silently ignore.
+    // a value that the .scad will silently ignore. A ridge's height is fixed,
+    // so it is shown but greyed; its length goes in the width column.
     const isCircle = row.shape === 'c';
-    for (const [key, disabled, minZero] of [
-      ['h',  false,     true],
-      ['w',  isCircle,  true],
-      ['cr', isCircle,  true],
-      ['x',  false,     false],
-      ['y',  false,     false],
-    ]) {
+    const isRidge  = row.shape === 'ridge';
+    const cols = [
+      ['h',  isRidge,             true],
+      [isRidge ? 'len' : 'w', isCircle, true],
+      ['cr', isCircle || isRidge, true],
+    ];
+    if (isScreen) cols.push(['ang', !isRidge, false]);
+    cols.push(['x', false, false], ['y', false, false]);
+    for (const [key, disabled, minZero] of cols) {
       const td = document.createElement('td');
+      if (key === 'ang') {
+        // Only the four directions a left-anchored ridge can point.
+        const a = document.createElement('select');
+        a.disabled = disabled;
+        for (const v of (disabled ? [''] : OG_RIDGE_ANGLES)) {
+          const o = document.createElement('option');
+          o.value = String(v); o.textContent = v === '' ? '' : `${v}°`;
+          a.appendChild(o);
+        }
+        if (!disabled) a.value = String(row.ang);
+        a.addEventListener('change', () => { row.ang = Number(a.value); ogPreview(); });
+        td.appendChild(a);
+        tr.appendChild(td);
+        continue;
+      }
       const inp = document.createElement('input');
       inp.type = 'number';
       inp.step = step;
       if (minZero) inp.min = 0;
       inp.disabled = disabled;
-      inp.value = disabled ? (0).toFixed(decimals) : row[key].toFixed(decimals);
+      inp.value = (isRidge && key === 'h') ? row.rh.toFixed(decimals)
+                : disabled ? (0).toFixed(decimals) : row[key].toFixed(decimals);
 
       // The viewport follows the value the clinician has FINISHED with: it
       // re-renders on blur (focus moved elsewhere) or Enter, never on 'change'.
@@ -7303,6 +7441,9 @@ function ogRenderGrid(grid) {
         if (!Number.isFinite(v)) v = 0;
         if (minZero && v < 0) v = 0;       // height/width/corner can't be negative
         v = parseFloat(v.toFixed(decimals));
+        // The keyguard file skips a ridge shorter than a millimetre — with only
+        // a console warning — so the box won't go below one.
+        if (key === 'len') v = Math.max(v, ogRidgeMinLen(ogScreenPerMM() || 1, decimals));
         inp.value = v.toFixed(decimals);
         row[key] = v;
         inp.classList.remove('pending');
@@ -7364,11 +7505,11 @@ function ogRenderWarnings() {
                 `this panel can't edit it. Press Cancel to leave it untouched.`);
       continue;
     }
-    if (st.dropped) {
-      bits.push(`<b>${field}</b> has ${st.dropped} opening(s) this panel can't show — ` +
-                `they use features beyond a simple rectangle or circle (text, an SVG, a ridge, ` +
-                `a slope, a raised addition…). <b>Saving will remove them.</b> ` +
-                `Press Cancel to keep them and edit that field directly instead.`);
+    if (st.kept.length) {
+      bits.push(`<b>${field}</b> has ${st.kept.length} item(s) this panel can't show — ` +
+                `they use features beyond what it draws (text, an SVG, a slope, a raised ` +
+                `addition, a ridge of another size…). They are <b>kept as they are</b> when ` +
+                `you Save; to change them, edit that field in the Customizer.`);
     }
     if (st.converted) {
       bits.push(`<b>${field}</b>: ${st.converted} opening(s) were measured from their lower-left ` +
@@ -7410,7 +7551,7 @@ function ogFieldText(forPreview = false) {
       ? new Set([...st.hl, ...st.rows.keys()])
       : st.hl;
     out[grid === 'screen' ? 'my_screen_openings' : 'my_case_openings'] =
-      ogSerialize(st.rows, hl);
+      ogSerialize(st.rows, hl, st.kept);
   }
   return out;
 }
@@ -7503,6 +7644,13 @@ function ogConvertScreenUnits(from, to) {
   if (ogPanel.classList.contains('eye')) ogePush();
   for (const row of ogState.screen.rows) {
     row.x = rp(row.x, insetX); row.y = rp(row.y, insetY);
+    if (row.shape === 'ridge') {
+      // Thickness and height are a fixed 2 mm, so they are re-derived exactly
+      // rather than scaled and rounded.
+      row.len = Math.max(ogRidgeMinLen(to === 'mm' ? 1 : perMM, dp), r(row.len));
+      ogRidgeSize(row, to === 'mm' ? 1 : perMM);
+      continue;
+    }
     row.h = Math.max(step, r(row.h));
     if (row.shape === 'c') { row.w = 0; row.cr = 0; continue; }
     row.w  = Math.max(step, r(row.w));
@@ -7569,6 +7717,18 @@ let ogeDrag    = null;      // the gesture in progress, or null
 let ogeGeomKey = null;      // last-drawn screen size, to spot a unit change
 let ogeDragPendingDrop = null;   // shift-clicked an already-selected opening
 let ogeKeyRun = null;            // arrow keys held down: one undo step per run
+let ogeDrawing = false;          // + Ridge pressed: the next press draws one
+
+// + Ridge arms a single ridge, as PowerPoint's line tool does: the next press
+// on the keyguard draws it, and the tab goes straight back to normal, where a
+// drag on empty keyguard turns the model again. Pressing the button a second
+// time, or Escape, stands it down without drawing.
+function ogeSetDrawing(on) {
+  ogeDrawing = !!on;
+  const btn = document.getElementById('oge-add-ridge');
+  if (btn) btn.classList.toggle('on', ogeDrawing);
+  viewport.classList.toggle('oge-drawing', ogeDrawing);
+}
 
 // How far one tap of an arrow key moves an opening, in MILLIMETRES — converted
 // to the clinician's unit at the time, so a tap moves the opening the same real
@@ -7675,7 +7835,18 @@ function ogeBlockedText() {
 // the clinician's corner is half the measured rectangle (owm x ohm) away in each
 // direction. Only the y axis differs between the two starting corners: an
 // upper-left origin counts downwards.
+//
+// A ridge's model is its anchor (the left end) in cx/cy, its length in
+// millimetres and its angle — so moving and nudging, which only shift cx/cy,
+// treat it exactly as they treat an opening.
 function ogeToModel(row, g) {
+  if (row.shape === 'ridge') {
+    const cx = -g.owm / 2 + row.x / g.perMM;
+    const cy = g.origin === 'upper-left'
+      ?  g.ohm / 2 - row.y / g.perMM
+      : -g.ohm / 2 + row.y / g.perMM;
+    return { cx, cy, len: row.len / g.perMM, ang: row.ang, isRidge: true };
+  }
   const w = (row.shape === 'c' ? row.h : row.w) / g.perMM;
   const h = row.h / g.perMM;
   const cx = -g.owm / 2 + row.x / g.perMM;
@@ -7687,6 +7858,7 @@ function ogeToModel(row, g) {
 function ogeFromModel(row, m, g) {
   row.x = (m.cx + g.owm / 2) * g.perMM;
   row.y = (g.origin === 'upper-left' ? (g.ohm / 2 - m.cy) : (m.cy + g.ohm / 2)) * g.perMM;
+  if (row.shape === 'ridge') { row.len = m.len * g.perMM; row.ang = m.ang; return; }
   if (row.shape === 'c') row.h = Math.max(m.w, m.h) * g.perMM;
   else { row.w = m.w * g.perMM; row.h = m.h * g.perMM; row.cr = m.r * g.perMM; }
 }
@@ -7696,6 +7868,10 @@ function ogeFromModel(row, m, g) {
 function ogeRoundRow(row, g) {
   const r = v => parseFloat((v || 0).toFixed(g.dp));
   row.x = r(row.x); row.y = r(row.y);
+  if (row.shape === 'ridge') {
+    row.len = Math.max(ogRidgeMinLen(g.perMM, g.dp), r(row.len));
+    return;
+  }
   row.h = Math.max(g.step, r(row.h));
   if (row.shape === 'c') { row.w = 0; row.cr = 0; return; }
   row.w  = Math.max(g.step, r(row.w));
@@ -7741,7 +7917,29 @@ function ogeClearShapes() {
   }
 }
 
+// A ridge's two ends, in model space: [anchor, far end].
+function ogeRidgeEnds(m) {
+  const a = m.ang * Math.PI / 180;
+  return [{ x: m.cx, y: m.cy },
+          { x: m.cx + Math.cos(a) * m.len, y: m.cy + Math.sin(a) * m.len }];
+}
+// Its footprint's four corners — the line widened to the ridge's 2 mm.
+function ogeRidgeCorners(m) {
+  const a = m.ang * Math.PI / 180, t = OG_RIDGE_MM / 2;
+  const nx = -Math.sin(a) * t, ny = Math.cos(a) * t;
+  const [p, q] = ogeRidgeEnds(m);
+  return [[p.x - nx, p.y - ny], [q.x - nx, q.y - ny], [q.x + nx, q.y + ny], [p.x + nx, p.y + ny]];
+}
+
 function ogeShapeGeometry(m) {
+  if (m.isRidge) {
+    // Laid along +x from the anchor; the mesh is rotated into place.
+    const t = OG_RIDGE_MM / 2;
+    const s = new THREE.Shape();
+    s.moveTo(0, -t); s.lineTo(m.len, -t); s.lineTo(m.len, t); s.lineTo(0, t);
+    s.closePath();
+    return new THREE.ShapeGeometry(s);
+  }
   if (m.isCircle) return new THREE.CircleGeometry(Math.max(m.w, m.h) / 2, 64);
   const w = m.w, h = m.h;
   const r = Math.min(Math.max(m.r, 0), Math.min(w, h) / 2);
@@ -7792,6 +7990,7 @@ function ogeBuildShapes(g) {
       })
     );
     mesh.position.set(m.cx, m.cy, g.topZ);
+    if (m.isRidge) mesh.rotation.z = m.ang * Math.PI / 180;
     mesh.renderOrder = 2;
     mesh.userData.ogeIdx = idx;
     ogeGroup.add(mesh);
@@ -7855,8 +8054,12 @@ function ogeSyncHandles() {
     const row = ogState.screen.rows[idx];
     if (!row) continue;
     const m = ogeToModel(row, g);
-    const pts = [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([sx, sy]) => {
-      const p = ogeProject(m.cx + sx * m.w / 2, m.cy + sy * m.h / 2, g.topZ, rect);
+    const corners = m.isRidge
+      ? ogeRidgeCorners(m)
+      : [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([sx, sy]) =>
+          [m.cx + sx * m.w / 2, m.cy + sy * m.h / 2]);
+    const pts = corners.map(([x, y]) => {
+      const p = ogeProject(x, y, g.topZ, rect);
       return `${p.x + ox},${p.y + oy}`;
     });
     ogeOverlay.appendChild(ogeEl('polygon', { class: 'oge-outline', points: pts.join(' ') }));
@@ -7908,7 +8111,11 @@ function ogeRender() {
   if (ogeSel.size === 1) {
     const idx = [...ogeSel][0];
     const row = ogState.screen.rows[idx];
-    if (row) {
+    if (row && row.shape === 'ridge') {
+      // A line has a handle at each end and nothing else, as in PowerPoint.
+      const [a, b] = ogeRidgeEnds(ogeToModel(row, g));
+      ogeHandleDefs.push({ pos: 'a', x: a.x, y: a.y }, { pos: 'b', x: b.x, y: b.y });
+    } else if (row) {
       const m = ogeToModel(row, g);
       for (const pos of OGE_HANDLES) {
         const p = ogeHandleAt(m, pos);
@@ -7947,6 +8154,7 @@ function ogeRefresh() {
 function ogeTeardown() {
   ogeDrag = null;
   ogeKeyRun = null;
+  ogeSetDrawing(false);
   ogeClearShapes();
   ogeGroup.visible = false;
   ogeOverlay.classList.remove('on');
@@ -7975,7 +8183,28 @@ function ogePlanePoint(ev, g) {
 }
 
 // The topmost pink shape under the pointer, or null.
-function ogePick(ev) {
+//
+// Ridges are tried first, and by distance on screen rather than by what lies
+// under the pointer: a 2 mm ridge is a few pixels wide, far too thin to hit
+// reliably, so anything within OGE_RIDGE_PICK_PX of one counts as a hit
+// whatever the zoom. First because a ridge laid across an opening would
+// otherwise be unreachable underneath it.
+const OGE_RIDGE_PICK_PX = 8;
+function ogePick(ev, g) {
+  const rect = canvas.getBoundingClientRect();
+  const px = ev.clientX - rect.left, py = ev.clientY - rect.top;
+  let best = null, bestD = OGE_RIDGE_PICK_PX;
+  ogState.screen.rows.forEach((row, idx) => {
+    if (row.shape !== 'ridge') return;
+    const [a, b] = ogeRidgeEnds(ogeToModel(row, g))
+      .map(p => ogeProject(p.x, p.y, g.topZ, rect));
+    const vx = b.x - a.x, vy = b.y - a.y;
+    const L2 = vx * vx + vy * vy;
+    const t = L2 ? Math.max(0, Math.min(1, ((px - a.x) * vx + (py - a.y) * vy) / L2)) : 0;
+    const d = Math.hypot(px - (a.x + t * vx), py - (a.y + t * vy));
+    if (d <= bestD) { bestD = d; best = idx; }
+  });
+  if (best !== null) return best;
   ogeRay.setFromCamera(ogeNDC(ev), camera);
   const hits = ogeRay.intersectObjects(ogeGroup.children, false);
   return hits.length ? hits[0].object.userData.ogeIdx : null;
@@ -8026,6 +8255,29 @@ function ogeResize(row, drag, p, g) {
   ogeFromModel(row, m, g);
 }
 
+// Dragging one end of a ridge, with the other end held still. The ridge points
+// at the pointer in steps of 45°, and reaches as far along that direction as
+// the pointer has gone. Once it is placed, its anchor is whichever end is now
+// the LEFT one (the bottom one if it stands upright) — the rule the openings
+// file uses — so a ridge dragged out leftward is recorded from its far end.
+function ogeRidgeEnd(row, drag, p, g) {
+  const f = drag.fixed;
+  const dx = p.x - f.x, dy = p.y - f.y;
+  const step = Math.PI / 4;
+  let deg = Math.round(Math.atan2(dy, dx) / step) * 45;     // -180 … 180
+  const rad = deg * Math.PI / 180;
+  const minLen = ogRidgeMinLen(g.perMM, g.dp) / g.perMM;
+  const len = Math.max(minLen, dx * Math.cos(rad) + dy * Math.sin(rad));
+  let ax = f.x, ay = f.y;
+  if (!OG_RIDGE_ANGLES.includes(deg)) {
+    // Pointing left (or straight down): the far end is the left (bottom) one.
+    ax = f.x + Math.cos(rad) * len;
+    ay = f.y + Math.sin(rad) * len;
+    deg = deg > 0 ? deg - 180 : deg + 180;
+  }
+  ogeFromModel(row, { cx: ax, cy: ay, len, ang: deg }, g);
+}
+
 // Pointer down anywhere over the viewport. Taken in the capture phase on the
 // viewport container so that a gesture aimed at an opening is decided before
 // the orbit controls on the canvas below ever see it — miss an opening and the
@@ -8040,10 +8292,41 @@ viewport.addEventListener('pointerdown', ev => {
   const p = ogePlanePoint(ev, g);
   if (!p) return;
 
+  // + Ridge was pressed: this press draws one, wherever it lands — even on top
+  // of an opening. It starts life as the standard 10 mm horizontal ridge with
+  // its left end where the button went down, which is exactly what a click
+  // leaves behind; a drag then swings and stretches it from that point.
+  if (ogeDrawing) {
+    ogeSetDrawing(false);
+    ogePush();
+    const row = ogRidgeSize({ id: 0, shape: 'ridge', h: 0, w: 0, cr: 0, x: 0, y: 0,
+                              len: 0, ang: 0 }, g.perMM);
+    ogeFromModel(row, { cx: p.x, cy: p.y, len: 10, ang: 0 }, g);
+    ogeRoundRow(row, g);
+    ogState.screen.rows.push(row);
+    const idx = ogState.screen.rows.length - 1;
+    ogeSel = new Set([idx]);
+    ogeRender();
+    ogeStart(ev, {
+      kind: 'ridge-end', idx, g, start: p, fixed: { x: p.x, y: p.y },
+      moved: false, pushed: true, draw: { x: ev.clientX, y: ev.clientY },
+    });
+    return;
+  }
+
   if (what === 'handle' || what === 'radius') {
     const idx = [...ogeSel][0];
     const row = ogState.screen.rows[idx];
     if (!row) return;
+    if (row.shape === 'ridge') {
+      // Whichever end is grabbed, the OTHER end stays put.
+      const [a, b] = ogeRidgeEnds(ogeToModel(row, g));
+      ogeStart(ev, {
+        kind: 'ridge-end', idx, g, start: p, fixed: ev.target.dataset.pos === 'a' ? b : a,
+        moved: false, pushed: false,
+      });
+      return;
+    }
     ogeStart(ev, {
       kind: what === 'radius' ? 'radius' : 'resize',
       pos: ev.target.dataset.pos, idx, g, start: p, moved: false, pushed: false,
@@ -8052,7 +8335,7 @@ viewport.addEventListener('pointerdown', ev => {
     return;
   }
 
-  const idx = ogePick(ev);
+  const idx = ogePick(ev, g);
   if (idx === null) {
     // Empty keyguard: drop the selection, then let the event through so the
     // drag turns the model as it always has.
@@ -8123,6 +8406,10 @@ viewport.addEventListener('pointermove', ev => {
   const p = ogePlanePoint(ev, g);
   if (!p) return;
   let dx = p.x - ogeDrag.start.x, dy = p.y - ogeDrag.start.y;
+  // Drawing a ridge: a hand that wobbles a few pixels while clicking still
+  // means "click", and should leave the 10 mm ridge, not a stub at some angle.
+  if (!ogeDrag.moved && ogeDrag.draw &&
+      Math.hypot(ev.clientX - ogeDrag.draw.x, ev.clientY - ogeDrag.draw.y) < 6) return;
   if (!ogeDrag.moved) {
     // A gesture only counts — and only costs an undo step — once the pointer
     // has genuinely travelled. A twitch during a click is not a drag.
@@ -8138,6 +8425,9 @@ viewport.addEventListener('pointermove', ev => {
       const row = ogState.screen.rows[f.i];
       if (row) ogeFromModel(row, { ...f.model, cx: f.model.cx + dx, cy: f.model.cy + dy }, g);
     }
+  } else if (ogeDrag.kind === 'ridge-end') {
+    const row = ogState.screen.rows[ogeDrag.idx];
+    if (row) ogeRidgeEnd(row, ogeDrag, p, g);
   } else if (ogeDrag.kind === 'radius') {
     const row = ogState.screen.rows[ogeDrag.idx];
     if (row) {
@@ -8232,6 +8522,9 @@ function ogeDelete() {
 
 document.getElementById('oge-add-rect').addEventListener('click', () => ogeAdd('r'));
 document.getElementById('oge-add-circ').addEventListener('click', () => ogeAdd('c'));
+document.getElementById('oge-add-ridge').addEventListener('click', () => {
+  if (ogeGeom()) ogeSetDrawing(!ogeDrawing);
+});
 document.getElementById('oge-del').addEventListener('click', ogeDelete);
 document.getElementById('oge-undo').addEventListener('click', ogeUndoOne);
 document.getElementById('oge-fit').addEventListener('click', () => ogeFaceOn());
@@ -8345,6 +8638,9 @@ document.addEventListener('keydown', e => {
     ogeRender();
     return;
   }
+  if (e.key === 'Escape' && ogeDrawing) {
+    e.stopPropagation(); ogeSetDrawing(false); return;
+  }
   if (e.key === 'Escape' && ogeSel.size) {
     e.stopPropagation(); ogeSel = new Set(); ogeRender();
   }
@@ -8373,10 +8669,11 @@ function openOpenings() {
   ogState = {
     screenUnit: unit,
     previewed: false,
-    screen: { rows: [], error: null, dropped: 0, converted: 0, hl: new Set() },
-    case:   { rows: [], error: null, dropped: 0, converted: 0, hl: new Set() },
+    screen: { rows: [], kept: [], error: null, converted: 0, hl: new Set() },
+    case:   { rows: [], kept: [], error: null, converted: 0, hl: new Set() },
   };
 
+  const perMM = ogScreenPerMM();
   for (const grid of ['screen', 'case']) {
     const name = grid === 'screen' ? 'my_screen_openings' : 'my_case_openings';
     const el = ogFieldInput(name);
@@ -8385,8 +8682,8 @@ function openOpenings() {
     const st = ogState[grid];
     if (!parsed.ok) { st.error = parsed.error; continue; }
     for (const row of parsed.rows) {
-      const simple = ogSimplify(row, grid, origin);
-      if (!simple) { st.dropped++; continue; }
+      const simple = ogSimplify(row, grid, origin, perMM);
+      if (!simple) { st.kept.push(row.raw); continue; }
       if (simple.converted) st.converted++;
       // A saved "#" ID is a highlighted opening — reopen it highlighted. The
       // marker isn't an ID the clinician chose, so the row falls back to 0 and
