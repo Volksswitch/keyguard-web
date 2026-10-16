@@ -421,9 +421,13 @@
   #openings-footer .msg { color: #666; margin-right: auto; }
   #openings-footer button { padding: 4px 14px; font-size: 12px; cursor: pointer; }
 
-  /* ---------- Confirm (unsaved-changes) modal ---------- */
+  /* ---------- Confirm (unsaved-changes) modal ----------
+     Above everything else (z-index 1300): a question is always about what is
+     on screen, so it must never open underneath it. At 1100 it sat below the
+     Custom Openings panel (1200), and "discard your changes?" opened hidden
+     behind the very panel it was asking about (Ken, 16 Oct 2026). */
   #confirm-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.35);
-                     display: none; align-items: center; justify-content: center; z-index: 1100; }
+                     display: none; align-items: center; justify-content: center; z-index: 1300; }
   #confirm-overlay.open { display: flex; }
   #confirm-modal { background: #fafafa; border: 1px solid #888; border-radius: 4px;
                    width: 420px; max-width: 90vw; box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
