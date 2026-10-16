@@ -13,7 +13,7 @@ notes, because nothing at this address could have been missed yet.
 
 ## Unreleased (next release)
 
-- You can now round off a square corner of the keyguard by eye. The “by eye” tab of Custom Openings has a new + Rounded corner button. Press it and every square corner that points outward is ringed — on the keyguard's outside edge, or where openings meet inside it. Move the pointer near one and it lights up; click it to round that corner by 2 mm, or press and drag from it along an edge to choose how much. The app works out which way the corner points, so there is nothing to set.
+- You can now round off a 90-degree corner of the keyguard by eye. The “by eye” tab of Custom Openings has a new + Rounded corner button. Press it and every square corner that points outward is ringed — on the keyguard's outside edge, or where openings meet inside it. Move the pointer near one and it lights up; click it to round that corner by 2 mm, or press and drag from it along an edge to choose how much.
 
 - To change a rounded corner afterwards, click it and drag its yellow dot outward to round it more, or inward to round it less. Delete, Ctrl+Z and the arrow keys work as they do for openings. Rounded corners are also listed on the “pixels or millimeters” tab, where their size is in the corner radius column.
 
