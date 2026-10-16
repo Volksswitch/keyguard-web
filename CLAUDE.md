@@ -130,7 +130,7 @@ folder** — follow it exactly.
 - `CACHE_NAME` (in `sw.js`) is NOT pre-bumped. It moves only during the release
   ritual, to match. Currently `keyguard-v114`.
 - `latest_app_version.json` is NOT pre-bumped either — RELEASE-TIME ONLY, same
-  reason. Currently 101.
+  reason. Currently 114.
 
 **Numbering starts at 100 here.** Releases 3–21 belong to the old address.
 
