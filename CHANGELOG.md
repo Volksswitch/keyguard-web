@@ -19,6 +19,8 @@ notes, because nothing at this address could have been missed yet.
 
 - On the “pixels or millimeters” tab, the shape list now offers only rectangle and circle. An opening can no longer be turned into a ridge there, or a ridge into an opening — draw ridges with + Ridge on the “by eye” tab.
 
+- If you have added openings, ridges or rounded corners in Custom Openings and then press Cancel (or the ✕, or Escape) without saving, the app now asks before throwing them away. Choose Keep editing to go back to them.
+
 ## Release 112
 
 - You can now add ridges to the keyguard by eye. The “by eye” tab of Custom Openings has a new + Ridge button. Press it, then click on the keyguard for a 10 mm horizontal ridge starting where you clicked, or press and drag to draw one from that point in the direction you drag, in steps of 45°. Every ridge is 2 mm thick and 2 mm tall, and is built the same way as a ridge instruction written in your openings-and-additions file.
