@@ -202,11 +202,18 @@ chunk/merge/membrane phrases.
 
 ## Running it locally
 
-```
-python -m http.server 8000
-```
+Ken double-clicks **`serve.bat`**, which runs `scripts/serve.py` on port 8000 and
+opens `http://localhost:8000/app.html` itself once it is serving. Use that, not a
+bare `python -m http.server`: serve.py tells the browser never to keep a copy (so
+every load is the `app.html` on disk now — plain http.server let a fresh tab reuse
+an earlier copy), and it **refuses to start if another server already holds the
+port**, where plain http.server on Windows silently shares it and the browser may
+reach an old window, even one serving the retired sibling folder (16 Oct 2026).
+The preview server in `.claude/launch.json` uses the same script.
 
-then open `http://localhost:8000/app.html`. The File System Access API needs a
+⚠ **Two machines, one OneDrive.** An edit made on one machine reaches the other
+only once OneDrive has synced `app.html`. Serving on the other machine before
+that serves the old app, however fresh the server is. The File System Access API needs a
 secure origin — `localhost` or HTTPS. A `file://` URL kills the folder picker,
 the O&A auto-watch, saving presets in place, and IndexedDB persistence.
 

@@ -5,8 +5,7 @@
       "name": "kgweb-live",
       "runtimeExecutable": "python",
       "runtimeArgs": [
-        "-m",
-        "http.server",
+        "scripts/serve.py",
         "8077"
       ],
       "port": 8077
