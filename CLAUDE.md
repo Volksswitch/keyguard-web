@@ -6,7 +6,7 @@ Two project folders exist and they look nearly identical:
 
 | Folder | Repo | What it is |
 |---|---|---|
-| **`keyguard-web`** (this one) | `Volksswitch/keyguard-web` | **THE LIVE APP.** Serves `keyguard.volksswitch.org`. Release 101 public, 102 local. |
+| **`keyguard-web`** (this one) | `Volksswitch/keyguard-web` | **THE LIVE APP.** Serves `keyguard.volksswitch.org`. Release 114 public, 115 local. |
 | `keyguard-designer-web` (sibling) | `Volksswitch/keyguard-designer-web` | **RETIRED.** The old address `volksswitch.github.io/keyguard-designer-web/`, frozen at release 21. Gets no app updates and no keyguard updates, ever. |
 
 **Release numbers tell them apart instantly: ≥100 is here, ≤21 is the old one.**
@@ -125,10 +125,10 @@ folder** — follow it exactly.
 
 **Version numbering — the dev copy leads public by one.**
 - `APP_RELEASE` (in `app.html`) is pre-incremented at the END of each release, so a
-  dev build always reads one ahead of what is deployed. Currently **102** local,
-  **101** public.
+  dev build always reads one ahead of what is deployed. Currently **115** local,
+  **114** public.
 - `CACHE_NAME` (in `sw.js`) is NOT pre-bumped. It moves only during the release
-  ritual, to match. Currently `keyguard-v101`.
+  ritual, to match. Currently `keyguard-v114`.
 - `latest_app_version.json` is NOT pre-bumped either — RELEASE-TIME ONLY, same
   reason. Currently 101.
 
