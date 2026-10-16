@@ -13,6 +13,8 @@ notes, because nothing at this address could have been missed yet.
 
 ## Unreleased (next release)
 
+## Release 112
+
 - You can now add ridges to the keyguard by eye. The “by eye” tab of Custom Openings has a new + Ridge button. Press it, then click on the keyguard for a 10 mm horizontal ridge starting where you clicked, or press and drag to draw one from that point in the direction you drag, in steps of 45°. Every ridge is 2 mm thick and 2 mm tall, and is built the same way as a ridge instruction written in your openings-and-additions file.
 
 - Working with a ridge works the way it does for rectangular and circular openings. Click a ridge to select it — you don't have to hit it exactly — and a handle appears at each end. Drag a handle to lengthen, shorten or swing that end, again in steps of 45°, or drag the middle to move it. Copying with Ctrl, deleting, Shift-click, the arrow keys and Ctrl+Z all work as they do for rectangular and circular openings. To make several ridges alike, copy one. Press the Shift key while you drag the copy to keep them aligned.
