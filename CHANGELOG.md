@@ -13,13 +13,11 @@ notes, because nothing at this address could have been missed yet.
 
 ## Unreleased (next release)
 
-- **You can now add ridges to the screen by eye.** The by eye tab of Custom Openings has a new **+ Ridge** button. Press it, then click on the keyguard for a 10 mm horizontal ridge starting where you clicked, or press and drag to draw one from that point in the direction you drag, in steps of 45°. Every ridge is 2 mm thick and 2 mm tall, and is built the same way as a ridge written in your openings-and-additions file.
+- You can now add ridges to the keyguard by eye. The “by eye” tab of Custom Openings has a new + Ridge button. Press it, then click on the keyguard for a 10 mm horizontal ridge starting where you clicked, or press and drag to draw one from that point in the direction you drag, in steps of 45°. Every ridge is 2 mm thick and 2 mm tall, and is built the same way as a ridge instruction written in your openings-and-additions file.
 
-- **Working with a ridge works the way it does for openings.** Click a ridge to select it — you don't have to hit it exactly — and a handle appears at each end. Drag a handle to lengthen, shorten or swing that end, again in steps of 45°, or drag the middle to move it. Copying with Ctrl, deleting, Shift-click, the arrow keys and Ctrl+Z all work as they do for rectangles and circles, and a ridge can be dragged off the screen the same way. To make several ridges alike, copy one.
+- Working with a ridge works the way it does for rectangular and circular openings. Click a ridge to select it — you don't have to hit it exactly — and a handle appears at each end. Drag a handle to lengthen, shorten or swing that end, again in steps of 45°, or drag the middle to move it. Copying with Ctrl, deleting, Shift-click, the arrow keys and Ctrl+Z all work as they do for rectangular and circular openings. To make several ridges alike, copy one. Press the Shift key while you drag the copy to keep them aligned.
 
-- **Ridges are on the pixels or millimeters tab too.** They are listed with your screen openings, with a new **angle** column. A ridge's x and y are its left end, or its bottom end if it stands upright — the same rule the openings-and-additions file uses.
-
-- **Custom Openings no longer throws away what it can't show.** If you had typed something into the custom openings field yourself that the panel can't draw — text, an SVG, a sloped edge, a ridge of another size — clicking Save used to remove it. It is now kept exactly as you typed it; the panel tells you it is there, and you still change it in the Customizer field itself.
+- Ridges are on the “pixels or millimeters” tab too. They are listed with your screen openings, with a new angle column. A ridge's x and y are its left end, or its bottom end if it stands upright — the same rule the openings-and-additions file uses.
 
 ## Release 111
 
