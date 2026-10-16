@@ -1601,7 +1601,8 @@ const RELEASE_NOTES = {
   ],
   "113": [
     "You can now round off a square corner of the keyguard by eye. The “by eye” tab of Custom Openings has a new + Rounded corner button. Press it and every square corner that points outward is ringed — on the keyguard's outside edge, or where openings meet inside it. Move the pointer near one and it lights up; click it to round that corner by 2 mm, or press and drag from it along an edge to choose how much. The app works out which way the corner points, so there is nothing to set.",
-    "To change a rounded corner afterwards, click it and drag its yellow dot outward to round it more, or inward to round it less. Delete, Ctrl+Z and the arrow keys work as they do for openings. Rounded corners are also listed on the “pixels or millimeters” tab, where their size is in the corner radius column."
+    "To change a rounded corner afterwards, click it and drag its yellow dot outward to round it more, or inward to round it less. Delete, Ctrl+Z and the arrow keys work as they do for openings. Rounded corners are also listed on the “pixels or millimeters” tab, where their size is in the corner radius column.",
+    "On the “pixels or millimeters” tab, the shape list now offers only rectangle and circle. An opening can no longer be turned into a ridge there, or a ridge into an opening — draw ridges with + Ridge on the “by eye” tab."
   ]
 };
 // @@RELEASE_NOTES_END@@
@@ -7232,35 +7233,13 @@ function ogRidgeMinLen(perMM, dp) {
   return Math.ceil(perMM * f - 1e-9) / f;
 }
 
-// The shape dropdown on the grid tab. Rectangles and circles share the same
-// numbers; a ridge does not, so a change to or from one carries its size and
-// place across: a ridge is laid horizontally through where the opening's
-// centre was, and an opening is centred where the ridge's middle was. False if
-// it can't be done (pixels, with the pixel size of the screen unknown).
+// The shape dropdown on the grid tab: rectangle or circle, which share the same
+// numbers. Ridges and rounded corners are drawn on the by-eye tab and keep their
+// own shape here — turning an opening into a ridge from a list of numbers was
+// never needed (Ken, 16 Oct 2026).
 function ogChangeShape(row, to) {
   if (to === row.shape) return true;
-  const perMM = ogScreenPerMM();
-  if (to === 'ridge' || row.shape === 'ridge') {
-    if (!perMM) return false;
-    const dp = ogState.screenUnit === 'px' ? 0 : 1;
-    const down = currentFormValues().starting_corner_for_screen_measurements !== 'lower-left';
-    if (to === 'ridge') {
-      // A new blank row has no size yet: it becomes the standard 10 mm ridge.
-      const src = row.shape === 'c' ? row.h : row.w;
-      const len = src > 0 ? Math.max(src, ogRidgeMinLen(perMM, dp)) : 10 * perMM;
-      row.len = parseFloat(len.toFixed(dp));
-      row.x = parseFloat((row.x - row.len / 2).toFixed(dp));
-      row.ang = 0;
-      row.h = 0; row.w = 0; row.cr = 0;
-      ogRidgeSize(row, perMM);
-    } else {
-      const rad = row.ang * Math.PI / 180;
-      row.x = parseFloat((row.x + Math.cos(rad) * row.len / 2).toFixed(dp));
-      row.y = parseFloat((row.y + (down ? -1 : 1) * Math.sin(rad) * row.len / 2).toFixed(dp));
-      row.h = row.len; row.w = row.len; row.cr = 0;
-      delete row.len; delete row.ang; delete row.th; delete row.rh;
-    }
-  }
+  if ((to !== 'r' && to !== 'c') || (row.shape !== 'r' && row.shape !== 'c')) return false;
   row.shape = to;
   return true;
 }
@@ -7396,12 +7375,12 @@ function ogRenderGrid(grid) {
 
     const shapeTd = document.createElement('td');
     const sel = document.createElement('select');
-    // An outer arc belongs to the corner it was snapped to on the by-eye tab,
-    // so it can't be turned into anything else here — nor anything into one.
+    // A ridge or a rounded corner is shown under its own name and can't be
+    // turned into anything else here — nor can anything be turned into one.
     const rowIsArc = ogIsArc(row.shape);
-    const shapes = rowIsArc ? [[row.shape, 'rounded corner']] : [['r', 'rectangle'], ['c', 'circle']];
-    if (isScreen && !rowIsArc) shapes.push(['ridge', 'ridge']);
-    sel.disabled = rowIsArc;
+    const fixed = rowIsArc ? 'rounded corner' : row.shape === 'ridge' ? 'ridge' : null;
+    const shapes = fixed ? [[row.shape, fixed]] : [['r', 'rectangle'], ['c', 'circle']];
+    sel.disabled = !!fixed;
     for (const [val, label] of shapes) {
       const o = document.createElement('option');
       o.value = val; o.textContent = label;
