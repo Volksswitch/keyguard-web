@@ -1603,7 +1603,7 @@ const RELEASE_NOTES = {
     "You can now round off a square corner of the keyguard by eye. The “by eye” tab of Custom Openings has a new + Rounded corner button. Press it and every square corner that points outward is ringed — on the keyguard's outside edge, or where openings meet inside it. Move the pointer near one and it lights up; click it to round that corner by 2 mm, or press and drag from it along an edge to choose how much. The app works out which way the corner points, so there is nothing to set.",
     "To change a rounded corner afterwards, click it and drag its yellow dot outward to round it more, or inward to round it less. Delete, Ctrl+Z and the arrow keys work as they do for openings. Rounded corners are also listed on the “pixels or millimeters” tab, where their size is in the corner radius column.",
     "On the “pixels or millimeters” tab, the shape list now offers only rectangle and circle. An opening can no longer be turned into a ridge there, or a ridge into an opening — draw ridges with + Ridge on the “by eye” tab.",
-    "If you have added openings, ridges or rounded corners in Custom Openings and then press Cancel (or the ✕, or Escape) without saving, the app now asks before throwing them away. Choose Keep editing to go back to them."
+    "If you have changed anything in Custom Openings — added, moved, resized or deleted an opening, ridge or rounded corner — and then press Cancel (or the ✕, or Escape) without saving, the app now asks before throwing your changes away. Choose Keep editing to go back to them."
   ]
 };
 // @@RELEASE_NOTES_END@@
@@ -8533,7 +8533,6 @@ viewport.addEventListener('pointerdown', ev => {
     const m = { cx: c.x, cy: c.y, r: 2, sx: OG_ARC_DIRS[c.shape][0], sy: OG_ARC_DIRS[c.shape][1] };
     ogeFromModel(row, m, g);
     ogeRoundRow(row, g);
-    row.fresh = true;          // made on this visit: Cancel asks first
     ogState.screen.rows.push(row);
     const idx = ogState.screen.rows.length - 1;
     ogeSel = new Set([idx]);
@@ -8552,7 +8551,6 @@ viewport.addEventListener('pointerdown', ev => {
                               len: 0, ang: 0 }, g.perMM);
     ogeFromModel(row, { cx: p.x, cy: p.y, len: 10, ang: 0 }, g);
     ogeRoundRow(row, g);
-    row.fresh = true;          // made on this visit: Cancel asks first
     ogState.screen.rows.push(row);
     const idx = ogState.screen.rows.length - 1;
     ogeSel = new Set([idx]);
@@ -8608,7 +8606,7 @@ viewport.addEventListener('pointerdown', ev => {
     for (const i of src) {
       const r = ogState.screen.rows[i];
       if (!r) continue;
-      ogState.screen.rows.push({ ...r, id: 0, fresh: true });
+      ogState.screen.rows.push({ ...r, id: 0 });
       made.push(ogState.screen.rows.length - 1);
     }
     ogeSel = new Set(made);
@@ -8770,7 +8768,6 @@ function ogeAdd(shape) {
     ? { id: 0, shape: 'c', h: mm(10), w: 0, cr: 0, x: cx, y: cy }
     : { id: 0, shape: 'r', h: mm(10), w: mm(10), cr: mm(2), x: cx, y: cy };
   ogeRoundRow(row, g);
-  row.fresh = true;          // made on this visit: Cancel asks first
   ogState.screen.rows.push(row);
   ogeSel = new Set([ogState.screen.rows.length - 1]);
   ogeCommit(g);
@@ -8993,6 +8990,7 @@ function openOpenings() {
   ogeGeomKey = null;
   ogGridSize = null;
   ogPanel.classList.add('open');
+  ogState.baseline = ogContentKey();   // what Cancel compares against
   // Opens on the by-eye tab: placing an opening on the keyguard is the common
   // errand, and the numbers are one click away. Note this squares the view up
   // to face-on, since dragging a handle on a keyguard seen edge-on is
@@ -9029,27 +9027,31 @@ function saveOpenings() {
 }
 
 // Leaving without saving — Cancel, the ✕, Escape or the Custom Openings
-// button — throws away anything made on this visit, so when there is
-// something it asks first (Ken, 16 Oct 2026). Only NEW openings, ridges and
-// rounded corners count: those are the work a clinician would mind losing.
-// Undoing an addition takes it back off the count, since the undo history
-// restores rows without it.
+// button — throws away everything done on this visit, so when anything has
+// been added, moved, resized or deleted it asks first (Ken, 16 Oct 2026).
+//
+// "Changed" means the openings themselves differ from how they were when the
+// panel opened — the same test Save would write — so undoing back to the
+// start counts as no change. Highlighting doesn't count: it is a way of
+// looking at the openings, not an edit to them.
 let ogAskingToClose = false;
-function ogNewCount() {
-  if (!ogState) return 0;
-  return ['screen', 'case'].reduce((n, grid) =>
-    n + ogState[grid].rows.filter(r => r.fresh).length, 0);
+function ogContentKey() {
+  return ['screen', 'case'].map(grid => {
+    const st = ogState[grid];
+    return st.error ? '' : ogSerialize(st.rows, new Set(), st.kept);
+  }).join('\n');
+}
+function ogHasChanges() {
+  return !!ogState && ogState.baseline !== undefined && ogContentKey() !== ogState.baseline;
 }
 async function ogRequestClose() {
   if (!ogPanel.classList.contains('open') || ogAskingToClose) return;
-  const n = ogNewCount();
-  if (n) {
+  if (ogHasChanges()) {
     ogAskingToClose = true;
     const ok = await askConfirm({
-      title: 'Discard what you added?',
-      message: `You have added ${n === 1 ? 'something' : `${n} things`} in Custom Openings ` +
-               `that ${n === 1 ? 'has' : 'have'} not been saved. Closing without saving ` +
-               `throws ${n === 1 ? 'it' : 'them'} away.`,
+      title: 'Discard your changes?',
+      message: 'You have changes in Custom Openings that have not been saved. ' +
+               'Closing without saving throws them away.',
       ok: 'Discard', cancel: 'Keep editing',
     });
     ogAskingToClose = false;
@@ -9073,7 +9075,7 @@ document.querySelectorAll('.og-add').forEach(btn => {
     if (!ogState || ogState[grid].error) return;
     // ID 0 for a new opening: the field format wants an ID, nothing reads it,
     // and "#" is reserved for the highlight.
-    ogState[grid].rows.push({ id: 0, shape: 'r', h: 0, w: 0, cr: 0, x: 0, y: 0, fresh: true });
+    ogState[grid].rows.push({ id: 0, shape: 'r', h: 0, w: 0, cr: 0, x: 0, y: 0 });
     ogRenderGrid(grid);
   });
 });

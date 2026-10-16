@@ -19,7 +19,7 @@ notes, because nothing at this address could have been missed yet.
 
 - On the “pixels or millimeters” tab, the shape list now offers only rectangle and circle. An opening can no longer be turned into a ridge there, or a ridge into an opening — draw ridges with + Ridge on the “by eye” tab.
 
-- If you have added openings, ridges or rounded corners in Custom Openings and then press Cancel (or the ✕, or Escape) without saving, the app now asks before throwing them away. Choose Keep editing to go back to them.
+- If you have changed anything in Custom Openings — added, moved, resized or deleted an opening, ridge or rounded corner — and then press Cancel (or the ✕, or Escape) without saving, the app now asks before throwing your changes away. Choose Keep editing to go back to them.
 
 ## Release 112
 
