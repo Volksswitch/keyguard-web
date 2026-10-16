@@ -312,3 +312,9 @@ Report what you verified.
   bounds` from wasm32 address-space fragmentation. Workaround for clinicians:
   `Ctrl-Shift-R`. Real fix needs an openscad-wasm rebuild with `-sIMPORTED_MEMORY`
   so instances can be reused. Deferred pending that release.
+- **HEIC screenshots — considered and declined (16 Oct 2026).** HEIC is the iPhone/iPad
+  *camera's* photo format; device screenshots (button-press) are always saved as PNG,
+  which the app already reads. A HEIC file would only be a photo of a screen — angled,
+  glare, not to scale — so it is not a valid screenshot source. Not worth the ~1.5 MB
+  vendored libheif decoder Chrome/Edge would need. Do not re-open unless clinicians
+  are genuinely arriving with HEIC screenshots.
