@@ -410,6 +410,11 @@
                              pointer-events: auto; }
   #oge-overlay .oge-radius { fill: #ffd24d; stroke: #a08000; stroke-width: 1;
                              pointer-events: auto; cursor: move; }
+  /* + Outer arc: every square corner that can take one is ringed, and the one
+     the pointer is close enough to snap to is filled in. Display only — the
+     pointer is tested against the corners in code, not by hitting the rings. */
+  #oge-overlay .oge-corner { fill: none; stroke: #06c; stroke-width: 1.5; }
+  #oge-overlay .oge-corner.hot { fill: #06c; fill-opacity: 0.35; stroke-width: 2.5; }
 
   #openings-footer { padding: 8px 12px; border-top: 1px solid #ccc; background: #f0f0f0;
                      display: flex; align-items: center; gap: 8px; }
@@ -859,6 +864,7 @@
       <button id="oge-add-rect" type="button">+ Rectangle</button>
       <button id="oge-add-circ" type="button">+ Circle</button>
       <button id="oge-add-ridge" type="button" title="Then click on the keyguard for a 10 mm ridge, or drag to draw one">+ Ridge</button>
+      <button id="oge-add-arc" type="button" title="Then click one of the ringed square corners to round it, or drag from it to set how much">+ Rounded corner</button>
       <button id="oge-del" type="button" title="Delete the selected opening(s)">Delete</button>
       <button id="oge-undo" type="button" title="Undo the last change (Ctrl+Z)">Undo</button>
     </div>
@@ -1592,6 +1598,10 @@ const RELEASE_NOTES = {
     "You can now add ridges to the keyguard by eye. The “by eye” tab of Custom Openings has a new + Ridge button. Press it, then click on the keyguard for a 10 mm horizontal ridge starting where you clicked, or press and drag to draw one from that point in the direction you drag, in steps of 45°. Every ridge is 2 mm thick and 2 mm tall, and is built the same way as a ridge instruction written in your openings-and-additions file.",
     "Working with a ridge works the way it does for rectangular and circular openings. Click a ridge to select it — you don't have to hit it exactly — and a handle appears at each end. Drag a handle to lengthen, shorten or swing that end, again in steps of 45°, or drag the middle to move it. Copying with Ctrl, deleting, Shift-click, the arrow keys and Ctrl+Z all work as they do for rectangular and circular openings. To make several ridges alike, copy one. Press the Shift key while you drag the copy to keep them aligned.",
     "Ridges are on the “pixels or millimeters” tab too. They are listed with your screen openings, with a new angle column. A ridge's x and y are its left end, or its bottom end if it stands upright — the same rule the openings-and-additions file uses."
+  ],
+  "113": [
+    "You can now round off a square corner of the keyguard by eye. The “by eye” tab of Custom Openings has a new + Rounded corner button. Press it and every square corner that points outward is ringed — on the keyguard's outside edge, or where openings meet inside it. Move the pointer near one and it lights up; click it to round that corner by 2 mm, or press and drag from it along an edge to choose how much. The app works out which way the corner points, so there is nothing to set.",
+    "To change a rounded corner afterwards, click it and drag its yellow dot outward to round it more, or inward to round it less. Delete, Ctrl+Z and the arrow keys work as they do for openings. Rounded corners are also listed on the “pixels or millimeters” tab, where their size is in the corner radius column."
   ]
 };
 // @@RELEASE_NOTES_END@@
@@ -7162,6 +7172,17 @@ const ogNum = t => (t && typeof t.n === 'number') ? t.n : null;
 const OG_RIDGE_MM = 2;
 const OG_RIDGE_ANGLES = [0, 45, 90, -45];
 
+// Outer arcs are the keyguard file's "oa1" … "oa4": a square corner of the
+// keyguard rounded off by cutting the plastic outside a quarter circle. x,y is
+// the corner's own point, the corner-radius column is the arc's radius, and the
+// number says which way the corner points. Here each is held as the direction
+// the PLASTIC runs from the corner, in model space (x right, y up): "oa1" is a
+// corner whose plastic lies to the left and below, i.e. one pointing up-right.
+const OG_ARC_DIRS = { oa1: [-1, -1], oa2: [-1, 1], oa3: [1, 1], oa4: [1, -1] };
+const ogIsArc = shape => Object.prototype.hasOwnProperty.call(OG_ARC_DIRS, shape);
+const ogArcShape = (sx, sy) =>
+  Object.keys(OG_ARC_DIRS).find(k => OG_ARC_DIRS[k][0] === sx && OG_ARC_DIRS[k][1] === sy);
+
 // Clinician units per millimetre for the screen grid, or null when it can't be
 // known (pixels, with a keyguard.scad too old to report the screen in pixels).
 function ogScreenPerMM() {
@@ -7250,7 +7271,9 @@ function ogSimplify(row, grid, screenOrigin, perMM) {
   if (!row || !row.isList || row.length < 7) return null;
   const shape = ogStr(row[1]);
   if (shape === 'ridge') return grid === 'screen' ? ogSimplifyRidge(row, perMM) : null;
-  if (shape !== 'r' && shape !== 'c') return null;
+  const isArc = ogIsArc(shape);
+  if (isArc && grid !== 'screen') return null;
+  if (shape !== 'r' && shape !== 'c' && !isArc) return null;
 
   const h = ogNum(row[2]), w = ogNum(row[3]), cr = ogNum(row[4]);
   let x = ogNum(row[5]), y = ogNum(row[6]);
@@ -7276,6 +7299,13 @@ function ogSimplify(row, grid, screenOrigin, perMM) {
   const idTok = row[0];
   const id = ogStr(idTok) !== null ? ogStr(idTok) : ogNum(idTok);
   if (id === null) return null;
+
+  // An outer arc is placed by its corner point whatever the anchor column says
+  // (the keyguard file ignores it), and its height and width go unused.
+  if (isArc) {
+    if (!(cr > 0)) return null;
+    return { id, shape, h: 0, w: 0, cr, x, y, converted: false };
+  }
 
   // Effective footprint: a circle's height is its diameter and its width is
   // ignored, so it is square.
@@ -7310,6 +7340,9 @@ function ogSerialize(rows, highlighted, kept = []) {
       // then length, thickness and the angle as its one special parameter.
       return `[${id},"ridge",0,0,0,${ogFmt(r.x)},${ogFmt(r.y)},${ogFmt(r.rh)},"L","",` +
              `${ogFmt(r.len)},${ogFmt(r.th)},[],[${r.ang}]],`;
+    }
+    if (ogIsArc(r.shape)) {
+      return `[${id},"${r.shape}",0,0,${ogFmt(r.cr)},${ogFmt(r.x)},${ogFmt(r.y)},0,"","",0,0,[],[]],`;
     }
     const w  = r.shape === 'c' ? 0 : r.w;
     const cr = r.shape === 'c' ? 0 : r.cr;
@@ -7363,8 +7396,12 @@ function ogRenderGrid(grid) {
 
     const shapeTd = document.createElement('td');
     const sel = document.createElement('select');
-    const shapes = [['r', 'rectangle'], ['c', 'circle']];
-    if (isScreen) shapes.push(['ridge', 'ridge']);
+    // An outer arc belongs to the corner it was snapped to on the by-eye tab,
+    // so it can't be turned into anything else here — nor anything into one.
+    const rowIsArc = ogIsArc(row.shape);
+    const shapes = rowIsArc ? [[row.shape, 'rounded corner']] : [['r', 'rectangle'], ['c', 'circle']];
+    if (isScreen && !rowIsArc) shapes.push(['ridge', 'ridge']);
+    sel.disabled = rowIsArc;
     for (const [val, label] of shapes) {
       const o = document.createElement('option');
       o.value = val; o.textContent = label;
@@ -7385,9 +7422,11 @@ function ogRenderGrid(grid) {
     // so it is shown but greyed; its length goes in the width column.
     const isCircle = row.shape === 'c';
     const isRidge  = row.shape === 'ridge';
+    // An outer arc has only a radius, kept in the corner-radius column as the
+    // keyguard file keeps it.
     const cols = [
-      ['h',  isRidge,             true],
-      [isRidge ? 'len' : 'w', isCircle, true],
+      ['h',  isRidge || rowIsArc, true],
+      [isRidge ? 'len' : 'w', isCircle || rowIsArc, true],
       ['cr', isCircle || isRidge, true],
     ];
     if (isScreen) cols.push(['ang', !isRidge, false]);
@@ -7435,6 +7474,9 @@ function ogRenderGrid(grid) {
       });
 
       inp.addEventListener('blur', () => {
+        // A rounded corner's point is held unrounded; merely passing through
+        // its box must not snap it to the shown number and off its corner.
+        if (rowIsArc && row[key] === applied) return;
         let v = parseFloat(inp.value);
         if (!Number.isFinite(v)) v = 0;
         if (minZero && v < 0) v = 0;       // height/width/corner can't be negative
@@ -7442,6 +7484,8 @@ function ogRenderGrid(grid) {
         // The keyguard file skips a ridge shorter than a millimetre — with only
         // a console warning — so the box won't go below one.
         if (key === 'len') v = Math.max(v, ogRidgeMinLen(ogScreenPerMM() || 1, decimals));
+        // An outer arc of no radius cuts nothing at all.
+        if (key === 'cr' && rowIsArc) v = Math.max(v, decimals ? 0.1 : 1);
         inp.value = v.toFixed(decimals);
         row[key] = v;
         inp.classList.remove('pending');
@@ -7641,6 +7685,13 @@ function ogConvertScreenUnits(from, to) {
   // Undoable as one step, like any other change made on the by-eye tab.
   if (ogPanel.classList.contains('eye')) ogePush();
   for (const row of ogState.screen.rows) {
+    if (ogIsArc(row.shape)) {
+      // Its point stays exactly on its corner, unrounded — see ogeRoundRow.
+      const ex = (v, inset) => to === 'mm' ? (v || 0) / perMM - inset : ((v || 0) + inset) * perMM;
+      row.x = ex(row.x, insetX); row.y = ex(row.y, insetY);
+      row.cr = Math.max(step, r(row.cr));
+      continue;
+    }
     row.x = rp(row.x, insetX); row.y = rp(row.y, insetY);
     if (row.shape === 'ridge') {
       // Thickness and height are a fixed 2 mm, so they are re-derived exactly
@@ -7715,17 +7766,147 @@ let ogeDrag    = null;      // the gesture in progress, or null
 let ogeGeomKey = null;      // last-drawn screen size, to spot a unit change
 let ogeDragPendingDrop = null;   // shift-clicked an already-selected opening
 let ogeKeyRun = null;            // arrow keys held down: one undo step per run
-let ogeDrawing = false;          // + Ridge pressed: the next press draws one
+let ogeDrawing = null;           // 'ridge' / 'arc': the next press places one
+let ogeHotCorner = null;         // + Outer arc: the corner the pointer would snap to
 
 // + Ridge arms a single ridge, as PowerPoint's line tool does: the next press
 // on the keyguard draws it, and the tab goes straight back to normal, where a
 // drag on empty keyguard turns the model again. Pressing the button a second
-// time, or Escape, stands it down without drawing.
-function ogeSetDrawing(on) {
-  ogeDrawing = !!on;
-  const btn = document.getElementById('oge-add-ridge');
-  if (btn) btn.classList.toggle('on', ogeDrawing);
-  viewport.classList.toggle('oge-drawing', ogeDrawing);
+// time, or Escape, stands it down without drawing. + Outer arc works the same
+// way, except that its press has to land on a corner.
+function ogeSetDrawing(kind) {
+  ogeDrawing = kind || null;
+  ogeHotCorner = null;
+  document.getElementById('oge-add-ridge')?.classList.toggle('on', ogeDrawing === 'ridge');
+  document.getElementById('oge-add-arc')?.classList.toggle('on', ogeDrawing === 'arc');
+  viewport.classList.toggle('oge-drawing', !!ogeDrawing);
+  if (ogeBooted) ogeSyncHandles();
+}
+
+// ---- Finding square corners ---------------------------------------------
+// An outer arc rounds a square corner of the plastic, and only the keyguard as
+// actually built knows where those are: its outside edge, every screen and case
+// opening, the openings-and-additions file and the grid all add their own. So
+// they are read off the finished model rather than worked out from the
+// settings.
+//
+// The model is cut through by a level plane just above its underside, which
+// gives the outline of the plastic there as a set of short straight pieces.
+// The underside rather than the face, because the face's edges are chamfered
+// back from the true corner; and the keyguard file anchors an arc to the true
+// corner, which is where the walls meet below the chamfer.
+//
+// A corner qualifies when two straight, square-on (horizontal and vertical)
+// edges meet there at a right angle with the plastic INSIDE the angle — a
+// corner that points outward. Inward corners, such as the inside corners of a
+// rectangular opening, are left out (Ken, 15 Oct 2026): rounding those means
+// adding plastic, not cutting it. A rounded corner is a run of short slanted
+// pieces, so it never qualifies — which is also why a corner that already has
+// an arc drops off the list once the keyguard is re-cut.
+const OGE_CORNER_MIN_EDGE_MM = 0.5;  // shorter edges are slivers, not corners
+const OGE_SNAP_PX = 16;              // how near the pointer must come to snap
+let ogeCornerCache = { mesh: null, list: [] };
+
+function ogeCorners() {
+  const kg = currentMesh && currentMesh.children
+    ? currentMesh.children.find(o => o.isMesh && o.userData.kgBody) : null;
+  if (!kg) return [];
+  if (ogeCornerCache.mesh === kg) return ogeCornerCache.list;
+  kg.updateMatrixWorld(true);
+  const pos = kg.geometry.getAttribute('position');
+  const idx = kg.geometry.index;
+  const nTri = (idx ? idx.count : pos.count) / 3;
+  const vert = k => new THREE.Vector3().fromBufferAttribute(pos, idx ? idx.getX(k) : k)
+    .applyMatrix4(kg.matrixWorld);
+  const box = new THREE.Box3().setFromObject(kg);
+  // A little above the underside, at an odd height so the plane never runs
+  // exactly through a row of the model's vertices.
+  const z0 = box.min.z + Math.min(0.3137, (box.max.z - box.min.z) / 4);
+
+  // One entry per point where pieces of the outline meet: the direction each
+  // piece leaves in, and which way the plastic's surface faces there.
+  const at = new Map();
+  const key = p => `${Math.round(p.x * 1000)},${Math.round(p.y * 1000)}`;
+  const add = (p, q, n) => {
+    const k = key(p);
+    if (!at.has(k)) at.set(k, { x: p.x, y: p.y, legs: [] });
+    at.get(k).legs.push({ dx: q.x - p.x, dy: q.y - p.y, nx: n.x, ny: n.y });
+  };
+  const e1 = new THREE.Vector3(), e2 = new THREE.Vector3(), nrm = new THREE.Vector3();
+  for (let t = 0; t < nTri; t++) {
+    const v = [vert(3 * t), vert(3 * t + 1), vert(3 * t + 2)];
+    const above = v.map(p => p.z >= z0);
+    if (above[0] === above[1] && above[1] === above[2]) continue;
+    const cut = [];
+    for (let i = 0; i < 3; i++) {
+      let a = v[i], b = v[(i + 1) % 3];
+      if ((a.z >= z0) === (b.z >= z0)) continue;
+      // Interpolated from the same end whichever triangle the edge belongs to,
+      // so the neighbours sharing it arrive at exactly the same point.
+      if (a.x > b.x || (a.x === b.x && (a.y > b.y || (a.y === b.y && a.z > b.z)))) [a, b] = [b, a];
+      const f = (z0 - a.z) / (b.z - a.z);
+      cut.push({ x: a.x + f * (b.x - a.x), y: a.y + f * (b.y - a.y) });
+    }
+    if (cut.length !== 2) continue;
+    nrm.crossVectors(e1.subVectors(v[1], v[0]), e2.subVectors(v[2], v[0]));
+    const nl = Math.hypot(nrm.x, nrm.y);
+    if (!(nl > 0)) continue;
+    const n = { x: nrm.x / nl, y: nrm.y / nl };
+    if (Math.hypot(cut[1].x - cut[0].x, cut[1].y - cut[0].y) < 1e-6) continue;
+    add(cut[0], cut[1], n);
+    add(cut[1], cut[0], n);
+  }
+
+  // How far a straight edge runs from a point in a direction, following the
+  // pieces it was sliced into.
+  const unit = l => { const L = Math.hypot(l.dx, l.dy); return { x: l.dx / L, y: l.dy / L }; };
+  const runLength = (start, leg) => {
+    const d = unit(leg);
+    let p = start, l = leg, len = 0;
+    for (let n = 0; n < 10000 && len < OGE_CORNER_MIN_EDGE_MM; n++) {
+      len += Math.hypot(l.dx, l.dy);
+      const next = at.get(key({ x: p.x + l.dx, y: p.y + l.dy }));
+      if (!next) break;
+      const on = next.legs.find(m => { const u = unit(m); return u.x * d.x + u.y * d.y > 0.9999; });
+      if (!on) break;
+      p = next; l = on;
+    }
+    return len;
+  };
+
+  const list = [];
+  const squareOn = u => Math.abs(u.x) < 0.002 || Math.abs(u.y) < 0.002;
+  for (const pt of at.values()) {
+    if (pt.legs.length !== 2) continue;
+    const [l1, l2] = pt.legs;
+    const u1 = unit(l1), u2 = unit(l2);
+    if (Math.abs(u1.x * u2.x + u1.y * u2.y) > 0.002) continue;  // not a right angle
+    if (!squareOn(u1) || !squareOn(u2)) continue;
+    // Pointing outward: each face looks away from the other edge, so the
+    // plastic lies inside the angle. Pointing inward, both look toward it.
+    if (!(l1.nx * u2.x + l1.ny * u2.y < -0.5 && l2.nx * u1.x + l2.ny * u1.y < -0.5)) continue;
+    if (runLength(pt, l1) < OGE_CORNER_MIN_EDGE_MM || runLength(pt, l2) < OGE_CORNER_MIN_EDGE_MM) continue;
+    const h = Math.abs(u1.x) > Math.abs(u1.y) ? u1 : u2;   // the horizontal edge
+    const vv = h === u1 ? u2 : u1;                          // the vertical one
+    const shape = ogArcShape(Math.sign(h.x), Math.sign(vv.y));
+    if (shape) list.push({ x: pt.x, y: pt.y, shape });
+  }
+  ogeCornerCache = { mesh: kg, list };
+  return list;
+}
+
+// The corner the pointer is within snapping distance of, nearest first; null
+// when there is none.
+function ogeCornerNear(ev, g) {
+  const rect = canvas.getBoundingClientRect();
+  const px = ev.clientX - rect.left, py = ev.clientY - rect.top;
+  let best = null, bestD = OGE_SNAP_PX;
+  for (const c of ogeCorners()) {
+    const q = ogeProject(c.x, c.y, g.topZ, rect);
+    const d = Math.hypot(px - q.x, py - q.y);
+    if (d <= bestD) { bestD = d; best = c; }
+  }
+  return best;
 }
 
 // How far one tap of an arrow key moves an opening, in MILLIMETRES — converted
@@ -7845,6 +8026,15 @@ function ogeToModel(row, g) {
       : -g.ohm / 2 + row.y / g.perMM;
     return { cx, cy, len: row.len / g.perMM, ang: row.ang, isRidge: true };
   }
+  if (ogIsArc(row.shape)) {
+    // cx/cy is the corner point itself; sx/sy the way the plastic runs from it.
+    const [sx, sy] = OG_ARC_DIRS[row.shape];
+    const cx = -g.owm / 2 + row.x / g.perMM;
+    const cy = g.origin === 'upper-left'
+      ?  g.ohm / 2 - row.y / g.perMM
+      : -g.ohm / 2 + row.y / g.perMM;
+    return { cx, cy, w: 0, h: 0, r: row.cr / g.perMM, sx, sy, isArc: true };
+  }
   const w = (row.shape === 'c' ? row.h : row.w) / g.perMM;
   const h = row.h / g.perMM;
   const cx = -g.owm / 2 + row.x / g.perMM;
@@ -7857,6 +8047,7 @@ function ogeFromModel(row, m, g) {
   row.x = (m.cx + g.owm / 2) * g.perMM;
   row.y = (g.origin === 'upper-left' ? (g.ohm / 2 - m.cy) : (m.cy + g.ohm / 2)) * g.perMM;
   if (row.shape === 'ridge') { row.len = m.len * g.perMM; row.ang = m.ang; return; }
+  if (ogIsArc(row.shape)) { row.cr = m.r * g.perMM; return; }
   if (row.shape === 'c') row.h = Math.max(m.w, m.h) * g.perMM;
   else { row.w = m.w * g.perMM; row.h = m.h * g.perMM; row.cr = m.r * g.perMM; }
 }
@@ -7865,6 +8056,10 @@ function ogeFromModel(row, m, g) {
 // reads as a clean number there: whole pixels, or tenths of a millimetre.
 function ogeRoundRow(row, g) {
   const r = v => parseFloat((v || 0).toFixed(g.dp));
+  // A rounded corner keeps its point exactly where the corner was found: a
+  // point rounded to the nearest pixel can sit a whisker off the corner and
+  // leave a nick of plastic beside the curve. Only its radius is rounded.
+  if (ogIsArc(row.shape)) { row.h = 0; row.w = 0; row.cr = Math.max(g.step, r(row.cr)); return; }
   row.x = r(row.x); row.y = r(row.y);
   if (row.shape === 'ridge') {
     row.len = Math.max(ogRidgeMinLen(g.perMM, g.dp), r(row.len));
@@ -7935,6 +8130,24 @@ function ogeShapeGeometry(m) {
     const t = OG_RIDGE_MM / 2;
     const s = new THREE.Shape();
     s.moveTo(0, -t); s.lineTo(m.len, -t); s.lineTo(m.len, t); s.lineTo(0, t);
+    s.closePath();
+    return new THREE.ShapeGeometry(s);
+  }
+  if (m.isArc) {
+    // The sliver of plastic the arc takes away: the corner point, out along
+    // one edge by the radius, round the quarter circle to the other edge.
+    const { r, sx, sy } = m;
+    const s = new THREE.Shape();
+    s.moveTo(0, 0);
+    s.lineTo(sx * r, 0);
+    const a1 = Math.atan2(-sy, 0), a2 = Math.atan2(0, -sx);
+    let d = a2 - a1;
+    if (d > Math.PI) d -= 2 * Math.PI;
+    if (d < -Math.PI) d += 2 * Math.PI;
+    for (let k = 1; k <= 16; k++) {
+      const a = a1 + d * k / 16;
+      s.lineTo(sx * r + r * Math.cos(a), sy * r + r * Math.sin(a));
+    }
     s.closePath();
     return new THREE.ShapeGeometry(s);
   }
@@ -8054,6 +8267,9 @@ function ogeSyncHandles() {
     const m = ogeToModel(row, g);
     const corners = m.isRidge
       ? ogeRidgeCorners(m)
+      : m.isArc
+      ? [[0, 0], [1, 0], [1, 1], [0, 1]].map(([u, v]) =>
+          [m.cx + u * m.sx * m.r, m.cy + v * m.sy * m.r])
       : [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([sx, sy]) =>
           [m.cx + sx * m.w / 2, m.cy + sy * m.h / 2]);
     const pts = corners.map(([x, y]) => {
@@ -8078,6 +8294,17 @@ function ogeSyncHandles() {
       h.dataset.oge = 'handle';
       h.dataset.pos = def.pos;
       ogeOverlay.appendChild(h);
+    }
+  }
+
+  // + Outer arc armed: ring every corner it could round.
+  if (ogeDrawing === 'arc') {
+    for (const c of ogeCorners()) {
+      const q = ogeProject(c.x, c.y, g.topZ, rect);
+      ogeOverlay.appendChild(ogeEl('circle', {
+        class: 'oge-corner' + (c === ogeHotCorner ? ' hot' : ''),
+        cx: q.x + ox, cy: q.y + oy, r: c === ogeHotCorner ? 7 : 5,
+      }));
     }
   }
 }
@@ -8113,6 +8340,11 @@ function ogeRender() {
       // A line has a handle at each end and nothing else, as in PowerPoint.
       const [a, b] = ogeRidgeEnds(ogeToModel(row, g));
       ogeHandleDefs.push({ pos: 'a', x: a.x, y: a.y }, { pos: 'b', x: b.x, y: b.y });
+    } else if (row && ogIsArc(row.shape)) {
+      // One control: the radius dot, at the far corner of the square the arc
+      // fills. Drag it out to round the corner more, in to round it less.
+      const m = ogeToModel(row, g);
+      ogeHandleDefs.push({ pos: 'radius', x: m.cx + m.sx * m.r, y: m.cy + m.sy * m.r });
     } else if (row) {
       const m = ogeToModel(row, g);
       for (const pos of OGE_HANDLES) {
@@ -8201,6 +8433,19 @@ function ogePick(ev, g) {
     const t = L2 ? Math.max(0, Math.min(1, ((px - a.x) * vx + (py - a.y) * vy) / L2)) : 0;
     const d = Math.hypot(px - (a.x + t * vx), py - (a.y + t * vy));
     if (d <= bestD) { bestD = d; best = idx; }
+  });
+  if (best !== null) return best;
+  // A rounded corner's pink sliver is thin too, so a press anywhere in the
+  // square it fills — or right on its corner point — picks it.
+  const p = ogePlanePoint(ev, g);
+  ogState.screen.rows.forEach((row, idx) => {
+    if (best !== null || !ogIsArc(row.shape)) return;
+    const m = ogeToModel(row, g);
+    const q = ogeProject(m.cx, m.cy, g.topZ, rect);
+    if (Math.hypot(px - q.x, py - q.y) <= OGE_RIDGE_PICK_PX) { best = idx; return; }
+    if (!p) return;
+    const u = m.sx * (p.x - m.cx), v = m.sy * (p.y - m.cy);
+    if (u >= 0 && v >= 0 && u <= m.r && v <= m.r) best = idx;
   });
   if (best !== null) return best;
   ogeRay.setFromCamera(ogeNDC(ev), camera);
@@ -8294,8 +8539,33 @@ viewport.addEventListener('pointerdown', ev => {
   // of an opening. It starts life as the standard 10 mm horizontal ridge with
   // its left end where the button went down, which is exactly what a click
   // leaves behind; a drag then swings and stretches it from that point.
-  if (ogeDrawing) {
-    ogeSetDrawing(false);
+  // + Rounded corner was pressed: a press on a ringed corner rounds it, at
+  // 2 mm, and a drag from there sets how much. A press anywhere else does
+  // nothing and leaves the button armed — the rings show where to aim.
+  if (ogeDrawing === 'arc') {
+    ev.preventDefault();
+    ev.stopPropagation();
+    const c = ogeCornerNear(ev, g);
+    if (!c) return;
+    ogeSetDrawing(null);
+    ogePush();
+    const row = { id: 0, shape: c.shape, h: 0, w: 0, cr: 0, x: 0, y: 0 };
+    const m = { cx: c.x, cy: c.y, r: 2, sx: OG_ARC_DIRS[c.shape][0], sy: OG_ARC_DIRS[c.shape][1] };
+    ogeFromModel(row, m, g);
+    ogeRoundRow(row, g);
+    ogState.screen.rows.push(row);
+    const idx = ogState.screen.rows.length - 1;
+    ogeSel = new Set([idx]);
+    ogeRender();
+    ogeStart(ev, {
+      kind: 'arc-radius', idx, g, start: p, model: ogeToModel(row, g),
+      moved: false, pushed: true, draw: { x: ev.clientX, y: ev.clientY },
+    });
+    return;
+  }
+
+  if (ogeDrawing === 'ridge') {
+    ogeSetDrawing(null);
     ogePush();
     const row = ogRidgeSize({ id: 0, shape: 'ridge', h: 0, w: 0, cr: 0, x: 0, y: 0,
                               len: 0, ang: 0 }, g.perMM);
@@ -8323,6 +8593,11 @@ viewport.addEventListener('pointerdown', ev => {
         kind: 'ridge-end', idx, g, start: p, fixed: ev.target.dataset.pos === 'a' ? b : a,
         moved: false, pushed: false,
       });
+      return;
+    }
+    if (ogIsArc(row.shape)) {
+      ogeStart(ev, { kind: 'arc-radius', idx, g, start: p, moved: false, pushed: false,
+                     model: ogeToModel(row, g) });
       return;
     }
     ogeStart(ev, {
@@ -8399,6 +8674,13 @@ function ogeStart(ev, drag) {
 }
 
 viewport.addEventListener('pointermove', ev => {
+  // + Rounded corner armed: light up the corner a press would round.
+  if (!ogeDrag && ogeDrawing === 'arc' && ogeLive()) {
+    const g = ogeGeom();
+    const c = g ? ogeCornerNear(ev, g) : null;
+    if (c !== ogeHotCorner) { ogeHotCorner = c; ogeSyncHandles(); }
+    return;
+  }
   if (!ogeDrag) return;
   const g = ogeDrag.g;
   const p = ogePlanePoint(ev, g);
@@ -8426,6 +8708,16 @@ viewport.addEventListener('pointermove', ev => {
   } else if (ogeDrag.kind === 'ridge-end') {
     const row = ogState.screen.rows[ogeDrag.idx];
     if (row) ogeRidgeEnd(row, ogeDrag, p, g);
+  } else if (ogeDrag.kind === 'arc-radius') {
+    // The radius is however far the pointer has gone into the plastic along
+    // either edge, so dragging along an edge puts the start of the curve
+    // under the pointer.
+    const row = ogState.screen.rows[ogeDrag.idx];
+    if (row) {
+      const b = ogeDrag.model;
+      const r = Math.max(g.step / g.perMM, b.sx * (p.x - b.cx), b.sy * (p.y - b.cy));
+      ogeFromModel(row, { ...b, r }, g);
+    }
   } else if (ogeDrag.kind === 'radius') {
     const row = ogState.screen.rows[ogeDrag.idx];
     if (row) {
@@ -8521,7 +8813,21 @@ function ogeDelete() {
 document.getElementById('oge-add-rect').addEventListener('click', () => ogeAdd('r'));
 document.getElementById('oge-add-circ').addEventListener('click', () => ogeAdd('c'));
 document.getElementById('oge-add-ridge').addEventListener('click', () => {
-  if (ogeGeom()) ogeSetDrawing(!ogeDrawing);
+  if (ogeGeom()) ogeSetDrawing(ogeDrawing === 'ridge' ? null : 'ridge');
+});
+document.getElementById('oge-add-arc').addEventListener('click', () => {
+  if (!ogeGeom()) return;
+  if (ogeDrawing === 'arc') { ogeSetDrawing(null); return; }
+  if (!ogeCorners().length) {
+    // Said for a moment, then the footer goes back to what it was saying —
+    // usually that the changes aren't saved yet, which must not be lost.
+    const was = ogMsgEl.textContent;
+    const note = 'This keyguard has no square corners to round.';
+    ogMsgEl.textContent = note;
+    setTimeout(() => { if (ogMsgEl.textContent === note) ogMsgEl.textContent = was; }, 4000);
+    return;
+  }
+  ogeSetDrawing('arc');
 });
 document.getElementById('oge-del').addEventListener('click', ogeDelete);
 document.getElementById('oge-undo').addEventListener('click', ogeUndoOne);
