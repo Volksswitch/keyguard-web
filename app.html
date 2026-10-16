@@ -1608,6 +1608,9 @@ const RELEASE_NOTES = {
     "To change a rounded corner afterwards, click it and drag its yellow dot outward to round it more, or inward to round it less. Delete, Ctrl+Z and the arrow keys work as they do for openings. Rounded corners are also listed on the “pixels or millimeters” tab, where their size is in the corner radius column.",
     "On the “pixels or millimeters” tab, the shape list now offers only rectangle and circle. An opening can no longer be turned into a ridge there, or a ridge into an opening — draw ridges with + Ridge on the “by eye” tab.",
     "If you have changed anything in Custom Openings — added, moved, resized or deleted an opening, ridge or rounded corner — and then press Cancel (or the ✕, or Escape) without saving, the app now asks before throwing your changes away. Choose Keep editing to go back to them."
+  ],
+  "114": [
+    "If you have unsaved changes — the red * is showing next to the preset name, or Custom Openings is open with changes you haven't saved — and you close the tab or the browser, refresh the page, or go to another address, your browser now asks “Leave site?” first. Choose Cancel to stay and keep your changes."
   ]
 };
 // @@RELEASE_NOTES_END@@
@@ -5759,6 +5762,18 @@ function updateDirty() {
   document.getElementById('import-preset-btn').disabled = false;
   document.getElementById('export-preset-btn').disabled = !project.currentPreset || project.currentPreset === 'design default values';
 }
+
+// Closing the tab or window, refreshing, or navigating away with unsaved
+// preset edits — or unsaved changes in an open Custom Openings panel — makes
+// the browser ask "Leave site?" first. The browser owns that box: its wording
+// can't be changed and our own modal can't stand in for it.
+window.addEventListener('beforeunload', e => {
+  let unsaved = false;
+  try {
+    unsaved = isDirty() || (ogPanel.classList.contains('open') && ogHasChanges());
+  } catch {}
+  if (unsaved) { e.preventDefault(); e.returnValue = ''; }
+});
 
 container.addEventListener('input', e => {
   if (!project || !e.target.dataset.paramName) return;

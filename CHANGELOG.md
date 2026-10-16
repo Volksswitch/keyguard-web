@@ -13,6 +13,8 @@ notes, because nothing at this address could have been missed yet.
 
 ## Unreleased (next release)
 
+- If you have unsaved changes — the red * is showing next to the preset name, or Custom Openings is open with changes you haven't saved — and you close the tab or the browser, refresh the page, or go to another address, your browser now asks “Leave site?” first. Choose Cancel to stay and keep your changes.
+
 ## Release 113
 
 - You can now round off a 90-degree corner of the keyguard by eye. The “by eye” tab of Custom Openings has a new + Rounded corner button. Press it and every square corner that points outward is ringed — on the keyguard's outside edge, or where openings meet inside it. Move the pointer near one and it lights up; click it to round that corner by 2 mm, or press and drag from it along an edge to choose how much.
