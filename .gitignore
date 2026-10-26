@@ -15,3 +15,7 @@ SECURITY.docx
 # scripts/doc-generators/capture-manual-figures.mjs, so they are outputs, not sources.
 scripts/doc-generators/figures/
 __pycache__/
+
+# How-to videos and their speech cache: rendered by scripts/video/render-video.mjs.
+# Outputs, published to volksswitch.org, never served from here.
+Videos/

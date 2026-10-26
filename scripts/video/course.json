@@ -1,0 +1,44 @@
+{
+  "_note": "The Keyguard Designer how-to course: every video in viewing order, from the support assets proposal (October 2026). The renderer reads titles and 'watch next' from here, so a title is changed in one place. 'id' is the script's id (scripts/video/scripts/<id>.mjs); an entry with no id has no script yet. 'path': true marks the groups watched in order. A video's number never changes once it's published, because its watch page's address comes from it; a new video goes at the end of its group.",
+  "groups": [
+    { "name": "Getting started", "path": true, "items": [
+      { "num": "1.1", "id": "1.1-what-for", "title": "What the Keyguard Designer Is For", "learn": "What the Keyguard Designer does, and why you'd print a keyguard." },
+      { "num": "1.2", "title": "Opening the App and Starting a Project", "learn": "Open the app and set up a project folder." },
+      { "num": "1.3", "title": "A Tour of the Screen", "learn": "Name each part of the screen." },
+      { "num": "1.4", "title": "Your First Grid Keyguard", "learn": "Describe a tablet, its case and a grid app." },
+      { "num": "1.5", "title": "Checking It Against a Screenshot", "learn": "See each opening over its button before you print." },
+      { "num": "1.6", "title": "Exporting for Printing or Cutting", "learn": "Save a file for a 3D printer or a laser cutter." }
+    ] },
+    { "name": "Measuring", "path": true, "items": [
+      { "num": "2.1", "title": "Which Tablet and Case Do You Have?", "learn": "Identify the tablet and measure the case opening." },
+      { "num": "2.2", "title": "The App Layout from a Screenshot", "learn": "Read bar heights and button positions in pixels." },
+      { "num": "2.3", "title": "Measuring in Millimeters", "learn": "Measure the app on the screen with a ruler." },
+      { "num": "2.4", "title": "Filling In the Keyguard Data Form", "learn": "Collect everything a keyguard needs in one place." }
+    ] },
+    { "name": "Shaping the keyguard", "items": [
+      { "num": "3.1", "title": "Covering and Merging Cells", "learn": "Close cells, or join them into one opening." },
+      { "num": "3.2", "title": "Placing Openings by Eye", "learn": "Draw openings straight onto the keyguard." },
+      { "num": "3.3", "title": "Typing Openings in Pixels or Millimeters", "learn": "Place an opening exactly." },
+      { "num": "3.4", "title": "Ridges and Rounded Corners", "learn": "Add ridges to find by touch, and round off corners." },
+      { "num": "3.5", "title": "Sloped Edges and Bars", "learn": "Slope openings to guide the finger, and open the app's bars." },
+      { "num": "3.6", "title": "Free-form and Hybrid Apps", "learn": "Design for apps whose buttons aren't in a grid." },
+      { "num": "3.7", "title": "Splitting a Keyguard in Two", "learn": "Print a keyguard too big for your printer." },
+      { "num": "3.8", "title": "Engraved Text and Braille", "learn": "Add words and braille to the keyguard." }
+    ] },
+    { "name": "Saving and sharing", "items": [
+      { "num": "4.1", "title": "Saving Designs as Presets", "learn": "Save, rename and switch between designs." },
+      { "num": "4.2", "title": "Sharing a Design", "learn": "Send a design to a colleague or a maker." },
+      { "num": "4.3", "title": "When a Keyguard Update Is Offered", "learn": "Take a new keyguard designer file, or wait." },
+      { "num": "4.4", "title": "Showing More Settings", "learn": "Choose a skill level." }
+    ] },
+    { "name": "Printing, fitting and mounting", "items": [
+      { "num": "5.1", "title": "Printing on Its Face", "learn": "Print a keyguard with a smooth top." },
+      { "num": "5.2", "title": "Testing the Fit", "learn": "Check a printed keyguard and fix what's wrong." }
+    ] },
+    { "name": "Keeping things running", "items": [
+      { "num": "6.1", "title": "When the App Looks Wrong", "learn": "Reload the app and read the Console." },
+      { "num": "6.2", "title": "Telling Us About a Problem", "learn": "Write a problem report and send it." },
+      { "num": "6.3", "title": "Getting IT on Board", "learn": "Run Check my setup and send IT the letter." }
+    ] }
+  ]
+}

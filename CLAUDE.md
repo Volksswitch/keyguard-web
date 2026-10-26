@@ -185,6 +185,8 @@ derive paths from `$env:OneDrive`, never hardcode `C:\Users\<name>`.
 | **"bump keyguard web app"** | the ritual in `RELEASING.md` (sibling folder) | **RELEASES THIS APP TO CLINICIANS, through the push, with no second confirmation.** For the app's OWN work. Bumps `CACHE_NAME`, finalizes the changelog, regenerates notes, writes `latest_app_version.json`, commits, pushes, then pre-bumps `APP_RELEASE`. Ken issues it only after reading `CHANGELOG.md`. The retiring sibling has its own deliberately different phrase, "patch the retiring keyguard address" — confirm which folder you are in first. |
 | **"apply release notes"** | `node scripts/apply-release-notes.mjs` | Regenerates the bundled `RELEASE_NOTES` block in `app.html` from `CHANGELOG.md`. Run after EVERY changelog edit. <1 s. |
 | **"apply skill config"** | `node scripts/apply-skill-config.mjs` | Regenerates the `SKILL_LEVEL_DESCS` and `SKILL_CONFIG` blocks in `app.html` from `skill-config.txt`, which decides which Customizer settings each skill level sees. Edit the .txt, never the generated blocks. Moved here from the sibling 17 Sep 2026 (it had stayed behind and could only write the RETIRED app). <1 s. |
+| **"make video &lt;number&gt;"** | `node scripts/video/render-video.mjs scripts/video/scripts/<id>.mjs` | Makes one how-to video from its script: the real app with the sample project open, a ring on what the narration names, the narrator's voice from Azure (Conversant's Andrew, using Conversant's `.azure-key`), and a one-page guide from the same pictures. Writes `Videos/<id>.mp4`, `.srt`, `.pdf` and `.json`. **Stops if a ring points at nothing on screen**, so a moved or renamed button can't slip into a video. Takes a few minutes; run in the background. |
+| **"sync videos"** | `node scripts/video/sync-videos.mjs` | Re-makes **every** video from its script, then reports which ones changed since they were last published, and which couldn't be made (with the control each was looking for). Speech is cached, so only changed wording costs anything. **Run it after any app release that changes what the videos show.** `--published <id>` records a video as published once it's on the website; `--only 1.` limits it to a group. |
 | **"publish app version"** | `node scripts/publish-app-version.mjs` | Rewrites `latest_app_version.json` from `APP_RELEASE`. **RELEASE-TIME ONLY** — part of the release merge, never day-to-day. |
 
 Because `CLAUDE.md` is auto-loaded per project, a new phrase only works after
@@ -293,6 +295,18 @@ Before deleting, verify nothing lives only there — they are untracked, so git 
 restore them. A code file is safe when `git hash-object <copy>` matches a historical
 blob for the canonical path; logs and generated artifacts are disposable by policy.
 Report what you verified.
+
+---
+
+## How-to videos are made, never edited (Ken, 26 Oct 2026)
+
+Ken: *"the videos should be generated so they can be modified automatically just like the
+Conversant videos."* Every video is a script in `scripts/video/scripts/`, rendered by
+`render-video.mjs` from the running app, and kept current by **"sync videos"**. Never fix a
+video by editing its file: change the script (or the app) and re-make it. The course order
+and titles live in `scripts/video/course.json`; a video's number never changes once it's
+published. Outputs go in `Videos/`, which is git-ignored. The figures and the videos open
+the app the same way, through `scripts/lib/sample-project.mjs`.
 
 ---
 

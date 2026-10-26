@@ -4,11 +4,8 @@
 // figures follow). The app is loaded, driven into each state the manual describes, and
 // captured, so a figure can't show a layout the app no longer has.
 //
-// The sample project is Documents/manual-sample/ (the TouchChat WordPower 42 exercise from
-// the Basic workshop). The browser can't be handed a real folder without the folder picker,
-// so the script copies the sample into the browser's own private storage and leaves that
-// folder where the app looks for the last project it opened. The app then opens it exactly
-// as it opens a clinician's folder.
+// The app is opened with the sample project by scripts/lib/sample-project.mjs, which the
+// how-to videos use too.
 //
 // It writes figures/*.png and figures/regions.json (each labeled element's box, in image
 // pixels); label-manual-figures.py draws the numbered labels from that.
@@ -19,43 +16,26 @@
 //
 //   node scripts/doc-generators/capture-manual-figures.mjs http://localhost:8077
 //   node scripts/doc-generators/capture-manual-figures.mjs https://keyguard.volksswitch.org --only um-check.png
-//
-// It drives the installed Microsoft Edge, so the browser check reads as a clinician's
-// would. Playwright comes from the retired sibling's test harness, the one install here.
-import { createRequire } from 'module';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { launch, openSampleProject, settled as settledOn, sleep } from '../lib/sample-project.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
-const SIBLING = path.join(process.env.OneDrive, '4 T-Z', 'Volksswitch', 'Keyguard', 'keyguard-designer-web');
-const require = createRequire(path.join(SIBLING, 'package.json'));
-const { chromium } = require('playwright');
-
 const BASE = process.argv[2] || 'http://localhost:8077';
 const ONLY = process.argv.includes('--only') ? process.argv[process.argv.indexOf('--only') + 1] : null;
 const want = name => !ONLY || ONLY === name;
-const SAMPLE_DIR = path.join(HERE, '..', '..', 'Documents', 'manual-sample');
 const OUT = path.join(HERE, 'figures');
 const SCALE = 2;
-const SAMPLE = ['keyguard_v92.scad', 'keyguard_v92.json', 'openings_and_additions.txt', 'WordPower 42 screenshot.png'];
 fs.mkdirSync(OUT, { recursive: true });
 
 const regions = {};
-const sleep = ms => new Promise(r => setTimeout(r, ms));
 
-const browser = await chromium.launch({ channel: 'msedge', args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
+const browser = await launch();
 const page = await browser.newPage({ viewport: { width: 1280, height: 800 }, deviceScaleFactor: SCALE, colorScheme: 'light' });
 page.on('pageerror', e => console.log('page error:', e.message));
 
-// Wait until the app has finished drawing: the status line clears and the Console is quiet.
-async function settled(ms = 1500) {
-  await page.waitForFunction(() => {
-    const s = document.getElementById('viewport-status');
-    return !s || !/render|loading|updating/i.test(s.textContent || '') || s.offsetParent === null;
-  }, null, { timeout: 120000 });
-  await sleep(ms);
-}
+const settled = (ms) => settledOn(page, ms);
 async function box(sel) {
   return page.locator(sel).first().evaluate(e => {
     const r = e.getBoundingClientRect();
@@ -72,47 +52,9 @@ async function shot(name, clip) {
 }
 const pad = (b, p) => ({ x: Math.max(0, b.x - p), y: Math.max(0, b.y - p), w: b.w + 2 * p, h: b.h + 2 * p });
 
-// ---- put the sample project where the app will reopen it ----
-// The files go in from here rather than being fetched, so this works against any address.
-const files = SAMPLE.map(n => [n, fs.readFileSync(path.join(SAMPLE_DIR, n)).toString('base64')]);
-await page.goto(`${BASE}/app.html`);
-await page.evaluate(async (files) => {
-  const root = await navigator.storage.getDirectory();
-  try { await root.removeEntry('keyguard design', { recursive: true }); } catch {}
-  const dir = await root.getDirectoryHandle('keyguard design', { create: true });
-  for (const [n, b64] of files) {
-    const bytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
-    const w = await (await dir.getFileHandle(n, { create: true })).createWritable();
-    await w.write(bytes);
-    await w.close();
-  }
-  const db = await new Promise((res, rej) => {
-    const q = indexedDB.open('keyguard-db', 1);
-    q.onupgradeneeded = () => q.result.createObjectStore('handles');
-    q.onsuccess = () => res(q.result); q.onerror = () => rej(q.error);
-  });
-  await new Promise((res, rej) => {
-    const tx = db.transaction('handles', 'readwrite');
-    tx.objectStore('handles').put(dir, 'lastProject');
-    tx.objectStore('handles').put([dir], 'recentProjects');
-    tx.oncomplete = res; tx.onerror = () => rej(tx.error);
-  });
-  // Pin the appearance to the defaults whatever this browser profile last used.
-  localStorage.removeItem('keyguard:settings');
-}, files);
-await page.reload();
-await sleep(1500);
-await page.click('#open-project-btn');
-await page.waitForFunction(() => /keyguard design/.test(document.getElementById('project-folder-label')?.textContent || ''), null, { timeout: 60000 });
-await settled(2500);
-
-// Choose the sample design, then Intermediate, which shows the screenshot setting the
-// manual's walkthrough uses.
-await page.click('#preset-dropdown-btn');
-await page.locator('#preset-list li', { hasText: 'WordPower 42' }).first().click();
-await settled(3000);
-await page.selectOption('#skill-select', 'intermediate');
-await settled(1000);
+// ---- the sample project, on its WordPower 42 design, at Intermediate, which shows the
+// screenshot setting the manual's walkthrough uses ----
+await openSampleProject(page, BASE);
 console.log('unsaved-changes marker showing:', await page.evaluate(() => {
   const m = document.getElementById('dirty-marker');
   return !!m && getComputedStyle(m).display !== 'none' && getComputedStyle(m).visibility !== 'hidden' && (m.textContent || '').trim() !== '';

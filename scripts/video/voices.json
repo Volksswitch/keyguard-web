@@ -1,0 +1,4 @@
+{
+  "_note": "The narrator for every Keyguard Designer how-to video: the same voice as Conversant AAC's narrator (Ken, October 26 2026), from AI-driven AAC/scripts/video/voices.json. Change it here and every video picks it up at its next render.",
+  "narrator": { "name": "Andrew", "azure": "en-US-Andrew:DragonHDLatestNeural" }
+}
