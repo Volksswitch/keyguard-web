@@ -296,6 +296,14 @@ Report what you verified.
 
 ---
 
+## Deferred work lives in TODO.md
+
+**[TODO.md](TODO.md) is the one list** of work identified but not being done now (created
+26 Oct 2026, same rule as Conversant's). Never say something is "on the list",
+"recorded" or "deferred" unless it is written there first.
+
+---
+
 ## Known gaps (recorded, not scheduled)
 
 - **No test harness here.** The Playwright layers (lint / smoke / visual) live in the
