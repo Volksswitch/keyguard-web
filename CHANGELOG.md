@@ -13,6 +13,14 @@ notes, because nothing at this address could have been missed yet.
 
 ## Unreleased (next release)
 
+- There is a new **?** button beside the Settings button. It opens a short Help menu: a card listing every Custom Openings move, links to the keyguard how-to pages and the known issues on volksswitch.org, Check my setup, Report a problem, and an email to Volksswitch. The menu and the moves card are built into the app, so they work offline and on networks that block volksswitch.org.
+
+- Settings has a new Troubleshooting tab. **Check my setup** looks at your browser, your project folder, whether the app can reach its own address, whether your keyguard file is the newest, and whether the 3D drawing works. It says what to do about anything that's wrong, including when it's one for your IT department.
+
+- **Report a problem**, on the same tab, writes a report you can read in full before it goes anywhere: your note, the app's release, your keyguard file's version, your browser and your design's settings. It leaves out folder, file and design names, and any text engraved on the keyguard is replaced with X's. The app sends nothing itself: you copy the report, open it in an email, or save it as a file.
+
+- The Troubleshooting tab also lists the errors since the app was opened, without the Console's routine messages, and explains the common ones. The Reload the app button is there too, as well as on the About tab.
+
 ## Release 114
 
 - If you have unsaved changes — the red * is showing next to the preset name, or Custom Openings is open with changes you haven't saved — and you close the tab or the browser, refresh the page, or go to another address, your browser now asks “Leave site?” first. Choose Cancel to stay and keep your changes.

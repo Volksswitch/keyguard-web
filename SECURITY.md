@@ -1,6 +1,6 @@
 # Keyguard Designer (web) — Security Overview for IT
 
-_Last updated: 2026-09-30_
+_Last updated: 2026-10-26_
 
 This document is written for IT / information-security teams evaluating whether the
 **Keyguard Designer** web app is safe for clinicians to use on managed workstations.
@@ -30,6 +30,11 @@ below can be independently verified in the source:
   empty folder, on acceptance, and the blank openings-and-additions template, which is
   simply supplied. The requests carry no data about the clinician or their work. There is no second hostname to review; §4 describes
   the whole footprint.
+- **Problem reports leave only by the clinician's own hand.** The app can write a
+  report of a problem for Volksswitch. The clinician sees all of it on screen first;
+  it carries no folder, file or design names, and any text engraved on the keyguard
+  is replaced with X's. The app sends nothing itself: the clinician copies the
+  report, opens it in their own email program, or saves it as a file (§3).
 - The heavy lifting (the OpenSCAD CAD engine) runs inside the browser's
   **WebAssembly sandbox**, which has no access to the host filesystem or network.
 - It needs **no installation and no administrator rights**; it runs on
@@ -87,6 +92,16 @@ Nothing in this loop touches a network or a server.
   - **UI preferences** (e.g. theme).
   No design content and no personal data are stored in this way, and none of it
   is transmitted.
+- **Problem reports** (Settings → Troubleshooting) are put together in the browser
+  from the app's release, the keyguard designer file's version, the browser and
+  screen size, the results of the setup check, recent error messages, and the
+  design's settings. Names are left out — of the folder, the files and the saved
+  designs — because they often name a student, and engraved or Braille text is
+  replaced with X's of the same length. The clinician reads the whole report before
+  doing anything with it. **Nothing is sent:** a report leaves the browser only if
+  the clinician copies it, saves it as a file, or opens it in their own email
+  program, which is handed a new message addressed to Volksswitch for them to send
+  or discard.
 - **Clearing site data** in the browser removes the above completely.
 
 ---
@@ -125,10 +140,24 @@ Everything the app fetches comes from there:
   the columns — so it alters no keyguard, and a clinician who has never heard of the
   file has no basis on which to answer a question about it. A file already in the
   folder is never read over or replaced.
+- **Check my setup, only on a click.** Settings → Troubleshooting can check that the
+  app still reaches its own address. It requests the same two small version files
+  described above — the app's and the keyguard designer's — from the same origin,
+  and nothing else.
 - **Any failure is harmless.** If a check or a download cannot complete — offline,
   say, or a folder that turns out not to be writable — the app says so in its Console
   and carries on. The clinician keeps working with the file
   they already have; nothing retries or degrades.
+
+### Links to volksswitch.org
+
+The Help menu and the Troubleshooting tab link to pages on `volksswitch.org` — the
+keyguard how-to pages, the Custom Openings page and the Known Issues page — and the
+About tab links to its home page. Each opens in a new browser tab, and only when the
+clinician clicks it. The app itself requests nothing from that site, and its help
+text is built in, so a network that blocks `volksswitch.org` leaves the app working
+fully; only those links fail. *Contact Volksswitch* and *Email report* hand a new
+message to the computer's own email program; the app makes no request for them.
 
 ### What this means for firewall policy
 
@@ -160,6 +189,9 @@ them are to the single origin you allowlisted.
 - **Saving exports** uses the browser's native **"Save As" dialog**. Write access
   is granted only to the specific file the clinician chooses in that dialog — there
   is no blanket write permission.
+- **Copying to the clipboard** happens only when the clinician clicks a Copy button
+  (the Console's, or a problem report's). The app writes text there and never reads
+  the clipboard.
 - The app requests **no other permissions** (no camera, microphone, location,
   notifications, clipboard-read, etc.).
 
@@ -247,7 +279,8 @@ Notes:
 - **Network behavior:** open the app, then in DevTools → Network, confirm that the
   only traffic is the app's own files plus — at project open — the designer version
   check described in §4 and any starter or updated file it fetches from that same
-  origin; or observe firewall/proxy logs. There is no request to any other host.
+  origin (and, if the clinician runs Check my setup, the same version files again);
+  or observe firewall/proxy logs. There is no request to any other host.
 - **Storage:** DevTools → Application → Storage shows the local IndexedDB/handle and
   preferences described in §3.
 

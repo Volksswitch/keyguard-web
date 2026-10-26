@@ -281,7 +281,7 @@
                       display: none; z-index: 1000; }
   #settings-overlay.open { display: block; }
   #settings-modal { background: #fafafa; border: 1px solid #888; border-radius: 4px;
-                    width: 560px; max-width: 90vw; height: 380px; max-height: 80vh;
+                    width: 560px; max-width: 90vw; height: 460px; max-height: 85vh;
                     display: flex; flex-direction: column; box-shadow: 0 8px 24px rgba(0,0,0,0.3);
                     position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); }
   #settings-modal h3 { margin: 0; padding: 10px 14px; border-bottom: 1px solid #ccc;
@@ -526,6 +526,67 @@
   @media (prefers-reduced-motion: reduce) {
     .export-bar-fill { animation-duration: 2.6s; }
   }
+
+  /* ---------- Help menu (the ? button) ----------
+     The toolbar sits at the bottom of the viewport, so the menu opens UPWARD
+     from the button; placed in JS from the button's rectangle. Above the Custom
+     Openings panel (1200), which is open exactly when the moves are wanted. */
+  #help-btn { font-weight: bold; font-size: 14px; color: #06c; }
+  #help-menu { position: fixed; z-index: 1250; margin: 0; padding: 4px 0; list-style: none;
+               min-width: 230px; background: #fff; border: 1px solid #888;
+               box-shadow: 0 2px 8px rgba(0,0,0,.25); display: none; font-size: 12px; }
+  #help-menu.open { display: block; }
+  #help-menu li { padding: 6px 14px; cursor: pointer; white-space: nowrap; }
+  #help-menu li:hover, #help-menu li:focus { background: #e8f0fc; outline: none; }
+  #help-menu li.sep { padding: 0; margin: 4px 0; border-top: 1px solid #ddd; cursor: default; }
+  #help-menu li.sep:hover { background: none; }
+  #help-menu .ext { color: #888; margin-left: 4px; }
+
+  /* The Custom Openings moves card. Not tied to the panel: it can be read with
+     the panel closed, and it closes on its own button, Escape or a click outside. */
+  #moves-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.25);
+                   display: none; align-items: center; justify-content: center; z-index: 1250; }
+  #moves-overlay.open { display: flex; }
+  #moves-modal { background: #fafafa; border: 1px solid #888; border-radius: 4px;
+                 width: 560px; max-width: 92vw; max-height: 86vh; display: flex; flex-direction: column;
+                 box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+  #moves-modal h3 { margin: 0; padding: 10px 14px; border-bottom: 1px solid #ccc;
+                    background: #e8e8e8; font-size: 14px; }
+  #moves-body { padding: 6px 14px 10px; overflow: auto; font-size: 12px; line-height: 1.45; }
+  #moves-body h4 { margin: 10px 0 4px; font-size: 12px; color: #06c; }
+  #moves-body table { border-collapse: collapse; width: 100%; }
+  #moves-body td { padding: 2px 0; vertical-align: top; }
+  #moves-body td:first-child { width: 160px; padding-right: 10px; font-weight: bold; white-space: nowrap; }
+  #moves-body kbd { font: inherit; font-weight: bold; }
+  #moves-footer { padding: 8px 14px; border-top: 1px solid #ccc; background: #f0f0f0;
+                  display: flex; align-items: center; gap: 8px; font-size: 12px; }
+  #moves-footer a { flex: 1; }
+  #moves-footer button { padding: 4px 14px; font-size: 12px; cursor: pointer; }
+
+  /* ---------- Settings → Troubleshooting ---------- */
+  #settings-panel .ts-section { margin-bottom: 18px; }
+  #settings-panel .ts-section > label { display: block; font-weight: bold; margin-bottom: 4px; }
+  #settings-panel .ts-note { color: #666; margin-bottom: 8px; }
+  #settings-panel .ts-btns { display: flex; gap: 8px; flex-wrap: wrap; margin: 6px 0; }
+  #settings-panel .ts-btns button { font-size: 12px; padding: 3px 10px; cursor: pointer; }
+  #settings-panel .ts-checks { list-style: none; margin: 6px 0 0; padding: 0; }
+  #settings-panel .ts-checks li { margin: 0 0 6px; padding-left: 20px; position: relative; }
+  #settings-panel .ts-checks li::before { position: absolute; left: 0; top: 0; font-weight: bold; }
+  #settings-panel .ts-checks li.ok::before   { content: '✓'; color: #2a7a2a; }
+  #settings-panel .ts-checks li.warn::before { content: '!'; color: #b07000; left: 4px; }
+  #settings-panel .ts-checks li.bad::before  { content: '✗'; color: #b00020; }
+  #settings-panel .ts-checks li.info::before { content: '–'; color: #888; left: 2px; }
+  #settings-panel .ts-checks .what { font-weight: bold; }
+  #settings-panel .ts-checks .todo { display: block; color: #555; }
+  #settings-panel #ts-what { width: 100%; box-sizing: border-box; font: inherit; padding: 4px; }
+  #settings-panel #ts-report { width: 100%; box-sizing: border-box; height: 120px; font: 11px/1.35 Consolas, monospace;
+                               padding: 4px; color: #333; background: #f4f4f4; resize: vertical; }
+  #settings-panel .ts-msg { min-height: 1.2em; color: #2a7a2a; margin: 2px 0 0; }
+  #settings-panel .ts-problems { list-style: none; margin: 6px 0 0; padding: 0; }
+  #settings-panel .ts-problems li { margin: 0 0 8px; }
+  #settings-panel .ts-problems code { display: block; font: 11px/1.35 Consolas, monospace; color: #8a1020;
+                                      white-space: pre-wrap; word-break: break-word; }
+  #settings-panel .ts-problems .why { display: block; color: #555; margin-top: 2px; }
 </style>
 </head>
 <body>
@@ -664,6 +725,7 @@
             </svg>
           </button>
           <div class="vp-sep"></div>
+          <button class="vp-btn" id="help-btn" title="Help" aria-haspopup="menu" aria-expanded="false">?</button>
           <button class="vp-btn" id="settings-btn" title="Settings">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true">
               <circle cx="12" cy="12" r="3"/>
@@ -750,6 +812,7 @@
         <div class="cat" data-cat="grid">Grid</div>
         <div class="cat" data-cat="text">Text</div>
         <div class="cat" data-cat="colors">Colors</div>
+        <div class="cat" data-cat="trouble">Troubleshooting</div>
         <div class="cat" data-cat="about">About</div>
       </div>
       <div id="settings-panel">
@@ -758,6 +821,28 @@
     </div>
     <div id="settings-footer">
       <button id="settings-close-btn">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ Help menu and the Custom Openings moves card ============ -->
+<ul id="help-menu" role="menu" aria-label="Help">
+  <li role="menuitem" tabindex="-1" data-help="moves">Custom Openings moves</li>
+  <li role="menuitem" tabindex="-1" data-help="howto">Keyguard how-to pages<span class="ext">↗</span></li>
+  <li role="menuitem" tabindex="-1" data-help="known">Known issues<span class="ext">↗</span></li>
+  <li class="sep" role="separator"></li>
+  <li role="menuitem" tabindex="-1" data-help="check">Check my setup…</li>
+  <li role="menuitem" tabindex="-1" data-help="report">Report a problem…</li>
+  <li role="menuitem" tabindex="-1" data-help="contact">Contact Volksswitch</li>
+</ul>
+
+<div id="moves-overlay">
+  <div id="moves-modal" role="dialog" aria-labelledby="moves-title">
+    <h3 id="moves-title">Custom Openings moves — the “by eye” tab</h3>
+    <div id="moves-body"><!-- filled by JS: the Ctrl/⌘ key differs by computer --></div>
+    <div id="moves-footer">
+      <a id="moves-more" target="_blank" rel="noopener">More on the Custom Openings page</a>
+      <button id="moves-close" type="button">Close</button>
     </div>
   </div>
 </div>
@@ -1411,6 +1496,18 @@ function logRaw(text) {
   consoleEl.scrollTop = consoleEl.scrollHeight;
 }
 
+// Errors nothing caught. They never reached the Console, so without this the
+// Troubleshooting tab's "Recent problems" (and a problem report) could not show
+// the very failures that leave the app looking stuck. Kept in memory only.
+const uncaughtProblems = [];
+window.addEventListener('error', e => {
+  uncaughtProblems.push(String((e && (e.error && e.error.message || e.message)) || 'Unknown error'));
+});
+window.addEventListener('unhandledrejection', e => {
+  const r = e && e.reason;
+  uncaughtProblems.push(String((r && r.message) || r || 'Unknown error'));
+});
+
 // ---- Sticky console lines ----
 // A sticky line appears at most ONCE and is rewritten in place when its text
 // changes, instead of being appended again. For keyguard.scad advice that is
@@ -1611,6 +1708,12 @@ const RELEASE_NOTES = {
   ],
   "114": [
     "If you have unsaved changes — the red * is showing next to the preset name, or Custom Openings is open with changes you haven't saved — and you close the tab or the browser, refresh the page, or go to another address, your browser now asks “Leave site?” first. Choose Cancel to stay and keep your changes."
+  ],
+  "115": [
+    "There is a new ? button beside the Settings button. It opens a short Help menu: a card listing every Custom Openings move, links to the keyguard how-to pages and the known issues on volksswitch.org, Check my setup, Report a problem, and an email to Volksswitch. The menu and the moves card are built into the app, so they work offline and on networks that block volksswitch.org.",
+    "Settings has a new Troubleshooting tab. Check my setup looks at your browser, your project folder, whether the app can reach its own address, whether your keyguard file is the newest, and whether the 3D drawing works. It says what to do about anything that's wrong, including when it's one for your IT department.",
+    "Report a problem, on the same tab, writes a report you can read in full before it goes anywhere: your note, the app's release, your keyguard file's version, your browser and your design's settings. It leaves out folder, file and design names, and any text engraved on the keyguard is replaced with X's. The app sends nothing itself: you copy the report, open it in an email, or save it as a file.",
+    "The Troubleshooting tab also lists the errors since the app was opened, without the Console's routine messages, and explains the common ones. The Reload the app button is there too, as well as on the About tab."
   ]
 };
 // @@RELEASE_NOTES_END@@
@@ -5768,6 +5871,9 @@ function updateDirty() {
 // the browser ask "Leave site?" first. The browser owns that box: its wording
 // can't be changed and our own modal can't stand in for it.
 window.addEventListener('beforeunload', e => {
+  // Opening an email (Help → Contact, or Email report) is not leaving the page,
+  // but some browsers raise this event for it all the same.
+  if (mailtoInFlight) return;
   let unsaved = false;
   try {
     unsaved = isDirty() || (ogPanel.classList.contains('open') && ogHasChanges());
@@ -6841,6 +6947,56 @@ const SETTINGS_PANELS = {
     </div>
     <button class="set-reset" id="reset-colors">Reset to defaults</button>
   `,
+  // Wired by wireTroubleshooting(). The Reload button keeps the About tab's id,
+  // so the one wiring in renderSettingsPanel serves both tabs.
+  trouble: () => `
+    <div class="ts-section">
+      <label>Check my setup</label>
+      <div class="ts-note">
+        Checks this computer, browser and network for what the app needs, and says
+        what to do about anything that's wrong.
+      </div>
+      <div class="ts-btns"><button id="ts-check-btn" type="button">Check my setup</button></div>
+      <ul class="ts-checks" id="ts-checks">${setupCheckHTML()}</ul>
+    </div>
+    <div class="ts-section">
+      <label>Report a problem</label>
+      <div class="ts-note">
+        Say in a line what happened. The app adds what Volksswitch needs to see the
+        problem: the app's release, your keyguard file's version, your browser and
+        your design's settings. It leaves out folder, file and design names, and any
+        text engraved on the keyguard. The whole report is shown below.
+        <b>The app sends nothing itself</b> — you copy, email or save the report.
+      </div>
+      <input id="ts-what" type="text" maxlength="500" placeholder="What happened?">
+      <div class="ts-btns">
+        <button id="ts-copy" type="button">Copy report</button>
+        <button id="ts-email" type="button">Email report…</button>
+        <button id="ts-save" type="button">Save report…</button>
+      </div>
+      <div class="ts-msg" id="ts-msg"></div>
+      <textarea id="ts-report" readonly aria-label="The report, exactly as you will send it"></textarea>
+    </div>
+    <div class="ts-section">
+      <label>Recent problems</label>
+      <div class="ts-note">Errors since the app was opened, without the Console's routine messages.</div>
+      <ul class="ts-problems" id="ts-problems">${problemsHTML()}</ul>
+    </div>
+    <div class="ts-section">
+      <label>Known issues</label>
+      <div class="ts-note">
+        Problems we already know about, each with what to do:
+        <a href="${KNOWN_ISSUES_URL}" target="_blank" rel="noopener">Known issues</a>
+        on volksswitch.org.
+      </div>
+      <label>Reloading</label>
+      <div class="ts-note">
+        Starts the app fresh and picks up the newest version. Use this any time the
+        app looks wrong or seems stuck. You&rsquo;ll need to open your project again.
+      </div>
+      <button id="about-reload-btn" type="button">Reload the app</button>
+    </div>
+  `,
   about: () => `
     <div class="setting">
       <label>Keyguard Designer (web)</label>
@@ -6888,6 +7044,7 @@ function renderSettingsPanel(cat) {
   // The panel's markup is replaced on every render, so its controls are wired
   // each time rather than once at startup.
   wireAboutSettings(settingsPanel);
+  wireTroubleshooting(settingsPanel);
   const reloadBtn = settingsPanel.querySelector('#about-reload-btn');
   if (reloadBtn) reloadBtn.addEventListener('click', () => {
     reloadBtn.disabled = true;
@@ -6983,11 +7140,11 @@ function renderSettingsPanel(cat) {
   });
 }
 
-function openSettings() {
+function openSettings(cat = 'general') {
   document.querySelectorAll('#settings-cats .cat').forEach(c => {
-    c.classList.toggle('active', c.dataset.cat === 'general');
+    c.classList.toggle('active', c.dataset.cat === cat);
   });
-  renderSettingsPanel('general');
+  renderSettingsPanel(cat);
   settingsOverlay.classList.add('open');
 }
 function closeSettings() { settingsOverlay.classList.remove('open'); }
@@ -7027,7 +7184,7 @@ function closeSettings() { settingsOverlay.classList.remove('open'); }
   document.addEventListener('mouseup', () => { dragging = false; });
 }());
 
-settingsBtn.addEventListener('click', openSettings);
+settingsBtn.addEventListener('click', () => openSettings());
 settingsCloseBtn.addEventListener('click', closeSettings);
 settingsOverlay.addEventListener('click', e => { if (e.target === settingsOverlay) closeSettings(); });
 document.addEventListener('keydown', e => {
@@ -7040,6 +7197,468 @@ document.querySelectorAll('#settings-cats .cat').forEach(c => {
     renderSettingsPanel(c.dataset.cat);
   });
 });
+
+// ===== Help menu, Custom Openings moves, Settings → Troubleshooting =====
+// All of the words here are built into the app, so help works offline and on a
+// network that blocks volksswitch.org. The links open volksswitch.org in a new
+// tab only when clicked; the app itself fetches nothing from there, and a
+// problem report leaves only by the clinician's own hand (SECURITY.md §4).
+const SUPPORT_EMAIL       = 'ken@volksswitch.org';
+const KEYGUARD_PAGES_URL  = 'https://volksswitch.org/index.php/volks-devices/'
+  + 'customizable-3d-printable-keyguard-for-grid-based-free-form-and-hybrid-aac-apps-on-tablets/';
+const CUSTOM_OPENINGS_URL = KEYGUARD_PAGES_URL + 'custom-openings/';
+// ⚠ This page must be live on volksswitch.org before a release carries the link.
+const KNOWN_ISSUES_URL    = 'https://volksswitch.org/index.php/keyguard-designer-known-issues/';
+const HELP_IS_MAC = /Mac|iPhone|iPad|iPod/.test(navigator.platform || '') ||
+                    (navigator.userAgentData && navigator.userAgentData.platform === 'macOS');
+const HELP_MOD = HELP_IS_MAC ? '⌘' : 'Ctrl';
+
+function tsEsc(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                  .replace(/"/g, '&quot;');
+}
+
+// A mailto: link is handed to the computer's email program. The flag keeps the
+// unsaved-changes question from firing as it goes.
+let mailtoInFlight = false;
+function openEmail(subject, body) {
+  const a = document.createElement('a');
+  a.href = `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(subject)}`
+         + (body ? `&body=${encodeURIComponent(body)}` : '');
+  mailtoInFlight = true;
+  a.click();
+  setTimeout(() => { mailtoInFlight = false; }, 1500);
+}
+function openSite(url) { window.open(url, '_blank', 'noopener'); }
+
+// ---- The ? menu ----
+const helpBtn  = document.getElementById('help-btn');
+const helpMenu = document.getElementById('help-menu');
+const helpItems = () => [...helpMenu.querySelectorAll('li[role=menuitem]')];
+function openHelpMenu() {
+  helpMenu.classList.add('open');
+  const r = helpBtn.getBoundingClientRect();
+  const mw = helpMenu.offsetWidth, mh = helpMenu.offsetHeight;
+  helpMenu.style.left = Math.max(4, Math.min(r.right - mw, window.innerWidth - mw - 4)) + 'px';
+  helpMenu.style.top  = Math.max(4, r.top - mh - 2) + 'px';
+  helpBtn.setAttribute('aria-expanded', 'true');
+  helpItems()[0].focus();
+}
+function closeHelpMenu() {
+  helpMenu.classList.remove('open');
+  helpBtn.setAttribute('aria-expanded', 'false');
+}
+function runHelpItem(what) {
+  closeHelpMenu();
+  if (what === 'moves')   openMoves();
+  if (what === 'howto')   openSite(KEYGUARD_PAGES_URL);
+  if (what === 'known')   openSite(KNOWN_ISSUES_URL);
+  if (what === 'check')   { openSettings('trouble'); runSetupCheck(); }
+  if (what === 'report')  {
+    openSettings('trouble');
+    const box = settingsPanel.querySelector('#ts-what');
+    if (box) { box.scrollIntoView({ block: 'center' }); box.focus(); }
+  }
+  if (what === 'contact') openEmail('Keyguard Designer');
+}
+helpBtn.addEventListener('click', e => {
+  e.stopPropagation();
+  if (helpMenu.classList.contains('open')) closeHelpMenu(); else openHelpMenu();
+});
+helpMenu.addEventListener('click', e => {
+  const li = e.target.closest('li[role=menuitem]');
+  if (li) runHelpItem(li.dataset.help);
+});
+helpMenu.addEventListener('keydown', e => {
+  const items = helpItems();
+  const i = items.indexOf(document.activeElement);
+  if (e.key === 'ArrowDown') { e.preventDefault(); items[(i + 1) % items.length].focus(); }
+  else if (e.key === 'ArrowUp') { e.preventDefault(); items[(i - 1 + items.length) % items.length].focus(); }
+  else if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (i >= 0) runHelpItem(items[i].dataset.help); }
+});
+document.addEventListener('mousedown', e => {
+  if (helpMenu.classList.contains('open') && !helpMenu.contains(e.target) && !helpBtn.contains(e.target)) {
+    closeHelpMenu();
+  }
+});
+
+// ---- The Custom Openings moves card ----
+// Mirrors what the by-eye tab really does (release notes 101, 112, 113 and its
+// keyboard handler). Change the two together.
+const movesOverlay = document.getElementById('moves-overlay');
+function movesHTML() {
+  const k = HELP_MOD;
+  const row = (a, b) => `<tr><td>${a}</td><td>${b}</td></tr>`;
+  return `
+    <h4>Adding</h4><table>
+      ${row('+ Rectangle, + Circle', 'An opening 10 mm across appears in the middle of the screen.')}
+      ${row('+ Ridge', 'Then click on the keyguard for a 10 mm ridge starting there, or press and drag to draw one, in steps of 45°.')}
+      ${row('+ Rounded corner', 'Square corners are ringed. Click one to round it by 2 mm, or drag from it along an edge to choose how much.')}
+    </table>
+    <h4>Selecting</h4><table>
+      ${row('Click', 'Selects an opening, ridge or rounded corner.')}
+      ${row('Shift-click', 'Adds another to the selection, so they move together.')}
+      ${row('<kbd>Esc</kbd>', 'Lets go of the selection. With nothing selected, it closes Custom Openings.')}
+    </table>
+    <h4>Moving and shaping</h4><table>
+      ${row('Drag', 'Moves what you drag. Dragging anywhere else turns the keyguard.')}
+      ${row('Shift + drag', 'Keeps to a straight line.')}
+      ${row(`${k} + drag`, 'Leaves a copy behind and drags the copy.')}
+      ${row('Arrow keys', 'Nudge the selection 1 mm. Hold Shift for 10 mm.')}
+      ${row('Handles', 'Drag one to resize an opening, or drag a ridge’s end to lengthen, shorten or swing it.')}
+      ${row('Yellow dot', 'Drag it to round a rectangle’s corners, or to change a rounded corner.')}
+    </table>
+    <h4>Taking back and finishing</h4><table>
+      ${row('<kbd>Delete</kbd>', 'Removes the selection.')}
+      ${row(`<kbd>${k}+Z</kbd> or Undo`, 'Takes back the last change: a whole drag, or a whole run of arrow-key nudges.')}
+      ${row('Save', 'Keeps your openings in the design.')}
+      ${row('Cancel', 'Closes without saving. If you changed anything, the app asks first.')}
+    </table>`;
+}
+function openMoves() {
+  document.getElementById('moves-body').innerHTML = movesHTML();
+  document.getElementById('moves-more').href = CUSTOM_OPENINGS_URL;
+  movesOverlay.classList.add('open');
+  document.getElementById('moves-close').focus();
+}
+function closeMoves() { movesOverlay.classList.remove('open'); }
+document.getElementById('moves-close').addEventListener('click', closeMoves);
+movesOverlay.addEventListener('click', e => { if (e.target === movesOverlay) closeMoves(); });
+// On window, capturing: ahead of the by-eye tab's own keys (on document), so
+// Escape or Delete with the menu or the card up acts on them, never on the
+// openings underneath.
+window.addEventListener('keydown', e => {
+  if (helpMenu.classList.contains('open') && e.key === 'Escape') {
+    e.preventDefault(); e.stopPropagation(); closeHelpMenu(); helpBtn.focus(); return;
+  }
+  if (!movesOverlay.classList.contains('open')) return;
+  if (e.key === 'Escape') closeMoves();
+  if (e.key !== 'Tab' && e.key !== 'Enter' && e.key !== ' ') { e.preventDefault(); e.stopPropagation(); }
+}, true);
+
+// ---- Check my setup ----
+let lastSetupCheck = null;   // { at: Date, items: [{ state, what, todo }] }
+let setupCheckRunning = false;
+
+function browserInfo() {
+  const ua = navigator.userAgent;
+  const brands = (navigator.userAgentData && navigator.userAgentData.brands) || [];
+  const brand = re => brands.find(b => re.test(b.brand));
+  let os = (navigator.userAgentData && navigator.userAgentData.platform) || '';
+  if (!os) os = /CrOS/.test(ua) ? 'ChromeOS' : /Windows/.test(ua) ? 'Windows'
+            : /Mac OS X/.test(ua) ? 'macOS' : /Linux/.test(ua) ? 'Linux' : 'unknown system';
+  let m, b;
+  if ((b = brand(/Microsoft Edge/)) || (m = ua.match(/Edg\/(\d+)/)))
+    return { name: 'Edge', version: b ? b.version : m[1], os, supported: true };
+  if ((m = ua.match(/Firefox\/(\d+)/)))  return { name: 'Firefox', version: m[1], os, supported: false };
+  if ((m = ua.match(/OPR\/(\d+)/)))      return { name: 'Opera', version: m[1], os, supported: 'maybe' };
+  if ((b = brand(/Google Chrome/)))      return { name: 'Chrome', version: b.version, os, supported: true };
+  if ((m = ua.match(/Chrome\/(\d+)/)))   return { name: brands.length ? 'a Chromium browser' : 'Chrome',
+                                                  version: m[1], os, supported: brands.length ? 'maybe' : true };
+  if ((m = ua.match(/Version\/(\d+).*Safari/))) return { name: 'Safari', version: m[1], os, supported: false };
+  return { name: 'an unrecognized browser', version: '', os, supported: false };
+}
+
+async function fetchOwn(url) {
+  const ctl = new AbortController();
+  const t = setTimeout(() => ctl.abort(), 8000);
+  try {
+    const r = await fetch(url + '?t=' + Date.now(), { cache: 'no-store', signal: ctl.signal });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    return await r.json();
+  } finally { clearTimeout(t); }
+}
+
+async function runSetupCheck() {
+  if (setupCheckRunning) return;
+  setupCheckRunning = true;
+  const list = settingsPanel.querySelector('#ts-checks');
+  if (list) list.innerHTML = '<li class="info"><span class="what">Checking…</span></li>';
+  const items = [];
+  const add = (state, what, todo = '') => items.push({ state, what, todo });
+  const host = location.host;
+
+  const br = browserInfo();
+  const brName = `${br.name}${br.version ? ' ' + br.version : ''} on ${br.os}`;
+  if (br.supported === true) add('ok', `Browser: ${brName}.`);
+  else if (br.supported === 'maybe') add('warn', `Browser: ${brName}.`,
+    'The app is made for Chrome and Edge. This browser may work, but it isn’t tested.');
+  else add('bad', `Browser: ${brName}.`,
+    'This browser can’t open a project folder. Use Chrome or Edge.');
+
+  if (window.isSecureContext) add('ok', 'The app’s address is secure.');
+  else add('bad', 'The app’s address isn’t secure, so the browser blocks folder access.',
+    'Open the app at https://keyguard.volksswitch.org/.');
+
+  if ('showDirectoryPicker' in window) add('ok', 'The browser can open a project folder.');
+  else add('bad', 'The browser can’t open a project folder.', 'Use Chrome or Edge.');
+
+  if (project && project.dirHandle && project.dirHandle.queryPermission) {
+    let perm = 'unknown';
+    try { perm = await project.dirHandle.queryPermission({ mode: 'readwrite' }); } catch {}
+    if (perm === 'granted') add('ok', 'The app can read and save in your project folder.');
+    else if (perm === 'prompt') add('warn', 'The browser will ask before the app saves in your project folder.',
+      'Choose Allow when it asks.');
+    else add('bad', 'The app isn’t allowed to save in your project folder.',
+      'Use Open Project to choose the folder again, and choose Allow.');
+  } else add('info', 'No project is open, so the folder wasn’t checked.');
+
+  let latestDesigner = null;
+  const [appMan, scadMan] = await Promise.allSettled([fetchOwn(APP_MANIFEST_URL), fetchOwn(DESIGNER_MANIFEST_URL)]);
+  if (appMan.status === 'fulfilled') {
+    add('ok', `The app can reach its own address (${host}).`);
+    const latest = Number(appMan.value && appMan.value.app_release);
+    if (Number.isFinite(latest) && latest > APP_RELEASE)
+      add('warn', `This is release ${APP_RELEASE}; release ${latest} is out.`, 'Use Reload the app, below.');
+    else add('ok', `The app is up to date (release ${APP_RELEASE}).`);
+  } else {
+    add('bad', `The app couldn’t reach its own address (${host}).`,
+      'You may be offline. If you are online, your network is blocking this address — ' +
+      `ask your IT department to allow ${host}. Until then the app works, but can’t offer updates.`);
+  }
+  if (scadMan.status === 'fulfilled') {
+    const latest = Number(scadMan.value && scadMan.value.version);
+    const mine = project ? parseDesignerVersion(project.scadText) : null;
+    if (!Number.isFinite(latest)) add('warn', 'The list of keyguard file versions couldn’t be read.');
+    else if (mine == null) add('info', `The newest keyguard file is version ${latest}.`);
+    else if (mine >= latest) add('ok', `Your keyguard file is the newest, version ${mine}.`);
+    else add('warn', `Your keyguard file is version ${mine}; version ${latest} is out.`,
+      'Open your project again and choose Update now when the app offers it.');
+    if (Number.isFinite(latest)) latestDesigner = latest;
+  } else if (appMan.status === 'fulfilled') {
+    add('bad', 'The app couldn’t check for a newer keyguard file.',
+      'Try again in a minute. If it keeps failing, report it.');
+  }
+
+  let storageOk = false;
+  try {
+    localStorage.setItem('keyguard:probe', '1');
+    storageOk = localStorage.getItem('keyguard:probe') === '1';
+    localStorage.removeItem('keyguard:probe');
+  } catch {}
+  if (storageOk) add('ok', 'The browser keeps the app’s settings between visits.');
+  else add('bad', 'The browser isn’t keeping the app’s settings.',
+    'It may be a private window, or set to clear site data. Your settings and remembered folder will be forgotten each time.');
+
+  const c = document.createElement('canvas');
+  if (c.getContext('webgl2') || c.getContext('webgl')) add('ok', '3D drawing (WebGL) is working.');
+  else add('bad', 'The browser’s 3D drawing (WebGL) is off or unavailable.',
+    'In the browser’s settings, turn on “Use graphics acceleration when available”, or ask IT.');
+
+  if (typeof WebAssembly === 'object') add('ok', 'The 3D engine (WebAssembly) can run.');
+  else add('bad', 'WebAssembly is turned off, so the 3D engine can’t run.',
+    `Some managed browsers turn it off. Ask your IT department to allow WebAssembly for ${host}.`);
+
+  if (navigator.serviceWorker && navigator.serviceWorker.controller)
+    add('ok', 'The app is saved for working offline.');
+  else add('info', 'The app isn’t saved for working offline yet.',
+    'It will be after you open it once more while online.');
+
+  lastSetupCheck = { at: new Date(), items, latestDesigner };
+  setupCheckRunning = false;
+  const live = settingsPanel.querySelector('#ts-checks');
+  if (live) live.innerHTML = setupCheckHTML();
+  refreshReport();
+}
+
+function setupCheckHTML() {
+  if (!lastSetupCheck || !lastSetupCheck.items) return '';
+  return lastSetupCheck.items.map(i =>
+    `<li class="${i.state}"><span class="what">${tsEsc(i.what)}</span>`
+    + (i.todo ? `<span class="todo">${tsEsc(i.todo)}</span>` : '') + '</li>').join('');
+}
+
+// ---- Recent problems ----
+const PROBLEM_RE = /\berror\b|failed|failure|out of bounds|out of memory|exception|damaged|couldn.t|could not|cannot|blocked/i;
+const PROBLEM_WHY = [
+  [/memory access out of bounds|out of memory/i,
+   'The 3D engine ran out of working memory, which can happen on heavy designs. Use Reload the app below, then open your project again.'],
+  [/couldn.t check|failed to fetch|networkerror|load failed/i,
+   'The app couldn’t reach its own address. Check my setup will say whether you are offline or the network is blocking it.'],
+  [/damaged/i,
+   'The file of saved designs (the .json in your project folder) has a fault, often from being opened in a text editor. The message says what is wrong with it.'],
+  [/notallowederror|permission|securityerror/i,
+   'The browser didn’t let the app use your project folder. Use Open Project again and choose Allow.'],
+  [/render failed/i,
+   'The keyguard couldn’t be drawn with these settings. Undo the last change, or report the problem so the settings come with it.'],
+  [/export failed/i,
+   'The file wasn’t saved. Try again; if it fails again, report the problem.'],
+];
+function recentProblems() {
+  const lines = consoleEl.textContent.split('\n').map(l => l.trim()).filter(l => l && PROBLEM_RE.test(l));
+  const all = [...lines, ...uncaughtProblems];
+  return [...new Set(all)].slice(-20).map(scrubLine);
+}
+function problemsHTML() {
+  const list = recentProblems();
+  if (!list.length) return '<li class="none" style="color:#666;">None since the app was opened.</li>';
+  return list.map(p => {
+    const why = (PROBLEM_WHY.find(([re]) => re.test(p)) || [])[1];
+    return `<li><code>${tsEsc(p)}</code>${why ? `<span class="why">${tsEsc(why)}</span>` : ''}</li>`;
+  }).join('');
+}
+
+// ---- The problem report ----
+// Names are left out because clinicians often name a folder or a design after a
+// student; engraved text often IS the student's name. Engraved text is kept to
+// its length (X for every letter) so the keyguard still draws the same way.
+function reportNames() {
+  const names = [];
+  if (project) {
+    if (project.dirHandle && project.dirHandle.name) names.push(project.dirHandle.name);
+    if (project.jsonName) names.push(project.jsonName, project.jsonName.replace(/\.json$/i, ''));
+    if (!/^keyguard(_v\d+)?\.scad$/i.test(project.scadName || '')) names.push(project.scadName);
+    for (const n of [...(project.presetNames || []), ...(project.rawPresetNames || []),
+                     ...(project.imageNames || [])]) names.push(n);
+    if (project.screenshotName) names.push(project.screenshotName);
+  }
+  // Three letters at least: a two-letter name would wipe out words like "no".
+  return names.filter(n => n && String(n).length >= 3)
+              .map(String).sort((a, b) => b.length - a.length);   // longest first
+}
+function scrubNames(s) {
+  let out = String(s);
+  for (const n of reportNames()) out = out.split(n).join('[name removed]');
+  return out;
+}
+// Console messages quote the names they mention, so for those anything quoted
+// goes too. Not for settings, whose quoted codes the report needs.
+function scrubLine(s) {
+  return scrubNames(s).replace(/"[^"\n]{1,200}"/g, '"[name removed]"')
+                      .replace(/“[^”\n]{1,200}”/g, '“[name removed]”');
+}
+const REPORT_TEXT_PARAMS = new Set(['text', 'Braille_text', 'engraved_text']);
+const REPORT_OA_PARAMS   = new Set(['my_screen_openings', 'my_case_openings',
+                                    'my_case_additions', 'my_tablet_openings']);
+// Short codes the openings rows use (shapes, anchors, yes/no). Any other quoted
+// word in those fields may be engraved text or a file name, so it is masked.
+const REPORT_OA_CODES = new Set(['r', 'c', 'rr', 'hd', 'cr', 'crr', 'chd', 'L', 'R', 'T', 'B', 'C',
+                                 't', 'b', 'l', 'x', 'y', '#', 'yes', 'no', 'top', 'bottom']);
+const maskLetters = s => s.replace(/[^\s,]/g, 'X');
+function reportValue(name, value) {
+  let v = String(value);
+  if (REPORT_TEXT_PARAMS.has(name)) return maskLetters(v);
+  if (name === 'screenshot_filename') return '[name removed]' + ((v.match(/\.[a-z0-9]+$/i) || [''])[0]);
+  if (REPORT_OA_PARAMS.has(name))
+    v = v.replace(/"([^"]*)"/g, (all, inner) => REPORT_OA_CODES.has(inner) ? all : `"${maskLetters(inner)}"`);
+  return scrubNames(v);
+}
+function changedSettings() {
+  if (!project || !project.customizer) return null;
+  const vals = currentFormValues();
+  const norm = s => String(s).trim().replace(/^"(.*)"$/s, '$1').replace(/\s+/g, '');
+  const out = [];
+  let total = 0;
+  for (const sec of project.customizer) {
+    for (const p of sec.params) {
+      total++;
+      if (!(p.name in vals)) continue;
+      const a = norm(vals[p.name]), d = norm(p.default);
+      const same = a === d || (a !== '' && d !== '' && !isNaN(a) && !isNaN(d) && Number(a) === Number(d));
+      if (!same) out.push(`${p.name} = ${reportValue(p.name, vals[p.name])}`);
+    }
+  }
+  return { lines: out, total };
+}
+function buildReport() {
+  const what = (settingsPanel.querySelector('#ts-what') || {}).value || '';
+  const now = new Date();
+  const pad = n => String(n).padStart(2, '0');
+  const stamp = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} `
+              + `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+  const br = browserInfo();
+  const mine = project ? parseDesignerVersion(project.scadText) : null;
+  const latest = lastSetupCheck && lastSetupCheck.latestDesigner;
+  const L = [];
+  L.push('Keyguard Designer problem report', `Made: ${stamp} (local time)`, '');
+  L.push('What happened:', what.trim() ? scrubNames(what.trim()) : '(not filled in)', '');
+  L.push(`App: release ${APP_RELEASE}, at ${location.origin}`);
+  L.push(`Keyguard designer file: ${mine != null ? 'version ' + mine : project ? 'version unknown' : 'no project open'}`
+         + (Number.isFinite(latest) ? ` (newest published: ${latest})` : ''));
+  L.push(`Skill level: ${settings.skillLevel}`);
+  L.push(`Browser: ${br.name}${br.version ? ' ' + br.version : ''} on ${br.os}`);
+  L.push(`Screen: ${screen.width}×${screen.height} at ${Math.round((window.devicePixelRatio || 1) * 100)}%, `
+         + `window ${window.innerWidth}×${window.innerHeight}`);
+  if (project) {
+    L.push(`Openings-and-additions file: ${project.oaText ? 'in the folder (not included)' : 'none'}`);
+    L.push(`Screenshot: ${project.screenshotName ? 'in the folder (not included)' : 'none'}`);
+  }
+  L.push('');
+  if (lastSetupCheck && lastSetupCheck.items) {
+    const t = lastSetupCheck.at;
+    L.push(`Check my setup (run at ${pad(t.getHours())}:${pad(t.getMinutes())}):`);
+    const mark = { ok: '✓', warn: '!', bad: '✗', info: '–' };
+    for (const i of lastSetupCheck.items) L.push(`  ${mark[i.state]} ${i.what}`);
+  } else L.push('Check my setup: not run');
+  L.push('');
+  const probs = recentProblems();
+  L.push('Recent problems:');
+  if (probs.length) for (const p of probs) L.push('  ' + p); else L.push('  none');
+  L.push('');
+  const cs = changedSettings();
+  if (!cs) L.push('Design settings: no project open');
+  else {
+    L.push(`Design settings that differ from the keyguard file's defaults (${cs.lines.length} of ${cs.total}):`);
+    for (const l of cs.lines) L.push('  ' + l);
+  }
+  return L.join('\n');
+}
+function refreshReport() {
+  const box = settingsPanel.querySelector('#ts-report');
+  if (box) box.value = buildReport();
+}
+function tsSay(msg) {
+  const el = settingsPanel.querySelector('#ts-msg');
+  if (el) el.textContent = msg;
+}
+async function copyReport() {
+  const text = buildReport();
+  try { await navigator.clipboard.writeText(text); return true; }
+  catch {
+    const box = settingsPanel.querySelector('#ts-report');
+    if (box) { box.value = text; box.focus(); box.select(); }
+    return false;
+  }
+}
+
+function wireTroubleshooting(root) {
+  const checkBtn = root.querySelector('#ts-check-btn');
+  if (!checkBtn) return;
+  checkBtn.addEventListener('click', runSetupCheck);
+  root.querySelector('#ts-what').addEventListener('input', refreshReport);
+  root.querySelector('#ts-copy').addEventListener('click', async () => {
+    if (await copyReport()) tsSay(`Copied. Paste it into an email to ${SUPPORT_EMAIL}.`);
+    else tsSay(`The report is selected below. Press ${HELP_MOD}+C to copy it, then paste it into an email to ${SUPPORT_EMAIL}.`);
+  });
+  root.querySelector('#ts-email').addEventListener('click', async () => {
+    // The full report is too long to put in an email link reliably, so it goes
+    // on the clipboard and the email opens with the clinician's line in it.
+    const copied = await copyReport();
+    const what = root.querySelector('#ts-what').value.trim();
+    openEmail(`Keyguard Designer problem (release ${APP_RELEASE})`,
+      (what ? scrubNames(what) + '\n\n' : '')
+      + `[Paste the report here: press ${HELP_MOD}+V]\n`);
+    tsSay(copied
+      ? `The report is copied. In the new email, press ${HELP_MOD}+V to paste it, then send. `
+        + `If no email opened, paste it into an email to ${SUPPORT_EMAIL}.`
+      : `Copy the report below (${HELP_MOD}+C), then paste it into the email.`);
+  });
+  root.querySelector('#ts-save').addEventListener('click', async () => {
+    const d = new Date();
+    const name = `keyguard-problem-report-${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+               + `-${String(d.getDate()).padStart(2, '0')}.txt`;
+    try {
+      const target = await pickSaveLocation({ suggestedName: name, description: 'Text file',
+                                               mime: 'text/plain', exts: ['.txt'] });
+      if (!target) return;
+      const saved = await writeSaveLocation(target, buildReport(), { suggestedName: name, mime: 'text/plain' });
+      tsSay(`Saved as ${saved}. Attach it to an email to ${SUPPORT_EMAIL}.`);
+    } catch (e) {
+      tsSay('The report couldn’t be saved: ' + e.message);
+    }
+  });
+  refreshReport();
+}
 
 // ===== Custom Openings panel =====
 // A simplified editor for the `my_screen_openings` / `my_case_openings`
