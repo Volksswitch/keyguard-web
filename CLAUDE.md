@@ -6,7 +6,7 @@ Two project folders exist and they look nearly identical:
 
 | Folder | Repo | What it is |
 |---|---|---|
-| **`keyguard-web`** (this one) | `Volksswitch/keyguard-web` | **THE LIVE APP.** Serves `keyguard.volksswitch.org`. Release 114 public, 115 local. |
+| **`keyguard-web`** (this one) | `Volksswitch/keyguard-web` | **THE LIVE APP.** Serves `keyguard.volksswitch.org`. Release 115 public, 116 local. |
 | `keyguard-designer-web` (sibling) | `Volksswitch/keyguard-designer-web` | **RETIRED.** The old address `volksswitch.github.io/keyguard-designer-web/`, frozen at release 21. Gets no app updates and no keyguard updates, ever. |
 
 **Release numbers tell them apart instantly: ≥100 is here, ≤21 is the old one.**
@@ -125,12 +125,12 @@ folder** — follow it exactly.
 
 **Version numbering — the dev copy leads public by one.**
 - `APP_RELEASE` (in `app.html`) is pre-incremented at the END of each release, so a
-  dev build always reads one ahead of what is deployed. Currently **115** local,
-  **114** public.
+  dev build always reads one ahead of what is deployed. Currently **116** local,
+  **115** public.
 - `CACHE_NAME` (in `sw.js`) is NOT pre-bumped. It moves only during the release
-  ritual, to match. Currently `keyguard-v114`.
+  ritual, to match. Currently `keyguard-v115`.
 - `latest_app_version.json` is NOT pre-bumped either — RELEASE-TIME ONLY, same
-  reason. Currently 114.
+  reason. Currently 115.
 
 **Numbering starts at 100 here.** Releases 3–21 belong to the old address.
 
@@ -254,6 +254,12 @@ folder and no settings — expect to open the project again.
 - **Changing origin empties localStorage, IndexedDB and OPFS for every user**, and
   `FileSystemDirectoryHandle` cannot cross origins at all. This is what the whole
   migration hand-off exists to work around — never treat an origin change as routine.
+- **The Help menu (release 115) links to four volksswitch.org pages:** the Known Issues
+  page (`/index.php/keyguard-designer-known-issues/`, WordPress page 24563, published
+  26 Oct 2026, the Conversant layout), the web app guide, the keyguard hub and the Custom
+  Openings page. Renaming, moving or deleting one breaks a link inside the app, which only
+  a release can fix. Problem reports and Contact go to `ken@volksswitch.org`
+  (`SUPPORT_EMAIL` in `app.html`).
 
 ---
 
@@ -292,13 +298,6 @@ Report what you verified.
 
 ## Known gaps (recorded, not scheduled)
 
-- **⚠ RELEASE BLOCKER for 115 (26 Oct 2026): the Known Issues page must be live first.**
-  The Help menu and Settings → Troubleshooting link to
-  `volksswitch.org/index.php/keyguard-designer-known-issues/`, which does not exist yet.
-  Its words are drafted in `Documents/Keyguard Designer Website Drafts - Phase 1.docx`.
-  Do not run "bump keyguard web app" until the page answers. The other help links (web
-  app guide, keyguard hub, Custom Openings page) already exist. Problem reports and
-  Contact go to `ken@volksswitch.org` (`SUPPORT_EMAIL` in `app.html`).
 - **No test harness here.** The Playwright layers (lint / smoke / visual) live in the
   sibling folder and exercise *that* copy of `app.html` — i.e. the retired app. A
   change made here is currently covered only by a manual syntax check of the inline
