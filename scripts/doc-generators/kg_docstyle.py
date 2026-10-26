@@ -77,6 +77,7 @@ class KgDoc:
         for side in ('left_margin', 'right_margin', 'top_margin', 'bottom_margin'):
             setattr(sec, side, Inches(1))
         self.sec = sec
+        self._num_id = None
         self._styles()
         self._header_footer(header, footer)
 
@@ -97,7 +98,10 @@ class KgDoc:
             h.font.color.rgb = color
             h.paragraph_format.space_before = Pt(before)
             h.paragraph_format.space_after = Pt(after)
-            h.paragraph_format.keep_with_next = True
+            # Kept OFF in the style and ON for each heading: Word drops paragraph
+            # formatting that repeats its style when it saves (as it does to fill the
+            # contents), and Conversant's rule S3 reads the paragraph.
+            h.paragraph_format.keep_with_next = False
         for name in ('List Bullet', 'List Number', 'List Bullet 2'):
             s = st[name]
             _force_arial(s)
@@ -150,7 +154,31 @@ class KgDoc:
         return self.p(text, 'List Bullet 2')
 
     def n(self, text):
-        return self.p(text, 'List Number')
+        """A numbered step. A run of steps counts from 1; any other paragraph in between
+        starts the next run from 1 again, so each section's steps number on their own."""
+        body = self.doc.element.body
+        prev = body[-2] if len(body) > 1 else None          # the last child is sectPr
+        continues = (prev is not None and prev.tag == qn('w:p')
+                     and prev.find(qn('w:pPr') + '/' + qn('w:numPr')) is not None
+                     and self._num_id is not None)
+        para = self.p(text, 'List Number')
+        if not continues:
+            self._num_id = self._new_list()
+        numPr = para._p.get_or_add_pPr().get_or_add_numPr()
+        numPr.get_or_add_ilvl().val = 0
+        numPr.get_or_add_numId().val = self._num_id
+        return para
+
+    def _new_list(self):
+        """A fresh numbering instance of the List Number list, restarting at 1."""
+        numbering = self.doc.part.numbering_part.numbering_definitions._numbering
+        style_num = self.doc.styles['List Number']._element.pPr.numPr.numId.val
+        abstract = next(n for n in numbering.findall(qn('w:num'))
+                        if n.numId == style_num).abstractNumId.val
+        num = numbering.add_num(abstract)
+        override = num.add_lvlOverride(ilvl=0)
+        override.add_startOverride(1)
+        return num.numId
 
     def _heading(self, text, level):
         h = self.doc.add_heading(smart(text), level=level)
@@ -240,14 +268,16 @@ class KgDoc:
 
     def table(self, headers, rows, widths, first_col=True, size=11):
         t = self.doc.add_table(rows=1, cols=len(headers))
+        t.style = self.doc.styles['Table Grid']
         t.alignment = WD_TABLE_ALIGNMENT.CENTER
         t.autofit = False
         self._borders(t)
         self._margins(t)
         trPr = t.rows[0]._tr.get_or_add_trPr()
-        th = OxmlElement('w:tblHeader')
-        th.set(qn('w:val'), 'true')
-        trPr.append(th)
+        for tag in ('w:cantSplit', 'w:tblHeader'):
+            el = OxmlElement(tag)
+            el.set(qn('w:val'), 'true')
+            trPr.append(el)
         for i, h in enumerate(headers):
             c = t.rows[0].cells[i]
             self._cell(c, h, bold=True, size=size)
@@ -271,7 +301,11 @@ class KgDoc:
     def callout(self, text, label='Tip', fill='EAF1FB', border='9DB9E0'):
         """A shaded one-cell box for a tip or a caution."""
         t = self.doc.add_table(rows=1, cols=1)
+        t.style = self.doc.styles['Table Grid']
         t.alignment = WD_TABLE_ALIGNMENT.CENTER
+        cant = OxmlElement('w:cantSplit')
+        cant.set(qn('w:val'), 'true')
+        t.rows[0]._tr.get_or_add_trPr().append(cant)
         self._borders(t, border, '6')
         self._margins(t, 100, 100, 160, 160)
         c = t.rows[0].cells[0]
@@ -299,7 +333,11 @@ class KgDoc:
     # ---------- contents ----------
     def contents(self, levels='1-2'):
         """A Word table of contents; Word fills it when the document is opened and updated."""
-        self.h1('Contents')
+        # Styled like a heading but not one, so the contents don't list themselves.
+        c = self.doc.add_paragraph()
+        c.paragraph_format.space_before, c.paragraph_format.space_after = Pt(18), Pt(6)
+        r = c.add_run('Contents')
+        r.font.size, r.font.color.rgb = Pt(16), BLUE
         p = self.doc.add_paragraph()
         r = p.add_run()
         _field(r, f'TOC \\o "{levels}" \\h \\z \\u')
