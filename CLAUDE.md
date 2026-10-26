@@ -292,6 +292,13 @@ Report what you verified.
 
 ## Known gaps (recorded, not scheduled)
 
+- **⚠ RELEASE BLOCKER for 115 (26 Oct 2026): the Known Issues page must be live first.**
+  The Help menu and Settings → Troubleshooting link to
+  `volksswitch.org/index.php/keyguard-designer-known-issues/`, which does not exist yet.
+  Its words are drafted in `Documents/Keyguard Designer Website Drafts - Phase 1.docx`.
+  Do not run "bump keyguard web app" until the page answers. The other help links (web
+  app guide, keyguard hub, Custom Openings page) already exist. Problem reports and
+  Contact go to `ken@volksswitch.org` (`SUPPORT_EMAIL` in `app.html`).
 - **No test harness here.** The Playwright layers (lint / smoke / visual) live in the
   sibling folder and exercise *that* copy of `app.html` — i.e. the retired app. A
   change made here is currently covered only by a manual syntax check of the inline
