@@ -127,7 +127,7 @@ export async function makeCompanion({ browser, script, frames, seconds, ffmpeg }
   const trouble = (script.trouble || []).map((t) => `<li>${esc(t)}</li>`).join('');
   const nextLine = next
     ? `<p class="next"><b>Watch next:</b> ${esc(next.num)} ${esc(next.title)}${/[.?!]$/.test(next.title) ? '' : '.'}</p>`
-    : `<p class="next">More videos are on the way.</p>`;
+    : '';
   const html = `<!doctype html><html><head><meta charset="utf-8"><style>${STYLE}</style></head><body>
     <div class="kicker">Keyguard Designer how-to video ${esc(entry.num)}</div>
     <h1>${esc(fullTitle(entry))}</h1>
@@ -167,7 +167,6 @@ export async function makeCourseMap(browser) {
     <p class="learn">Short videos, a minute or two each, that show you how to design a keyguard. Each one has a one-page guide with the same steps.</p>
     <div class="meta">Start with "Getting started" and "Measuring", and watch those in order. After that, pick the ones you need. Updated ${today()}.</div>
     ${body}
-    <p class="note">More videos are on the way.</p>
   </body></html>`;
   const out = path.join(VIDEOS, 'Learning the Keyguard Designer.pdf');
   await printPdf(browser, html, out, { onePage: false });

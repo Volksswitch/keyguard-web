@@ -2,6 +2,8 @@
 // scripts/video/render-video.mjs, with the same narrator voice.
 //
 //   node scripts/video/render-video.mjs scripts/video/scripts/1.1-what-for.mjs
+//   node scripts/video/render-video.mjs <script> --pictures   pictures only, no speech or
+//        video: a trial run while writing a script; prints where the pictures are
 //
 // Output, in Videos/: <id>.mp4; <id>.srt (captions a player can show on request; nothing
 // is drawn over the picture); <id>.pdf, the one-page guide made from the same pictures
@@ -39,8 +41,13 @@ const CONVERSANT = path.join(process.env.OneDrive, '4 T-Z', 'Volksswitch', 'AI-d
 const { readAzureKey, synthesize, pace } = await import(
   pathToFileURL(path.join(CONVERSANT, 'scripts', 'video', 'azure.mjs')).href);
 
-const PORT = 8124;                 // its own port, so it never meets a preview or serve.bat
-const BASE = `http://localhost:${PORT}`;
+// Its own port, so it never meets a preview or serve.bat; KG_VIDEO_PORT lets two renders
+// run side by side.
+const PORT = Number(process.env.KG_VIDEO_PORT || 8124);
+const LOCAL = `http://localhost:${PORT}`;
+// A script showing what a clinician's browser reports about the app (Check my setup) uses
+// the live address, so the video shows keyguard.volksswitch.org and the released app.
+const LIVE = 'https://keyguard.volksswitch.org';
 const VIEW = { width: 1280, height: 720 };
 const SCALE = 1.5;                 // 1920 x 1080 video
 const LEAD_S = 0.35;               // quiet before each line
@@ -97,7 +104,7 @@ async function startServer() {
   const proc = spawn('python', [path.join(PROJECT, 'scripts', 'serve.py'), String(PORT)],
     { cwd: PROJECT, stdio: 'ignore' });
   for (let i = 0; i < 50; i++) {
-    try { if ((await fetch(`${BASE}/app.html`)).ok) return proc; } catch {}
+    try { if ((await fetch(`${LOCAL}/app.html`)).ok) return proc; } catch {}
     await pace(200);
   }
   proc.kill();
@@ -105,15 +112,22 @@ async function startServer() {
 }
 
 // The ring is drawn by the video, not the app: an overlay above everything, positioned on
-// the named control's own box. The same look as Conversant's videos.
-async function mark(page, selector) {
+// the named control's own box. The same look as Conversant's videos. A step can instead
+// give `ringBox`, a function working out a box itself (in page pixels), for something
+// drawn inside the 3D view, which has no control of its own to name.
+async function mark(page, selector, ringBox) {
   await page.evaluate(() => document.getElementById('vid-mark')?.remove());
-  if (!selector) return null;
-  const target = page.locator(selector).first();
-  if (!(await target.count())) throw new Error(`STOPPING - nothing on screen matches ${selector}`);
-  const box = await target.evaluate((el) => {
-    el.scrollIntoView({ block: 'nearest' });
-    const r = el.getBoundingClientRect();
+  if (!selector && !ringBox) return null;
+  let target;
+  if (selector) {
+    target = page.locator(selector).first();
+    if (!(await target.count())) throw new Error(`STOPPING - nothing on screen matches ${selector}`);
+  }
+  const fixed = ringBox ? await ringBox(page) : null;
+  const draw = (el, fixed) => {
+    if (el) el.scrollIntoView({ block: 'nearest' });
+    const r = fixed ? { left: fixed.x, top: fixed.y, right: fixed.x + fixed.w, bottom: fixed.y + fixed.h,
+      width: fixed.w, height: fixed.h } : el.getBoundingClientRect();
     if (r.width < 2 || r.height < 2) return null;
     const pad = 4, W = innerWidth, H = innerHeight;
     const L = Math.max(0, r.left - pad), T = Math.max(0, r.top - pad);
@@ -128,13 +142,49 @@ async function mark(page, selector) {
     });
     document.body.appendChild(m);
     return { left: L, top: T, right: R, bottom: B };
-  });
-  if (!box) throw new Error(`STOPPING - ${selector} is on the page but not visible`);
+  };
+  // A locator hands the function its element first; the page alone hands it nothing, so the
+  // worked-out box is written into the call itself.
+  const box = target ? await target.evaluate(draw, null)
+    : await page.evaluate(`(${draw.toString()})(null, ${JSON.stringify(fixed)})`);
+  if (!box) throw new Error(`STOPPING - ${selector || 'the ring box'} is on the page but not visible`);
   return box;
 }
 
+// A still picture instead of the app: a photo or screenshot that isn't the app's own screen
+// (a tablet's settings, a data form, a ruler on a case). `image` is a path inside the
+// project folder; `ring` is a box to point at and `marks` are lines or boxes to draw, all in
+// the picture's own pixels. The picture is fitted to the video's frame.
+async function showPicture(page, step) {
+  const file = path.resolve(PROJECT, step.image);
+  if (!fs.existsSync(file)) throw new Error(`STOPPING - the picture ${step.image} is missing`);
+  const ext = path.extname(file).slice(1).toLowerCase().replace('jpg', 'jpeg');
+  const data = `data:image/${ext};base64,${fs.readFileSync(file).toString('base64')}`;
+  const [iw, ih] = run(FFPROBE, ['-v', 'error', '-select_streams', 'v', '-show_entries', 'stream=width,height',
+    '-of', 'csv=p=0', file]).trim().split(',').map(Number);
+  const k = Math.min(VIEW.width / iw, VIEW.height / ih);
+  const ox = (VIEW.width - iw * k) / 2, oy = (VIEW.height - ih * k) / 2;
+  const sx = (v) => ox + v * k, sy = (v) => oy + v * k;
+  const svg = (step.marks || []).map((m) => {
+    const label = m.label ? `<text x="${sx(m.at[0])}" y="${sy(m.at[1])}" font-family="Arial" font-size="20"
+      font-weight="bold" fill="#FF6D00" stroke="#fff" stroke-width="4" paint-order="stroke">${m.label}</text>` : '';
+    if (m.line) return `<line x1="${sx(m.line[0])}" y1="${sy(m.line[1])}" x2="${sx(m.line[2])}" y2="${sy(m.line[3])}"
+      stroke="#FF6D00" stroke-width="4"/>${label}`;
+    if (m.box) return `<rect x="${sx(m.box[0])}" y="${sy(m.box[1])}" width="${m.box[2] * k}" height="${m.box[3] * k}"
+      fill="none" stroke="#FF6D00" stroke-width="4" stroke-dasharray="10 6"/>${label}`;
+    return label;
+  }).join('');
+  await page.setContent(`<!doctype html><html><body style="margin:0;width:100vw;height:100vh;overflow:hidden;background:#1d2733;">
+    <img src="${data}" style="position:absolute;left:${ox}px;top:${oy}px;width:${iw * k}px;height:${ih * k}px;">
+    <svg width="${VIEW.width}" height="${VIEW.height}" style="position:absolute;left:0;top:0">${svg}</svg>
+    ${step.ring ? `<div id="vid-target" style="position:absolute;left:${sx(step.ring[0])}px;top:${sy(step.ring[1])}px;width:${step.ring[2] * k}px;height:${step.ring[3] * k}px"></div>` : ''}
+    </body></html>`, { waitUntil: 'load' });
+}
+
 async function settle(page) {
-  await settled(page, 600);
+  // A dialog the app is showing (Set it up, an update offer) leaves it "loading", so the
+  // wait gives up after 20 seconds and takes the picture of the dialog.
+  await settled(page, 600, { timeout: 20000 });
   // Animations that never end are switched off for the picture, so it shows plain colors.
   await page.evaluate(() => {
     for (const a of document.getAnimations()) {
@@ -152,6 +202,8 @@ function srtTime(s) {
   return `${p(Math.floor(ms / 3600000))}:${p(Math.floor(ms / 60000) % 60)}:${p(Math.floor(ms / 1000) % 60)},${p(ms % 1000, 3)}`;
 }
 
+const PICTURES_ONLY = process.argv.includes('--pictures');
+
 async function main() {
   const scriptPath = process.argv[2];
   if (!scriptPath) throw new Error('Usage: node scripts/video/render-video.mjs <script.mjs>');
@@ -167,13 +219,15 @@ async function main() {
   fs.mkdirSync(work, { recursive: true });
 
   // "{next}" in a line names the next video in the course, so a closing line stays right
-  // when a video is added.
-  const nextLine = next ? `Next: ${next.title}${/[.?!]$/.test(next.title) ? '' : '.'}` : 'More videos are on the way.';
-  for (const step of script.steps) step.say = step.say.replace('{next}', nextLine);
+  // when a video is added. It never promises videos that aren't made: no "more on the way".
+  // With no next video (the last in the course), the line simply ends without it (Ken).
+  const nextLine = next ? `Next: ${next.title}${/[.?!]$/.test(next.title) ? '' : '.'}` : '';
+  for (const step of script.steps) step.say = step.say.replace(/\s*\{next\}/, nextLine ? ` ${nextLine}` : '');
   // Every line is spoken first, so a missing key fails before the browser opens.
-  for (const step of script.steps) await speech(step.speaker || 'narrator', step.say);
+  if (!PICTURES_ONLY) for (const step of script.steps) await speech(step.speaker || 'narrator', step.say);
 
-  const server = await startServer();
+  const base = script.base === 'live' ? LIVE : LOCAL;
+  const server = script.base === 'live' || script.app === false ? null : await startServer();
   const browser = await launch();
   const segments = [];
   const frames = [];
@@ -185,7 +239,8 @@ async function main() {
   const signature = crypto.createHash('sha256');
   signature.update(JSON.stringify({ trouble: script.trouble || [], entry: me, next: next?.title || null, voices }));
   const frameDir = path.join(VIDEOS, '.frames', script.id);
-  fs.rmSync(frameDir, { recursive: true, force: true });
+  // A trial run leaves the last real render's pictures alone, for "sync videos".
+  if (!PICTURES_ONLY) fs.rmSync(frameDir, { recursive: true, force: true });
   fs.mkdirSync(frameDir, { recursive: true });
   let t = 0;
   try {
@@ -197,18 +252,34 @@ async function main() {
       st.textContent = '* { caret-color: transparent !important; }';
       document.head.appendChild(st);
     }));
-    await openSampleProject(page, BASE, script.project || {});
-    // The Console starts empty, so it shows only what the video does.
-    await page.click('#clear-btn');
+    // The app's own questions (the name for a new preset) are answered from the script, in
+    // order; a question it didn't plan for is answered with OK.
+    const answers = [...(script.answers || [])];
+    page.on('dialog', async (d) => {
+      console.log(`  [dialog] ${d.message()}`);
+      await (d.type() === 'prompt' ? d.accept(answers.shift() ?? '') : d.accept());
+    });
+    if (script.app !== false) {
+      await openSampleProject(page, base, script.project || {});
+      // The Console starts empty, so it shows only what the video does.
+      if (await page.locator('#clear-btn').isVisible()) await page.click('#clear-btn');
+    }
+    let picPage = null;
     for (const [i, step] of script.steps.entries()) {
-      if (step.before) await step.before(page);
-      await settle(page);
-      const box = await mark(page, step.highlight);
+      const shotPage = step.image ? (picPage ??= await browser.newPage({ viewport: VIEW, deviceScaleFactor: SCALE })) : page;
+      if (step.image) await showPicture(shotPage, step);
+      else {
+        if (step.before) await step.before(page);
+        await settle(page);
+      }
+      const box = await mark(shotPage, step.image ? (step.ring ? '#vid-target' : null) : step.highlight,
+        step.image ? null : step.ringBox);
       const shot = path.join(work, `${String(i).padStart(2, '0')}.png`);
       // Software 3D drawing is slow with the screenshot under the keyguard.
-      await page.screenshot({ path: shot, timeout: 180000 });
+      await shotPage.screenshot({ path: shot, timeout: 180000 });
       frames.push({ file: shot, box, view: { ...VIEW, deviceScaleFactor: SCALE } });
-      await page.evaluate(() => document.getElementById('vid-mark')?.remove());
+      await shotPage.evaluate(() => document.getElementById('vid-mark')?.remove());
+      if (PICTURES_ONLY) { console.log(`picture ${i + 1}/${script.steps.length}`); continue; }
 
       const clip = await speech(step.speaker || 'narrator', step.say);
       const speak = durationOf(clip);
@@ -227,12 +298,13 @@ async function main() {
       t += dur;
       console.log(`step ${i + 1}/${script.steps.length}  ${dur.toFixed(1)}s`);
     }
+    if (PICTURES_ONLY) { console.log(`\nPictures only: ${work}`); return; }
     // The companion page, from the same pictures, while the browser is still open.
     const pdf = await makeCompanion({ browser, script, frames, seconds: t, ffmpeg: FFMPEG });
     console.log(path.relative(PROJECT, pdf));
   } finally {
     await browser.close();
-    server.kill();
+    server?.kill();
   }
 
   fs.mkdirSync(VIDEOS, { recursive: true });
