@@ -152,7 +152,8 @@ Everything the app fetches comes from there:
 ### Links to volksswitch.org
 
 The Help menu and the Troubleshooting tab link to pages on `volksswitch.org` — the
-keyguard how-to pages, the Custom Openings page and the Known Issues page — and the
+web app guide, the keyguard how-to pages, the Custom Openings page and the Known
+Issues page — and the
 About tab links to its home page. Each opens in a new browser tab, and only when the
 clinician clicks it. The app itself requests nothing from that site, and its help
 text is built in, so a network that blocks `volksswitch.org` leaves the app working

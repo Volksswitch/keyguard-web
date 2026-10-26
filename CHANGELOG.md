@@ -13,7 +13,7 @@ notes, because nothing at this address could have been missed yet.
 
 ## Unreleased (next release)
 
-- There is a new **?** button beside the Settings button. It opens a short Help menu: a card listing every Custom Openings move, links to the keyguard how-to pages and the known issues on volksswitch.org, Check my setup, Report a problem, and an email to Volksswitch. The menu and the moves card are built into the app, so they work offline and on networks that block volksswitch.org.
+- There is a new **?** button beside the Settings button. It opens a short Help menu: a card listing every Custom Openings move, links to the web app guide, the keyguard how-to pages and the known issues on volksswitch.org, Check my setup, Report a problem, and an email to Volksswitch. The menu and the moves card are built into the app, so they work offline and on networks that block volksswitch.org.
 
 - Settings has a new Troubleshooting tab. **Check my setup** looks at your browser, your project folder, whether the app can reach its own address, whether your keyguard file is the newest, and whether the 3D drawing works. It says what to do about anything that's wrong, including when it's one for your IT department.
 

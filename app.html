@@ -828,6 +828,7 @@
 <!-- ============ Help menu and the Custom Openings moves card ============ -->
 <ul id="help-menu" role="menu" aria-label="Help">
   <li role="menuitem" tabindex="-1" data-help="moves">Custom Openings moves</li>
+  <li role="menuitem" tabindex="-1" data-help="guide">Web app guide<span class="ext">↗</span></li>
   <li role="menuitem" tabindex="-1" data-help="howto">Keyguard how-to pages<span class="ext">↗</span></li>
   <li role="menuitem" tabindex="-1" data-help="known">Known issues<span class="ext">↗</span></li>
   <li class="sep" role="separator"></li>
@@ -1710,7 +1711,7 @@ const RELEASE_NOTES = {
     "If you have unsaved changes — the red * is showing next to the preset name, or Custom Openings is open with changes you haven't saved — and you close the tab or the browser, refresh the page, or go to another address, your browser now asks “Leave site?” first. Choose Cancel to stay and keep your changes."
   ],
   "115": [
-    "There is a new ? button beside the Settings button. It opens a short Help menu: a card listing every Custom Openings move, links to the keyguard how-to pages and the known issues on volksswitch.org, Check my setup, Report a problem, and an email to Volksswitch. The menu and the moves card are built into the app, so they work offline and on networks that block volksswitch.org.",
+    "There is a new ? button beside the Settings button. It opens a short Help menu: a card listing every Custom Openings move, links to the web app guide, the keyguard how-to pages and the known issues on volksswitch.org, Check my setup, Report a problem, and an email to Volksswitch. The menu and the moves card are built into the app, so they work offline and on networks that block volksswitch.org.",
     "Settings has a new Troubleshooting tab. Check my setup looks at your browser, your project folder, whether the app can reach its own address, whether your keyguard file is the newest, and whether the 3D drawing works. It says what to do about anything that's wrong, including when it's one for your IT department.",
     "Report a problem, on the same tab, writes a report you can read in full before it goes anywhere: your note, the app's release, your keyguard file's version, your browser and your design's settings. It leaves out folder, file and design names, and any text engraved on the keyguard is replaced with X's. The app sends nothing itself: you copy the report, open it in an email, or save it as a file.",
     "The Troubleshooting tab also lists the errors since the app was opened, without the Console's routine messages, and explains the common ones. The Reload the app button is there too, as well as on the About tab."
@@ -7207,6 +7208,7 @@ const SUPPORT_EMAIL       = 'ken@volksswitch.org';
 const KEYGUARD_PAGES_URL  = 'https://volksswitch.org/index.php/volks-devices/'
   + 'customizable-3d-printable-keyguard-for-grid-based-free-form-and-hybrid-aac-apps-on-tablets/';
 const CUSTOM_OPENINGS_URL = KEYGUARD_PAGES_URL + 'custom-openings/';
+const WEB_APP_GUIDE_URL   = KEYGUARD_PAGES_URL + 'keyguard-design-web-app/';
 // ⚠ This page must be live on volksswitch.org before a release carries the link.
 const KNOWN_ISSUES_URL    = 'https://volksswitch.org/index.php/keyguard-designer-known-issues/';
 const HELP_IS_MAC = /Mac|iPhone|iPad|iPod/.test(navigator.platform || '') ||
@@ -7251,6 +7253,7 @@ function closeHelpMenu() {
 function runHelpItem(what) {
   closeHelpMenu();
   if (what === 'moves')   openMoves();
+  if (what === 'guide')   openSite(WEB_APP_GUIDE_URL);
   if (what === 'howto')   openSite(KEYGUARD_PAGES_URL);
   if (what === 'known')   openSite(KNOWN_ISSUES_URL);
   if (what === 'check')   { openSettings('trouble'); runSetupCheck(); }
