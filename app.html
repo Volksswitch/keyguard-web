@@ -1715,6 +1715,9 @@ const RELEASE_NOTES = {
     "Settings has a new Troubleshooting tab. Check my setup looks at your browser, your project folder, whether the app can reach its own address, whether your keyguard file is the newest, and whether the 3D drawing works. It says what to do about anything that's wrong, including when it's one for your IT department.",
     "Report a problem, on the same tab, writes a report you can read in full before it goes anywhere: your note, the app's release, your keyguard file's version, your browser and your design's settings. It leaves out folder, file and design names, and any text engraved on the keyguard is replaced with X's. The app sends nothing itself: you copy the report, open it in an email, or save it as a file.",
     "The Troubleshooting tab also lists the errors since the app was opened, without the Console's routine messages, and explains the common ones. The Reload the app button is there too, as well as on the About tab."
+  ],
+  "116": [
+    "Changing the skill level no longer makes the red * appear beside the preset name. A skill level only changes which settings you can see, so switching it on a design you haven't changed no longer looks like an unsaved change, and closing the tab no longer asks “Leave site?” because of it."
   ]
 };
 // @@RELEASE_NOTES_END@@
@@ -5586,9 +5589,21 @@ function isDirty() {
   const cur = currentFormValues();
   const base = project.baselineParams || {};
   for (const k of Object.keys(cur)) {
-    if (String(cur[k]) !== String(base[k] ?? '')) return true;
+    if (!sameParamValue(cur[k], base[k])) return true;
   }
   return false;
+}
+
+// A number box shows its value to the setting's decimal places ("2" reads "2.0"),
+// while a setting the skill level hides keeps the value as written. Comparing the
+// two as text made a skill-level change alone show the red * (26 Oct 2026), so
+// plain numbers compare by value. A leading zero ("05") still counts as different,
+// since in a text setting that is a real change.
+const PLAIN_NUMBER = /^-?(0|[1-9]\d*)(\.\d+)?$/;
+function sameParamValue(a, b) {
+  const sa = String(a), sb = String(b ?? '');
+  if (sa === sb) return true;
+  return PLAIN_NUMBER.test(sa) && PLAIN_NUMBER.test(sb) && Number(sa) === Number(sb);
 }
 
 // DOM-based replacement for confirm(). A native confirm() consumes the
