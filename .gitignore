@@ -14,3 +14,4 @@ SECURITY.docx
 # Manual figures: screenshots regenerated from the running app by
 # scripts/doc-generators/capture-manual-figures.mjs, so they are outputs, not sources.
 scripts/doc-generators/figures/
+__pycache__/

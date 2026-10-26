@@ -70,12 +70,14 @@ def _field(run, instr):
 
 
 class KgDoc:
-    def __init__(self, footer, header=''):
+    def __init__(self, footer, header='', body_pt=12, margin=1.0):
+        """body_pt and margin shrink the page for a card that must fit one sheet."""
         self.doc = Document()
+        self.body_pt = body_pt
         sec = self.doc.sections[0]
         sec.page_width, sec.page_height = Inches(8.5), Inches(11)
         for side in ('left_margin', 'right_margin', 'top_margin', 'bottom_margin'):
-            setattr(sec, side, Inches(1))
+            setattr(sec, side, Inches(margin))
         self.sec = sec
         self._num_id = None
         self._styles()
@@ -86,12 +88,13 @@ class KgDoc:
         st = self.doc.styles
         normal = st['Normal']
         _force_arial(normal)
-        normal.font.size = Pt(12)
+        normal.font.size = Pt(self.body_pt)
         pf = normal.paragraph_format
-        pf.space_before, pf.space_after, pf.line_spacing = Pt(0), Pt(8), 1.08
-        for name, size, color, before, after in (('Heading 1', 16, BLUE, 18, 6),
-                                                 ('Heading 2', 13, BLUE, 14, 4),
-                                                 ('Heading 3', 12, BLUE3, 10, 3)):
+        pf.space_before, pf.space_after, pf.line_spacing = Pt(0), Pt(8 * self.body_pt / 12), 1.08
+        k = self.body_pt / 12
+        for name, size, color, before, after in (('Heading 1', 16 * k, BLUE, 18 * k, 6 * k),
+                                                 ('Heading 2', 13 * k, BLUE, 14 * k, 4 * k),
+                                                 ('Heading 3', 12 * k, BLUE3, 10 * k, 3 * k)):
             h = st[name]
             _force_arial(h)
             h.font.size, h.font.bold, h.font.italic = Pt(size), False, False
@@ -105,9 +108,9 @@ class KgDoc:
         for name in ('List Bullet', 'List Number', 'List Bullet 2'):
             s = st[name]
             _force_arial(s)
-            s.font.size = Pt(12)
+            s.font.size = Pt(self.body_pt)
             s.paragraph_format.space_before = Pt(0)
-            s.paragraph_format.space_after = Pt(4)
+            s.paragraph_format.space_after = Pt(4 * self.body_pt / 12)
             s.paragraph_format.line_spacing = 1.08
 
     def _header_footer(self, header, footer):
