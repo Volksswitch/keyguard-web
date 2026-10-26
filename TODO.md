@@ -48,6 +48,28 @@ quietly waits forever.
   - The User Manual's "Starting a project" chapter gains a section on the sample.
 - **Why not now:** Ken deferred it for future consideration on 2026-10-26.
 
+### Phase 2 documents, pages and demos that wait on Ken
+- **Raised:** 2026-10-26 - Phase 2 of the support assets proposal, drafted the same day.
+- **Drafted, for Ken's review** (all in `Documents/`, built by `scripts/doc-generators/`):
+  Product Overview, User Manual (screenshots from `capture-manual-figures.mjs`), Quick
+  Reference Card, and the IT Request Letter rebuilt in the same style.
+- **Waiting on Ken's answer**, all set out in `Documents/Keyguard Designer Website and Demo
+  Drafts - Phase 2.docx`:
+  1. **The home page and documents page:** their wording and addresses, and who turns the
+     documents into PDFs and puts the pages up.
+  2. **The Keyguard Designer Web App page** overlaps the manual and is out of date in places
+     (six Settings tabs where there are seven; says an update restarts the app; no Help
+     menu; names Opera, which the app doesn't claim). Claude suggests trimming it to point
+     at the manual.
+  3. **Whether the app's "Web app guide" link should open the new home page** - an app
+     change for the next release.
+  4. **The Intro and Hands-on deck changes,** slide by slide. The decks are Ken's and were
+     not edited; `Documents/manual-sample/` is a ready demo project folder.
+  5. **Check one assumption in the manual's Conversant section:** that the lines in
+     Conversant's Screen Openings.txt are pasted into the screen_openings list of
+     openings_and_additions.txt. Read from Conversant's code, not tried end to end.
+- **Why not now:** each needs Ken's review or decision; publishing needs his OK per page.
+
 ### Website changes from Phase 1 that wait on Ken
 - **Raised:** 2026-10-26 - Phase 1 of the support assets proposal. The words for all of
   these are in `Documents/Keyguard Designer Website Drafts - Phase 1.docx`.
