@@ -39,8 +39,8 @@ d.n("**Check it.** In Special Actions and Settings, set **include screenshot** t
     "click the **Top** view button. Each opening should sit over its button.")
 d.n("**Save it.** Click **+** beside the preset box, type a name and press Enter. After that, "
     "**Save preset** keeps your changes. A red * means changes aren't saved yet.")
-d.n("**Export and print.** Click **STL** and open the file in your slicer. Print it face down, "
-    "try it on the tablet, adjust and export again.")
+d.n("**Export and print.** Click **STL**, open the file in your slicer and print it. Try it on "
+    "the tablet, adjust and export again.")
 
 d.h1('Presets')
 d.table(['Control', 'What it does'], [
