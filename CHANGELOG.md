@@ -15,6 +15,8 @@ notes, because nothing at this address could have been missed yet.
 
 - Changing the skill level no longer makes the red * appear beside the preset name. A skill level only changes which settings you can see, so switching it on a design you haven't changed no longer looks like an unsaved change, and closing the tab no longer asks “Leave site?” because of it.
 
+- Settings and Custom Openings now spell color, center, behavior, millimeters and canceled the American way.
+
 ## Release 115
 
 - There is a new **?** button beside the Settings button. It opens a short Help menu: a card listing every Custom Openings move, links to the web app guide, the keyguard how-to pages and the known issues on volksswitch.org, Check my setup, Report a problem, and an email to Volksswitch. The menu and the moves card are built into the app, so they work offline and on networks that block volksswitch.org.

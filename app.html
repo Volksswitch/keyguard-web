@@ -934,7 +934,7 @@
     <div id="openings-note">
       Openings cut all the way through the keyguard (or the frame, if you have one).
       For a <b>circle</b>, the <b>height</b> is the diameter — width and corner radius are ignored.
-      Each opening is positioned by its <b>centre</b>.
+      Each opening is positioned by its <b>center</b>.
       A <b>tinted box</b> is a number you've changed but not applied yet: press <b>Enter</b>, or
       click another box, to update the keyguard.
     </div>
@@ -944,7 +944,7 @@
       <button class="og-add" data-grid="screen">+ Add opening</button>
     </div>
     <div class="og-sec">
-      <h4>Case openings <span class="units">— millimetres, from the lower-left corner of the case opening</span></h4>
+      <h4>Case openings <span class="units">— millimeters, from the lower-left corner of the case opening</span></h4>
       <table class="og-table" id="og-case"></table>
       <button class="og-add" data-grid="case">+ Add opening</button>
     </div>
@@ -1717,7 +1717,8 @@ const RELEASE_NOTES = {
     "The Troubleshooting tab also lists the errors since the app was opened, without the Console's routine messages, and explains the common ones. The Reload the app button is there too, as well as on the About tab."
   ],
   "116": [
-    "Changing the skill level no longer makes the red * appear beside the preset name. A skill level only changes which settings you can see, so switching it on a design you haven't changed no longer looks like an unsaved change, and closing the tab no longer asks “Leave site?” because of it."
+    "Changing the skill level no longer makes the red * appear beside the preset name. A skill level only changes which settings you can see, so switching it on a design you haven't changed no longer looks like an unsaved change, and closing the tab no longer asks “Leave site?” because of it.",
+    "Settings and Custom Openings now spell color, center, behavior, millimeters and canceled the American way."
   ]
 };
 // @@RELEASE_NOTES_END@@
@@ -4512,7 +4513,7 @@ function runExportInWorker(job, { onLog } = {}) {
     cancelActiveExport = () => {
       if (settled) return;
       cleanup();
-      const err = new Error('Export cancelled');
+      const err = new Error('Export canceled');
       err.cancelled = true;
       reject(err);
     };
@@ -4683,7 +4684,7 @@ async function exportCurrent(fmt) {
     console.error(e);
     return;
   }
-  if (target === null) { logLine(`${fmt} export cancelled.`); return; }
+  if (target === null) { logLine(`${fmt} export canceled.`); return; }
 
   const prevStatusText = statusEl.innerHTML;
   const prevStatusKind = statusEl.className;
@@ -4705,8 +4706,8 @@ async function exportCurrent(fmt) {
     setStatus(prevStatusText, prevStatusKind);
   } catch (e) {
     if (e && e.cancelled) {
-      logLine('Export cancelled.');
-      setStatus('Export cancelled', '');
+      logLine('Export canceled.');
+      setStatus('Export canceled', '');
     } else {
       logLine('Export failed: ' + e.message);
       setStatus('Export failed: ' + e.message, 'error');
@@ -6488,7 +6489,7 @@ async function presetWritesBlocked(action) {
   const what = project.jsonName || 'the preset file';
   logLine(`${action}: refused — ${what} is damaged and was not read.`);
   await showNotice('Saved designs file is damaged',
-    `${action} was cancelled because "${what}" is damaged and could not be read: `
+    `${action} was canceled because "${what}" is damaged and could not be read: `
     + `${project.jsonFault} Nothing was written, so the designs inside it are `
     + `untouched. Repair or replace the file, then open the project again.`);
   return true;
@@ -6855,9 +6856,9 @@ const SETTINGS_PANELS = {
       ${opt('tumble', 'Free tumble',
         'Grab the keyguard and roll it any direction — no vertical stop, no limits. Recommended.')}
       ${opt('guided', 'Guided tumble',
-        'Free rotation with an on-screen ring guide; double-click a point to centre on it.')}
+        'Free rotation with an on-screen ring guide; double-click a point to center on it.')}
       ${opt('turntable', 'Turntable',
-        'Spins around an upright axis. Steady, but tilt stops when level overhead and side-drag spins the view in place. (Original behaviour.)')}
+        'Spins around an upright axis. Steady, but tilt stops when level overhead and side-drag spins the view in place. (Original behavior.)')}
     </div>
     <div class="setting">
       <label>Rotation sensitivity</label>
@@ -6943,8 +6944,8 @@ const SETTINGS_PANELS = {
     <div class="setting">
       <label>Panel theme</label>
       <div style="color:#666; margin-bottom:8px;">
-        Light or dark colours for the Customizer (right) and Console (bottom)
-        panes. The viewport keeps its own background colour, set below.
+        Light or dark colors for the Customizer (right) and Console (bottom)
+        panes. The viewport keeps its own background color, set below.
       </div>
       <label class="opt"><input type="radio" name="paneTheme" value="light"
         ${settings.paneTheme !== 'dark' ? 'checked' : ''}> Light</label>
@@ -8191,9 +8192,9 @@ function ogRenderWarnings() {
     }
     if (st.converted) {
       bits.push(`<b>${field}</b>: ${st.converted} opening(s) were measured from their lower-left ` +
-                `corner and have been converted to be measured from their <b>centre</b>. The ` +
+                `corner and have been converted to be measured from their <b>center</b>. The ` +
                 `openings have not moved — but if you Save, they will be written back ` +
-                `centre-based.`);
+                `center-based.`);
     }
   }
   ogWarnEl.classList.toggle('show', bits.length > 0);
@@ -8274,7 +8275,7 @@ function ogSyncScreenUnits() {
   document.getElementById('og-screen-units').textContent =
     unit === 'px'
       ? `— pixels, from the ${origin} corner of the screen`
-      : `— millimetres, from the ${origin} corner of the ${inset ? 'app' : 'screen'}`;
+      : `— millimeters, from the ${origin} corner of the ${inset ? 'app' : 'screen'}`;
 
   if (unit !== ogState.screenUnit) {
     const was = ogState.screenUnit;
