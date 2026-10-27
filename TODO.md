@@ -22,6 +22,35 @@ quietly waits forever.
 
 ## Open
 
+### After release 116: pictures that still show versioned file names
+- **Raised:** 2026-10-26 - the plain file names change (`keyguard.scad`, `keyguard.json`),
+  unreleased at the time of writing.
+- **What's wanted:** every how-to video, and the User Manual's figures, show the project
+  line at the top of the Customizer, which read `keyguard_v92.scad` and now reads
+  `keyguard.scad (version 92)`. Run "sync videos" to re-make them all. For the manual,
+  re-run `capture-manual-figures.mjs` and `label-manual-figures.py` and put the new
+  figures into `Documents/Keyguard Designer User Manual.docx` (`um-presets.png` certainly;
+  check the rest). The manual's text is already corrected, edited directly in the .docx,
+  because Ken's copy has a filled-in table of contents a regenerate would drop.
+- **Also:** website pages and images that show the old names (a list was gathered for
+  Ken on 2026-10-26), and any workshop decks that do.
+- **Why not now:** the pictures should show what clinicians are given, so they are made
+  from the released app, after Ken releases 116.
+
+### Folders with two files of saved designs
+- **Raised:** 2026-10-26 - the plain file names change. Before it, a folder holding
+  `keyguard_v92.scad` beside a presets file with another name (say `keyguard.json`) opened
+  with no designs, and saving one then started `keyguard_v92.json` with just that design.
+  Such a folder now holds two files of designs.
+- **What happens now:** the app leaves that folder's names alone, keeps using the file
+  named after the keyguard file, as before, and says so in the Console on every open.
+  Nothing is lost, but the other file's designs stay out of sight.
+- **What could be done:** offer to bring the other file's designs in (Import already
+  exists), or merge the two with a question when names clash.
+- **Why not now:** which designs she wants is her call, and how often this happened in the
+  field is unknown. Claude flagged it to Ken on 2026-10-26 as a bigger question than the
+  rename; he has not decided it.
+
 ### Welcome screen and sample keyguard
 - **Raised:** 2026-10-26 - Phase 2 of the support assets proposal
   (`Documents/Keyguard Designer Support Assets Proposal.docx`). Ken: "Put the welcome

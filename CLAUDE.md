@@ -110,6 +110,18 @@ delivery. Release it first, then publish the keyguard.
 `SHELL` precache list.** A precached designer file could never be replaced — the one
 failure that would be worse than what this replaced.
 
+**File names: plain in her folder, versioned on the server (release 116, Ken, 26 Oct
+2026).** A clinician's folder always holds `keyguard.scad` and `keyguard.json`. The app
+renames older `keyguard_v<N>.*` files the first time it opens a folder (and leaves a
+folder with two presets files alone), and an update writes the new version over
+`keyguard.scad` in place. **The copy served beside `app.html` keeps its version in its
+name ON PURPOSE — do not "tidy" it to match.** GitHub Pages lets every file be reused for
+10 minutes and ignores `?t=` cache-busters (measured 26 Oct 2026), so only a new address
+is sure to be fresh right after a release; a fixed name would make updates fail (safely,
+but visibly) for the first minutes after every keyguard release. The version list's
+`scad_filename` is now read only by releases before 116. The retired app reads the
+keyguard repo's own list and is unaffected; it accepts any keyguard file name.
+
 ---
 
 ## Release model — single `main`, PC = dev, GitHub = release

@@ -23,7 +23,7 @@ const require = createRequire(path.join(SIBLING, 'package.json'));
 export const { chromium } = require('playwright');
 
 export const SAMPLE_DIR = path.join(PROJECT, 'Documents', 'manual-sample');
-export const SAMPLE = ['keyguard_v92.scad', 'keyguard_v92.json', 'openings_and_additions.txt',
+export const SAMPLE = ['keyguard.scad', 'keyguard.json', 'openings_and_additions.txt',
   'WordPower 42 screenshot.png'];
 export const sleep = ms => new Promise(r => setTimeout(r, ms));
 

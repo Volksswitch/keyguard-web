@@ -30,7 +30,7 @@ export default {
       say: "Remind me in a week keeps your file, and asks again in a week. Skip keeps it for now." },
     { before: async (page) => {
         await page.click('#update-now');
-        await page.waitForFunction(() => /keyguard_v92/.test(document.getElementById('project-folder-label')?.textContent || ''), null, { timeout: 90000 });
+        await page.waitForFunction(() => /version 92/.test(document.getElementById('project-folder-label')?.textContent || ''), null, { timeout: 90000 });
         await settled(page, 3000);
         // Reopening logs the local copy's own release number, one ahead of the public one.
         await page.locator('#clear-btn').evaluate((el) => el.click());

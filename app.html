@@ -1717,6 +1717,8 @@ const RELEASE_NOTES = {
     "The Troubleshooting tab also lists the errors since the app was opened, without the Console's routine messages, and explains the common ones. The Reload the app button is there too, as well as on the About tab."
   ],
   "116": [
+    "Your keyguard files no longer have a version number in their names. The keyguard designer file is now always called keyguard.scad, and your saved designs keyguard.json, instead of names like keyguard_v92.scad and keyguard_v92.json. The files in each project folder are renamed the first time you open it with this release. Nothing inside the files changes, and your designs are all still there. The version you have is shown beside the file name at the top of the Customizer, and in Settings → About. Updating the keyguard designer file now simply replaces it, so your saved designs keep the same file for good.",
+    "Saved designs are no longer missed when their file's name doesn't match the keyguard designer file. A folder holding, for example, keyguard_v92.scad beside keyguard.json used to open with only the design default values, as though you had no saved designs, and saving a design then started a second file holding just that one. The app now finds your saved designs whatever their file is called, and gives it the standard name.",
     "Changing the skill level no longer makes the red * appear beside the preset name. A skill level only changes which settings you can see, so switching it on a design you haven't changed no longer looks like an unsaved change, and closing the tab no longer asks “Leave site?” because of it.",
     "Settings and Custom Openings now spell color, center, behavior, millimeters and canceled the American way."
   ]
@@ -1742,7 +1744,7 @@ function logVersionBanner(scadName, scadText) {
 // A tiny manifest served from THIS APP'S OWN ADDRESS, beside app.html, together
 // with the designer file it points at. Expected shape:
 //   { "version": 87,
-//     "scad_filename": "keyguard_v87.scad",
+//     "scad_filename": "keyguard_v87.scad",   (read only by releases before 116)
 //     "scad_url": "./keyguard_v87.scad",
 //     "notes": ["clinician-visible 'What's new' lines shown in the update prompt"] }
 // `version` MUST equal the keyguard_designer_version inside the .scad it points
@@ -1865,6 +1867,7 @@ const SETTINGS_DEFAULTS = {
   customizerWheelStep: 3,                // entries advanced per mouse-wheel notch in the Customizer pane + dropdowns
   skillLevel: 'beginner',               // 'beginner' | 'intermediate' | 'advanced'
   lastSeenAppRelease: null,             // highest APP_RELEASE whose "What's new" the clinician has seen; null until first recorded
+  toldPlainNames: false,                // true once she has been told her files lost their version numbers (tellAboutPlainNames)
 };
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -2340,9 +2343,10 @@ async function refreshRecentsDropdown() {
 
 // ===== Project model =====
 // A "project" is the contents of a folder the user picked:
-//   scadName        e.g. "keyguard_v77.scad"
+//   scadName        "keyguard.scad" (from release 116; "keyguard_v77.scad" and the
+//                   like until the folder is first opened — see settlePlainNames)
 //   scadText        full text of the .scad file
-//   jsonName        e.g. "keyguard_v77.json" (null if no presets file)
+//   jsonName        "keyguard.json" likewise (null if no presets file)
 //   jsonText        full text of the .json file (null if no presets file)
 //   oaText          text of openings_and_additions.txt ('' if missing)
 //   files           map of all root-level files: { 'name.ext': Uint8Array }
@@ -2623,6 +2627,7 @@ async function openProject(presetHandle = null) {
   const files = {};         // name → Uint8Array
   const fileHandles = {};  // name → FileSystemFileHandle
   let scadName = null;
+  let scadCount = 0;
   let jsonName = null;
   let oaText = '';
   let oaMtime = null;
@@ -2637,6 +2642,7 @@ async function openProject(presetHandle = null) {
       fileHandles[name] = handle;
       if (name === 'openings_and_additions.txt') oaMtime = file.lastModified;
       if (name.toLowerCase().endsWith('.scad')) {
+        scadCount++;
         if (scadName) {
           logLine(`  WARNING: multiple .scad files found; using "${scadName}", ignoring "${name}"`);
         } else {
@@ -2689,10 +2695,11 @@ async function openProject(presetHandle = null) {
   // Confirmed a real project — now it's safe to remember the folder.
   await idbPutHandle(dirHandle);
   await pushRecent(dirHandle);
-  // Matching json: same basename
-  const base = scadName.replace(/\.scad$/i, '');
-  const expectedJson = base + '.json';
-  if (files[expectedJson]) jsonName = expectedJson;
+  // A folder still under the old versioned names (or with a presets file whose
+  // name has drifted) moves to the plain ones here, before anything is read.
+  const naming = await settlePlainNames(dirHandle, files, fileHandles, scadName, scadCount);
+  if (naming && naming.scadName) scadName = naming.scadName;
+  jsonName = pickPresetsFile(files, scadName);
 
   // Decode the text files
   const dec = new TextDecoder();
@@ -2706,6 +2713,7 @@ async function openProject(presetHandle = null) {
   // (its `keyguard_designer_version = NN;` declaration).
   logVersionBanner(scadName, scadText);
   logLine(`Opening project folder "${dirHandle.name}"...`);
+  if (naming) logLine(`  ${naming.report}`);
 
   if (files[OA_FILENAME]) {
     const oaBytes = files[OA_FILENAME];
@@ -2784,7 +2792,9 @@ async function openProject(presetHandle = null) {
     const lbl = document.getElementById('project-folder-label');
     lbl.textContent = '';
     const nameB = document.createElement('b'); nameB.textContent = dirHandle.name;
-    lbl.append('📁 ', nameB, ' — ' + scadName);
+    // The version, now that the file name no longer carries it.
+    const ver = parseDesignerVersion(scadText);
+    lbl.append('📁 ', nameB, ' — ' + scadName + (ver != null ? ` (version ${ver})` : ''));
     lbl.appendChild(document.createElement('br'));
     const hint = document.createElement('span');
     hint.style.color = '#888';
@@ -2807,20 +2817,24 @@ async function openProject(presetHandle = null) {
   updateDelPresetButton();
   // Say it where she is looking. Reporting this only in the log left the clinician
   // with a project that opened normally and simply had none of her designs in it.
+  // Each notice waits for the one before it, and the update offer for both: shown
+  // together, one dialog covers the other.
+  let told = Promise.resolve();
   if (jsonFault) {
-    showNotice('Saved designs file is damaged',
+    told = showNotice('Saved designs file is damaged',
       `"${jsonName}" opened, but ${jsonFault} None of the designs in it can be `
       + `shown, and the app will not write to it, so nothing inside it is at risk. `
       + `Repair or replace the file and open the project again — the design settings `
       + `themselves are still in the file.`);
   }
+  if (naming && naming.renamed) told = told.then(() => tellAboutPlainNames(!!jsonName));
   logLine(`Project ready — auto-rendering "${project.currentPreset}"...`);
   await doRender();
   startWatcher();
   // Non-blocking: check whether a newer keyguard.scad has been published and,
   // if so, offer to update. Never awaited — a slow or blocked fetch must not
   // hold up the viewport, and any failure is swallowed silently.
-  checkForDesignerUpdate().catch(() => {});
+  told.then(() => checkForDesignerUpdate()).catch(() => {});
   // Same here for the web app itself: a stale shell force-refreshes now, while
   // the just-loaded project has no unsaved edits to lose.
   checkForAppUpdate(swRegistration).catch(() => {});
@@ -2871,9 +2885,7 @@ async function checkForDesignerUpdate() {
     return;
   }
 
-  const oldScad = project.scadName;
-  const newScad = manifest.scad_filename || oldScad;
-  const choice = await showUpdateModal({ loaded, latest, notes: manifest.notes, oldScad, newScad });
+  const choice = await showUpdateModal({ loaded, latest, notes: manifest.notes });
 
   if (choice === 'update') {
     await applyDesignerUpdate(manifest);
@@ -2885,20 +2897,19 @@ async function checkForDesignerUpdate() {
   }
 }
 
-// Performs the swap: download → write-new → rename presets → delete-old →
-// restart. Write-before-delete ordering means an interrupted update never
-// leaves the folder empty — the worst case is a harmless extra file, which the
-// restart's "exactly one .scad" scan surfaces.
+// Performs the swap: download → check → write over the keyguard file → restart.
+// Written in place, under the name the file already has: the browser writes to a
+// temporary copy and swaps it in only once it is complete, so an interrupted
+// update leaves the old file whole. Her saved designs are not touched at all.
+// (Until release 116 each version had its own file name, so an update wrote a
+// new pair of files and deleted the old pair.) The restart puts the folder under
+// the plain names if it isn't already.
 async function applyDesignerUpdate(manifest) {
   const dir = project.dirHandle;
-  const oldScad = project.scadName;
-  const oldJson = project.jsonName;                       // may be null (no presets file)
-  const newScad = manifest.scad_filename || oldScad;
-  const newBase = newScad.replace(/\.scad$/i, '');
-  const newJson = oldJson ? newBase + '.json' : null;     // carry presets forward under the new name
+  const scadName = project.scadName;
 
   setStatus('Updating keyguard…', 'rendering');
-  logLine(`Updating designer "${oldScad}" → "${newScad}" (v${manifest.version})…`);
+  logLine(`Updating the keyguard designer file "${scadName}" to v${manifest.version}…`);
 
   // 1. Download the replacement FIRST — before touching the folder. Any failure
   //    here leaves the clinician's files completely untouched.
@@ -2921,40 +2932,25 @@ async function applyDesignerUpdate(manifest) {
     return;
   }
 
-  // 2. Suspend the folder watcher: during the swap the folder briefly holds two
-  //    .scad files (or, mid-write, an inconsistent set) and a poll would either
-  //    error or kick off a stray re-render.
+  // 2. Suspend the folder watcher: a poll mid-write would kick off a stray
+  //    re-render of a half-replaced file.
   stopWatcher();
 
   try {
-    // 3. WRITE the new files before deleting the old ones.
-    const scadHandle = await dir.getFileHandle(newScad, { create: true });
+    // 3. Write the new version over the old one.
+    const scadHandle = await dir.getFileHandle(scadName);
     const sw = await scadHandle.createWritable();
     await sw.write(scadBytes);
     await sw.close();
     if ((await scadHandle.getFile()).size === 0) throw new Error('written .scad is empty');
 
-    if (oldJson && newJson && newJson !== oldJson) {
-      const jsonBytes = new Uint8Array(await (await (await dir.getFileHandle(oldJson)).getFile()).arrayBuffer());
-      const newJsonHandle = await dir.getFileHandle(newJson, { create: true });
-      const jw = await newJsonHandle.createWritable();
-      await jw.write(jsonBytes);
-      await jw.close();
-    }
-
-    // 4. New files are safely on disk — now remove the superseded originals.
-    //    Guarded so an in-place version bump (same filename) doesn't self-delete.
-    if (newScad !== oldScad) await dir.removeEntry(oldScad);
-    if (oldJson && newJson && newJson !== oldJson) await dir.removeEntry(oldJson);
-
     logLine(`  Update complete — now running v${manifest.version}. Restarting project…`);
   } catch (e) {
-    // Leave whatever landed in place and fall through to a restart, which
-    // re-scans and re-validates the folder (and surfaces any "two .scad" state).
+    // Fall through to a restart, which re-reads whatever the folder now holds.
     logLine(`  WARNING during update: ${e.message}. Restarting to re-scan the folder…`);
   }
 
-  // 5. Drop any snooze and restart against the SAME granted handle (no picker,
+  // 4. Drop any snooze and restart against the SAME granted handle (no picker,
   //    no page reload) so the Customizer, version banner, and preset list all
   //    rebuild from the new file.
   if (settings.updateSnooze) setSetting('updateSnooze', null);
@@ -2976,12 +2972,129 @@ async function applyDesignerUpdate(manifest) {
 //     littered. The prompt names the folder so she can see what she chose.
 //   • It never touches an openings file that already exists. That file is her
 //     own work, and this path only ever fills in what is absent.
-//   • A presets file already in the folder is renamed to match the new keyguard
-//     file, whatever it was called — otherwise it is silently ignored and her
-//     saved designs seem to have vanished. With several, the first one wins.
+//   • A presets file already in the folder is renamed keyguard.json, whatever
+//     it was called — otherwise it is silently ignored and her saved designs
+//     seem to have vanished. With several, the first one wins.
 //
 // Returns 'done' (folder set up and re-opened), 'declined', or 'failed'.
 const OA_FILENAME = 'openings_and_additions.txt';
+
+// --- The names a project folder's keyguard files have ---------------------
+// Always these two, from release 116. Until then each carried its version —
+// keyguard_v92.scad, keyguard_v92.json — so every update renamed both, and a
+// presets file whose name had drifted from the keyguard file's was silently
+// ignored: the project opened with none of her designs. The version is written
+// inside the file, which is what the update check reads, so the name never
+// needed to carry it.
+//
+// The copy on the SERVER keeps its version in its name (keyguard_v<N>.scad), on
+// purpose. GitHub Pages lets a copy be reused for ten minutes and ignores a
+// cache-busting query string (measured 26 Oct 2026), so only a new address is
+// sure to be fresh in the minutes after a release. The version list's
+// scad_filename still names that file, for releases before 116; this app no
+// longer reads it.
+const KG_SCAD = 'keyguard.scad';
+const KG_JSON = 'keyguard.json';
+// The release whose What's new explains the new names (see tellAboutPlainNames).
+const PLAIN_NAMES_RELEASE = 116;
+
+// File names compared as Windows compares them. Treating "Keyguard.json" as
+// different from "keyguard.json" would copy the file onto itself and then
+// delete it.
+const sameName = (a, b) => !!a && !!b && a.toLowerCase() === b.toLowerCase();
+
+// Which .json in a folder holds her saved designs. One named after the keyguard
+// file wins; failing that keyguard.json; failing that any other file of saved
+// designs, since one left behind by an older keyguard file can be called
+// anything. With several, the first found is used — guessing wrong there was
+// judged cheaper than handling it (Ken, 3 Oct 2026). Under another name a file
+// must really be a file of saved designs, so that a second copy of the app's
+// settings is never mistaken for one.
+function pickPresetsFile(files, scadName) {
+  const names = Object.keys(files);
+  const matched = scadName ? scadName.replace(/\.scad$/i, '') + '.json' : null;
+  const exact = names.find(n => sameName(n, matched)) || names.find(n => sameName(n, KG_JSON));
+  if (exact) return exact;
+  return names.find(n => {
+    if (!/\.json$/i.test(n) || sameName(n, SETTINGS_FILE)) return false;
+    try {
+      const text = new TextDecoder().decode(files[n]);
+      return presetFileFault(text, JSON.parse(text)) === null;
+    } catch { return false; }
+  }) || null;
+}
+
+// Puts a folder's keyguard file and saved-designs file under the plain names.
+// Copies first and deletes the originals only once every copy is safely
+// written, so an interruption leaves at worst a spare copy, never a folder
+// without its files. Leaves the folder exactly as it is, and the project opening
+// under its old names, when it holds more than one keyguard file, or when
+// keyguard.json is already there beside a different presets file: that is two
+// files of saved designs, which one she means is not ours to guess, and copying
+// over either would lose designs.
+// Updates `files` and `fileHandles` in place. Returns null when there was nothing
+// to do, otherwise { renamed, scadName, report }: `report` is the Console line.
+async function settlePlainNames(dirHandle, files, fileHandles, scadName, scadCount) {
+  if (!dirHandle || scadCount !== 1) return null;
+  const presets = pickPresetsFile(files, scadName);
+  const moves = [];
+  if (!sameName(scadName, KG_SCAD)) moves.push([scadName, KG_SCAD]);
+  if (presets && !sameName(presets, KG_JSON)) {
+    const taken = Object.keys(files).find(n => sameName(n, KG_JSON));
+    if (taken) {
+      return { renamed: false, report: `This folder holds two files of saved designs, `
+        + `"${presets}" and "${taken}". The app is using "${presets}", as before, and has `
+        + `left both files and their names as they are.` };
+    }
+    moves.push([presets, KG_JSON]);
+  }
+  if (!moves.length) return null;
+
+  const written = [];
+  try {
+    for (const [from, to] of moves) {
+      const h = await dirHandle.getFileHandle(to, { create: true });
+      written.push(to);
+      const w = await h.createWritable();
+      await w.write(files[from]);
+      await w.close();
+      if ((await h.getFile()).size !== files[from].length) throw new Error(`the copy of ${from} is incomplete`);
+      fileHandles[to] = h;
+    }
+  } catch (e) {
+    // Take back the copies, so the folder is as she left it.
+    for (const to of written) { try { await dirHandle.removeEntry(to); } catch {} delete fileHandles[to]; }
+    return { renamed: false, report: `The files in this folder could not be given their new names `
+      + `(${e.message}). They have been left as they were, and the project opens as before.` };
+  }
+  let leftOver = null;
+  for (const [from, to] of moves) {
+    files[to] = files[from];
+    delete files[from];
+    delete fileHandles[from];
+    try { await dirHandle.removeEntry(from); } catch (e) { leftOver = leftOver || `${from} (${e.message})`; }
+  }
+  const names = moves.map(([from, to]) => `${from} is now ${to}`).join(', and ');
+  return { renamed: true, scadName: KG_SCAD,
+           report: `Renamed: ${names}. Nothing inside the files changed.`
+             + (leftOver ? ` The old copy of ${leftOver} could not be removed; it can be deleted.` : '') };
+}
+
+// The one-time explanation of the new names, for a clinician the release notes
+// did not reach: one arriving from the old address (the move deliberately starts
+// her What's new history afresh), or one new to the app with an older folder.
+// Whoever saw release 116's What's new has been told already and never sees it.
+async function tellAboutPlainNames(hasPresets) {
+  if (settings.toldPlainNames) return;
+  setSetting('toldPlainNames', true);
+  await showNotice('Your keyguard files have new names',
+    `The files in this folder are now called ${KG_SCAD}`
+    + (hasPresets ? ` and ${KG_JSON}` : '') + `. The version number is no longer `
+    + `part of the name: the app reads the version from inside the file, and shows it `
+    + `at the top of the Customizer and in Settings → About. Nothing inside the files `
+    + `changed` + (hasPresets ? `, and all your saved designs are still here` : '') + `. `
+    + `Your other project folders get the same names the first time you open them.`);
+}
 
 // Fetches the starter openings file from this app's own address and writes it
 // into a project folder that hasn't got one. Used by the ordinary project-open
@@ -3029,8 +3142,8 @@ async function offerStarterSetup(dirHandle, files) {
     return 'failed';
   }
   const version  = Number(manifest && manifest.version);
-  const scadName = manifest && manifest.scad_filename;
-  if (!Number.isFinite(version) || !scadName) {
+  const scadName = KG_SCAD;
+  if (!Number.isFinite(version) || !(manifest && manifest.scad_url)) {
     logLine('  This folder has no keyguard designer file, and the published version list '
           + 'could not be read. Nothing was changed.');
     setStatus('Empty folder, and the published keyguard file could not be identified.', 'error');
@@ -3038,18 +3151,13 @@ async function offerStarterSetup(dirHandle, files) {
   }
 
   const needsOa = !files[OA_FILENAME];
-  // Any .json in the folder is taken to be her presets, whatever it is called
-  // (a folder emptied of an old keyguard file often keeps a "keyguard.json").
-  // If there are several — rare — the first one found is used; guessing wrong
-  // there was judged cheaper than handling it (Ken, 3 Oct 2026). The app's own
-  // settings copy is never a presets file and is left where it is.
-  const jsons   = Object.keys(files).filter(n => /\.json$/i.test(n) && n !== SETTINGS_FILE);
-  const oldJson = jsons.length ? jsons[0] : null;
-  const newJson  = oldJson ? scadName.replace(/\.scad$/i, '') + '.json' : null;
+  // Her presets file, whatever it is called (a folder emptied of an old keyguard
+  // file often keeps a "keyguard_v73.json"); see pickPresetsFile.
+  const oldJson = pickPresetsFile(files, null);
+  const newJson = (oldJson && !sameName(oldJson, KG_JSON)) ? KG_JSON : null;
 
   const ok = await showSetupModal({
-    folder: dirHandle.name, version, scadName, needsOa,
-    oldJson, newJson: (newJson && newJson !== oldJson) ? newJson : null,
+    folder: dirHandle.name, version, scadName, needsOa, oldJson, newJson,
   });
   if (!ok) return 'declined';
 
@@ -3063,7 +3171,7 @@ async function offerStarterSetup(dirHandle, files) {
   // the folder exactly as she left it.
   let scadBytes;
   try {
-    const resp = await fetch(manifest.scad_url || ('./' + scadName), { cache: 'no-store' });
+    const resp = await fetch(manifest.scad_url, { cache: 'no-store' });
     if (!resp.ok) throw new Error('HTTP ' + resp.status);
     scadBytes = new Uint8Array(await resp.arrayBuffer());
   } catch (e) {
@@ -3114,8 +3222,8 @@ async function offerStarterSetup(dirHandle, files) {
       done.push(`added ${OA_FILENAME}`);
     }
 
-    // Write-before-delete, the same ordering the update path uses.
-    if (oldJson && newJson && newJson !== oldJson) {
+    // Write-before-delete, the same ordering settlePlainNames uses.
+    if (oldJson && newJson) {
       const bytes = new Uint8Array(await (await (await dirHandle.getFileHandle(oldJson)).getFile()).arrayBuffer());
       const nh = await dirHandle.getFileHandle(newJson, { create: true });
       const nw = await nh.createWritable();
@@ -5735,7 +5843,7 @@ function showSetupModal({ folder, version, scadName, needsOa, oldJson, newJson }
   });
 }
 
-function showUpdateModal({ loaded, latest, notes, oldScad, newScad }) {
+function showUpdateModal({ loaded, latest, notes }) {
   return new Promise(resolve => {
     const ov  = document.getElementById('update-overlay');
     const msg = document.getElementById('update-msg');
@@ -5768,10 +5876,9 @@ function showUpdateModal({ loaded, latest, notes, oldScad, newScad }) {
 
     const p2 = document.createElement('div');
     p2.style.cssText = 'margin-top:12px;';
-    const oc = document.createElement('code'); oc.textContent = oldScad;
-    const nc = document.createElement('code'); nc.textContent = newScad;
-    p2.append('“Update now” will download the new file, replace ', oc,
-              ' with ', nc, ', carry your saved presets forward, and reload the project.');
+    const nv = document.createElement('b'); nv.textContent = 'v' + latest;
+    p2.append('“Update now” will download ', nv, ', put it in place of the keyguard designer '
+              + 'file in your folder, and reload the project. Your saved presets are not changed.');
     msg.appendChild(p2);
 
     const now    = document.getElementById('update-now');
@@ -5869,6 +5976,9 @@ function maybeShowWhatsNew() {
   if (Number(seen) >= APP_RELEASE) return;                 // already current
   const groups = collectWhatsNew(Number(seen));
   setSetting('lastSeenAppRelease', APP_RELEASE);           // record before showing (a reload can't re-trigger)
+  // These notes include the release that explains the new file names, so the
+  // one-time notice about them would only repeat it.
+  if (groups.length && Number(seen) < PLAIN_NAMES_RELEASE) setSetting('toldPlainNames', true);
   if (groups.length) showWhatsNewModal(groups);
 }
 
@@ -7525,7 +7635,11 @@ function reportNames() {
   const names = [];
   if (project) {
     if (project.dirHandle && project.dirHandle.name) names.push(project.dirHandle.name);
-    if (project.jsonName) names.push(project.jsonName, project.jsonName.replace(/\.json$/i, ''));
+    // The standard names say nothing about anyone, and "keyguard" itself must not
+    // be blanked out of every line of the report.
+    if (project.jsonName && !/^keyguard(_v\d+)?\.json$/i.test(project.jsonName)) {
+      names.push(project.jsonName, project.jsonName.replace(/\.json$/i, ''));
+    }
     if (!/^keyguard(_v\d+)?\.scad$/i.test(project.scadName || '')) names.push(project.scadName);
     for (const n of [...(project.presetNames || []), ...(project.rawPresetNames || []),
                      ...(project.imageNames || [])]) names.push(n);

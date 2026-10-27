@@ -233,7 +233,7 @@ d.p("The curved arrows near the right end of the toolbar undo and redo changes t
 # =====================================================================
 d.h1('6.  Saving Designs as Presets')
 d.p("A **preset** is a design saved by name, with all its settings. The presets live in one file "
-    "in the project folder, named after the keyguard designer file, such as keyguard_v92.json. "
+    "in the project folder, named keyguard.json. "
     "OpenSCAD reads the same file.")
 fig('um-presets.png', 'Figure 3. The top of the Customizer: the project, the preset box and its '
     'buttons, and the skill level.', 4.5)
@@ -519,7 +519,7 @@ for term, text in (
     ('Customizer', 'The list of settings on the right of the app.'),
     ('Free-form app', 'An AAC app whose buttons can sit anywhere, such as a scene.'),
     ('Hybrid app', 'An AAC app with a grid and buttons outside it.'),
-    ('Keyguard designer file', 'keyguard_v92.scad or similar: the program that turns the settings '
+    ('Keyguard designer file', 'keyguard.scad: the program that turns the settings '
                                'into a keyguard. The app runs it; OpenSCAD can run it too.'),
     ('OpenSCAD', 'A free design program you install on a computer. It runs the same keyguard '
                  'designer file and reads the same presets.'),

@@ -183,10 +183,21 @@ them are to the single origin you allowlisted.
 ## 5. Permissions the app uses
 
 - **File System Access API** (Chrome/Edge): when the clinician clicks
-  *Open Project* and *picks a folder*, the app gets read access to **only that
-  folder**, and only for that session (the browser re-prompts on later visits).
-  The app does **not** and **cannot** silently scan the filesystem or read files
-  outside the chosen folder.
+  *Open Project* and *picks a folder*, the app gets read and write access to
+  **only that folder**, and only for that session (the browser re-prompts on later
+  visits). The app does **not** and **cannot** silently scan the filesystem or read
+  files outside the chosen folder. It writes into that folder only the project's own
+  files: the saved designs, when a design is saved; the openings-and-additions file,
+  when openings are edited in the app; a copy of the clinician's settings, when they
+  ask for one; and the designer file and starter files described in §4.
+- **Standard file names.** The designer file is always named `keyguard.scad` and the
+  saved designs `keyguard.json`. Releases before 116 put the designer's version in
+  both names (`keyguard_v92.scad`), so the first time the app opens a folder that
+  still has such names, it renames the two files, with no prompt, and tells the
+  clinician in the Console and, once, on screen. Nothing inside either file changes.
+  Each file is copied to its new name and the original removed only once the copy
+  is complete, so an interruption leaves at worst a spare copy. A folder holding two
+  files of saved designs, or more than one designer file, is left exactly as it is.
 - **Saving exports** uses the browser's native **"Save As" dialog**. Write access
   is granted only to the specific file the clinician chooses in that dialog — there
   is no blanket write permission.
