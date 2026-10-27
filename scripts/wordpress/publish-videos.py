@@ -4,6 +4,11 @@
     python scripts/wordpress/publish-videos.py --apply            # publish every video that changed
     python scripts/wordpress/publish-videos.py --apply 1.1-what-for 1.2-open-and-start
                                                                   # only these
+    python scripts/wordpress/publish-videos.py --apply --pages-only   # no uploads; refresh the pages
+
+"sync videos" runs it (sync-videos.mjs --publish) with the ids that sync judged changed,
+which counts a clearly changed picture; on its own, with no ids, this sees only changed
+words or voice, so run it alone only to repair a half-finished sync.
 
 Adapted from Conversant AAC's publish-videos.py (Ken, October 27 2026: "follow the
 template of the AI-driven AAC project"). Each video published is uploaded (its .mp4 and
@@ -191,7 +196,7 @@ def main():
     course = json.load(open(COURSE, encoding='utf-8'))
     items = {i['id']: i for g in course['groups'] for i in g['items'] if i.get('id')}
     ids = [a for a in sys.argv[1:] if not a.startswith('--')]
-    if not ids:
+    if not ids and '--pages-only' not in sys.argv:
         # Every made video whose signature differs from the one published.
         for vid in items:
             made = os.path.join(VIDEOS, f'{vid}.json')

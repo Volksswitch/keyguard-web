@@ -57,6 +57,43 @@ quietly waits forever.
 - **Why not now:** the pictures should show what clinicians are given, so they are made
   from the released app, after Ken releases 116.
 
+### Help menu: links to the videos page and the documents page
+- **Raised:** 2026-10-27, Ken: *"I want to ensure that links for both of these pages are
+  added to (or replace as appropriate) the entries in the Help (?) pop up."*
+- **What's wanted:** the ? menu opens the how-to videos page
+  (`/index.php/keyguard-designer-videos/`) and the documents page
+  (`/index.php/keyguard-designer-documents/`). Today it lists Custom Openings moves, Web app
+  guide, Keyguard how-to pages, Known issues, Check my setup, Report a problem and Contact
+  Volksswitch. Claude's lean, for Ken to confirm when it's built: add **How-to videos**, and
+  let **User Manual and documents** replace **Web app guide**, whose page overlaps the
+  manual and is out of date (the Phase 2 entry, item 2). Keep **Keyguard how-to pages**:
+  measuring, printing and mounting are covered only there.
+- **What it touches:** the app (an Unreleased changelog entry and "apply release notes");
+  CLAUDE.md's note listing the pages the Help menu links; `SECURITY.md`, which names the
+  pages it opens (and a rebuilt security document for Ken to upload); the manual's Help
+  menu section and its Figure 7, then "sync docs"; any video that shows the menu, then
+  "sync videos". The two links work only online, like the others; the menu itself stays
+  built in.
+- **Why not now:** it's an app change for the next release, recorded while Ken reviews the
+  videos and documents.
+
+### Customizer setting descriptions, shown when pointing at a setting
+- **Raised:** 2026-10-26, Phase 4 of the support assets proposal ("What's this? and the
+  setting descriptions"); Ken asked when on 2026-10-27.
+- **What it is:** a description for every Customizer setting, appearing when the clinician
+  points at its name, with a More link to that setting's entry in the Design Settings
+  Reference (also Phase 4). Today 41 of the 188 settings have a short gray note under the
+  name, most of them warnings, and they stay; nothing appears on pointing. Each description
+  is written once, in the keyguard designer file beside its setting, so OpenSCAD users get
+  it too and the reference is built from the same words. The proposal pairs it with
+  **What's this?**: choose it, click any button or setting, and see what it does with a
+  link to the manual section and video.
+- **What it touches:** the keyguard designer file (the 147 missing descriptions, and a way
+  to tell a description from a warning note), released by "bump keyguard designer"; the
+  app, to show them, in an app release.
+- **Why not now:** Phase 4 was sequenced after the manual and videos, which now exist; it
+  waits on Ken's go-ahead and the order he wants.
+
 ### The security overview on the website predates release 116
 - **Raised:** 2026-10-27 - found while checking the new documents page, which links it.
 - **What's wanted:** the PDF at `wp-content/uploads/2026/08/SECURITY.pdf` was uploaded
@@ -120,8 +157,11 @@ quietly waits forever.
 - **Mounting videos** (the proposal's "one per mounting method") are Ken's existing
   recordings. They aren't in the course list yet: which ones, and where they live, is his call.
 - **Publishing: done 2026-10-27.** All 27 are on volksswitch.org with their guides, at the
-  addresses the User Manual links ("publish videos"; every link checked by "check website
-  links").
+  addresses the User Manual links. From now on "sync videos" publishes whatever changed and
+  checks every link. **Ken is reviewing the set (and the documents) before he next says
+  "sync videos" or "sync docs"** (2026-10-27).
+- **More videos to come (Ken, 2026-10-27):** which ones is his call. CLAUDE.md, "How-to
+  videos", says how a new one joins the set without moving any published number.
 - **Why not now:** the pictures and recordings are Ken's.
 
 ### Phase 2 documents, pages and demos that wait on Ken
@@ -130,10 +170,11 @@ quietly waits forever.
   `volksswitch.org/index.php/keyguard-designer-documents/`: Product Overview, User Manual,
   Quick Reference Card and the IT Request Letter, as PDFs Claude exported through Word.
   The page also lists the security overview, which stays Ken's to upload.
-- **Linking the new pages: Ken's call.** When they were made, nothing on the site linked
-  the videos page or the documents page. Candidates: the keyguard hub page, the Keyguard
-  Designer Web App page, the site menu, the home page below, and (an app change, next
-  release) the app's Help menu.
+- **Linking the new pages from the website: Ken's call.** When they were made, nothing on
+  the site linked the videos page or the documents page. Candidates: the keyguard hub page,
+  the Keyguard Designer Web App page, the site menu and the home page below. The app's Help
+  menu is decided: its own entry below.
+- From now on **"sync docs"** keeps the documents and their page current (Ken, 2026-10-27).
 - **Waiting on Ken's answer**, all set out in `Documents/Keyguard Designer Website and Demo
   Drafts - Phase 2.docx`:
   1. **The home page** (`/index.php/keyguard-designer/` proposed): its wording and address.

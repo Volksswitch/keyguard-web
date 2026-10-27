@@ -4,8 +4,9 @@
 //   node scripts/video/sync-videos.mjs              re-make everything and report
 //   node scripts/video/sync-videos.mjs --no-render  compare what is already made, without re-making
 //   node scripts/video/sync-videos.mjs --only 1.1   only videos whose id starts with this
+//   node scripts/video/sync-videos.mjs --publish    ...then publish what changed: what "sync videos" runs
 //   node scripts/video/sync-videos.mjs --published 1.1-what-for
-//        record a video as published, once Ken has put it on the website
+//        record a video as published by hand (the publisher does this itself)
 //
 // Re-making costs no speech unless a line's wording changed: spoken lines are cached.
 //
@@ -20,9 +21,13 @@
 // brightness, and a picture counts as changed only past 200 such pixels. A changed word
 // on a button moves hundreds.
 //
-// Publishing to volksswitch.org isn't set up yet: the videos page doesn't exist. Until it
-// is, publishing is by hand, and --published records what went up so the next sync
-// compares against it.
+// --publish (Ken, October 27 2026: "sync videos" also publishes) hands exactly the videos
+// judged changed here to scripts/wordpress/publish-videos.py - by this judgement, not the
+// publisher's own, which sees only words and voice and would miss a moved button. With
+// nothing changed it still lets the publisher refresh the pages, in case a title or a
+// "what you will learn" line changed in course.json. Then every link on the website is
+// checked, and any video the User Manual doesn't link yet is named for "sync docs". A
+// video that couldn't be made is not published: its last published copy stays up.
 import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -33,6 +38,7 @@ const args = process.argv.slice(2);
 const RENDER = !args.includes('--no-render');
 const ONLY = args.includes('--only') ? args[args.indexOf('--only') + 1] : null;
 const MARK = args.includes('--published') ? args[args.indexOf('--published') + 1] : null;
+const PUBLISH = args.includes('--publish');
 
 const VIDEOS = path.join(PROJECT, 'Videos');
 const PIXEL_STEP = 51;      // a fifth of full brightness, out of 255
@@ -130,16 +136,32 @@ if (RENDER) {
 }
 
 console.log('\nCompared with what was last published:');
-let changed = 0;
+const changed = [];
 for (const x of items) {
   if (failed.find((f) => f.x === x)) { console.log(`  ${x.num.padEnd(5)} NOT MADE  ${fullTitle(x)}`); continue; }
   const why = whatChanged(x.id);
-  if (why && why !== 'not made') changed++;
+  if (why && why !== 'not made') changed.push(x.id);
   console.log(`  ${x.num.padEnd(5)} ${why ? 'CHANGED  ' : 'same     '} ${fullTitle(x)}${why ? `  (${why})` : ''}`);
 }
 if (failed.length) {
   console.log('\nThese could not be made:');
   for (const { x, why } of failed) console.log(`  ${x.num} ${fullTitle(x)}: ${why}`);
 }
-console.log(changed ? `\n${changed} to publish.` : '\nNothing to publish.');
-process.exit(failed.length ? 1 : 0);
+console.log(changed.length ? `\n${changed.length} to publish.` : '\nNothing to publish.');
+
+let publishFailed = false;
+if (PUBLISH) {
+  const py = (script, extra) => {
+    console.log(`\n${script} ${extra.join(' ')}`);
+    return spawnSync('python', [path.join(PROJECT, script), ...extra],
+      { stdio: 'inherit', cwd: PROJECT, env: { ...process.env, PYTHONIOENCODING: 'utf-8' } }).status;
+  };
+  if (py('scripts/wordpress/publish-videos.py', changed.length ? ['--apply', ...changed] : ['--apply', '--pages-only']) !== 0) {
+    publishFailed = true;
+    console.log('PUBLISHING FAILED: see above. The link check was not run.');
+  } else {
+    publishFailed = py('scripts/wordpress/check-links.py', []) !== 0;
+    py('scripts/video/add-manual-links.py', []);
+  }
+}
+process.exit(failed.length || publishFailed ? 1 : 0);
