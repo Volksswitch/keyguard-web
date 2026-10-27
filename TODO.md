@@ -59,6 +59,10 @@ quietly waits forever.
   2. 2.3 - a ruler on the tablet's screen, measuring a bar.
   3. 5.1 - a keyguard in a slicer, back down and face down.
   4. 5.2 - a two-layer test mask in the case, over the app.
+- **5.1's title, "Printing on Its Face"**, leans toward face down, though the video says most
+  keyguards print back down and face down is the option for a smoother top. Something like
+  "Printing: Back Down or Face Down" would match it. Ken's call; it's free to change until the
+  video is published.
 - **Mounting videos** (the proposal's "one per mounting method") are Ken's existing
   recordings. They aren't in the course list yet: which ones, and where they live, is his call.
 - **Publishing** isn't set up: no videos page on volksswitch.org yet (Phase 3's "Videos
@@ -66,6 +70,23 @@ quietly waits forever.
   hand, so the next sync compares against it.
 - **Why not now:** the pictures and recordings are Ken's; publishing waits on his review of
   the set.
+
+### Braille cell inserts on short cells: dots off the edge, no warning
+- **Raised:** 2026-10-26 - found making how-to video 3.8.
+- **What happens:** with braille above (or below) the finger opening, the keyguard file
+  places the braille and the opening at fixed distances from the insert's middle, whatever
+  the cell's size. At the default settings (10 mm opening, braille 5 mm from it) that needs a
+  cell opening about 27 mm tall. On a shorter cell - the WordPower 42 sample's 18 mm cells -
+  the top row of dots hangs off the insert into the air and the finger opening breaks
+  through the bottom edge. The Console says nothing, so a clinician finds out at the
+  printer. Beside the opening has the same limit across the cell's width.
+- **What the video does instead:** uses the VocoChat sample's taller cells, with the braille
+  2 mm from the opening, and a troubleshooting line on the guide page.
+- **Open decision for Ken:** whether the keyguard file should say so in the Console (as it
+  does when it shrinks a cell height to fit), shrink the opening, or both. It's a change to
+  `keyguard.scad`, so it would go out with "bump keyguard designer".
+- **Why not now:** it's the keyguard file's behavior, a separate project, and the fix is a
+  design choice.
 
 ### Phase 2 documents, pages and demos that wait on Ken
 - **Raised:** 2026-10-26 - Phase 2 of the support assets proposal, drafted the same day.
