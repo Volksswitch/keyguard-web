@@ -1,0 +1,42 @@
+{
+  "_about": "The documents published on https://volksswitch.org/index.php/keyguard-designer-documents/ - in the order they appear there. Maintained by scripts/wordpress/publish-documents.py; add or remove an entry to change what is published. 'date', 'mediaId' and 'url' record what is live now and are written by the script; do not edit those by hand. An entry with 'external': true is a PDF Ken uploads himself (the security overview, replaced in place so its links keep working); the script only reads its date from the live file and lists it.",
+  "page": "keyguard-designer-documents",
+  "pageTitle": "Keyguard Designer Documents",
+  "mediaFolder": 109,
+  "documents": [
+    {
+      "file": "Keyguard Designer Product Overview.docx",
+      "title": "Product Overview",
+      "date": "2026-10-26",
+      "mediaId": 24651,
+      "url": "https://volksswitch.org/wp-content/uploads/2026/10/Keyguard-Designer-Product-Overview.pdf"
+    },
+    {
+      "file": "Keyguard Designer User Manual.docx",
+      "title": "User Manual",
+      "date": "2026-10-27",
+      "mediaId": 24652,
+      "url": "https://volksswitch.org/wp-content/uploads/2026/10/Keyguard-Designer-User-Manual.pdf"
+    },
+    {
+      "file": "Keyguard Designer Quick Reference Card.docx",
+      "title": "Quick Reference Card",
+      "date": "2026-10-26",
+      "mediaId": 24653,
+      "url": "https://volksswitch.org/wp-content/uploads/2026/10/Keyguard-Designer-Quick-Reference-Card.pdf"
+    },
+    {
+      "file": "Keyguard Designer IT Request Letter.docx",
+      "title": "Request to Allow the Keyguard Designer (for IT)",
+      "date": "2026-10-26",
+      "mediaId": 24654,
+      "url": "https://volksswitch.org/wp-content/uploads/2026/10/Keyguard-Designer-IT-Request-Letter.pdf"
+    },
+    {
+      "external": true,
+      "title": "Security Overview (for IT)",
+      "url": "https://volksswitch.org/wp-content/uploads/2026/08/SECURITY.pdf",
+      "date": "2026-10-26"
+    }
+  ]
+}

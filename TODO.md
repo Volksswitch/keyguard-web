@@ -57,6 +57,15 @@ quietly waits forever.
 - **Why not now:** the pictures should show what clinicians are given, so they are made
   from the released app, after Ken releases 116.
 
+### The security overview on the website predates release 116
+- **Raised:** 2026-10-27 - found while checking the new documents page, which links it.
+- **What's wanted:** the PDF at `wp-content/uploads/2026/08/SECURITY.pdf` was uploaded
+  2026-10-26 at 15:46 and lacks that evening's `SECURITY.md` changes for release 116 (the
+  folder permission is now read and write; the standard file names). `SECURITY.docx` was
+  rebuilt with them. Ken converts it to PDF and replaces the file in place in WordPress,
+  so the address the app, the IT letter and the documents page use keeps working.
+- **Why not now:** it's Ken's step by his rule (CLAUDE.md); Claude doesn't upload it.
+
 ### Folders with two files of saved designs
 - **Raised:** 2026-10-26 - the plain file names change. Before it, a folder holding
   `keyguard_v92.scad` beside a presets file with another name (say `keyguard.json`) opened
@@ -110,29 +119,25 @@ quietly waits forever.
   4. 5.2 - a two-layer test mask in the case, over the app.
 - **Mounting videos** (the proposal's "one per mounting method") are Ken's existing
   recordings. They aren't in the course list yet: which ones, and where they live, is his call.
-- **Publishing** isn't set up: no videos page on volksswitch.org yet (Phase 3's "Videos
-  page"). Until it is, `sync-videos.mjs --published <id>` records a video Ken has put up by
-  hand, so the next sync compares against it. Conversant's `scripts/wordpress/publish-videos.py`
-  does this job there (uploads, one watch page per video, the list page made as a draft) and
-  is the model to copy.
-- **The User Manual already links to the watch pages (2026-10-27)**, at the addresses they
-  will have: `volksswitch.org/index.php/keyguard-designer-videos/video-<n>-<n>/` (both
-  addresses checked free that day). Every one shows "not found" until the videos are
-  published there, so **the manual can't be published before the videos are.** Publishing
-  the videos at another address means changing `ALL_URL` in `add-manual-links.py` and
-  running "link the videos in the manual".
-- **Why not now:** the pictures and recordings are Ken's; publishing waits on his review of
-  the set.
+- **Publishing: done 2026-10-27.** All 27 are on volksswitch.org with their guides, at the
+  addresses the User Manual links ("publish videos"; every link checked by "check website
+  links").
+- **Why not now:** the pictures and recordings are Ken's.
 
 ### Phase 2 documents, pages and demos that wait on Ken
 - **Raised:** 2026-10-26 - Phase 2 of the support assets proposal, drafted the same day.
-- **Drafted, for Ken's review** (all in `Documents/`, built by `scripts/doc-generators/`):
-  Product Overview, User Manual (screenshots from `capture-manual-figures.mjs`), Quick
-  Reference Card, and the IT Request Letter rebuilt in the same style.
+- **Published 2026-10-27 at Ken's request** ("publish documents"), on the documents page
+  `volksswitch.org/index.php/keyguard-designer-documents/`: Product Overview, User Manual,
+  Quick Reference Card and the IT Request Letter, as PDFs Claude exported through Word.
+  The page also lists the security overview, which stays Ken's to upload.
+- **Linking the new pages: Ken's call.** When they were made, nothing on the site linked
+  the videos page or the documents page. Candidates: the keyguard hub page, the Keyguard
+  Designer Web App page, the site menu, the home page below, and (an app change, next
+  release) the app's Help menu.
 - **Waiting on Ken's answer**, all set out in `Documents/Keyguard Designer Website and Demo
   Drafts - Phase 2.docx`:
-  1. **The home page and documents page:** their wording and addresses, and who turns the
-     documents into PDFs and puts the pages up.
+  1. **The home page** (`/index.php/keyguard-designer/` proposed): its wording and address.
+     The documents page is done.
   2. **The Keyguard Designer Web App page** overlaps the manual and is out of date in places
      (six Settings tabs where there are seven; says an update restarts the app; no Help
      menu; names Opera, which the app doesn't claim). Claude suggests trimming it to point
