@@ -182,8 +182,8 @@ d.h2('4.6  Export and print')
 d.n("Click **STL** in the toolbar. A Save As box opens in the project folder, with the preset's "
     "name filled in. Click **Save**.")
 d.n("Open the STL file in your slicer and print it. A keyguard usually prints with its back on "
-    "the build plate. Some print better face down, for a smoother top; the page Printing Your "
-    "Keyguard on Its Face, on volksswitch.org, says when.")
+    "the build plate. One with a sloped edge prints better face down, with far less support "
+    "material; the page Printing Your Keyguard on Its Face, on volksswitch.org, says when.")
 d.n("Try the keyguard on the tablet. Note what to change, change those settings, save the "
     "preset and export again. Most keyguards take a couple of tries.")
 

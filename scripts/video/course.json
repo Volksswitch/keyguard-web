@@ -32,7 +32,7 @@
       { "num": "4.4", "id": "4.4-skill-levels", "title": "Showing More Settings", "learn": "Choose a skill level." }
     ] },
     { "name": "Printing, fitting and mounting", "items": [
-      { "num": "5.1", "id": "5.1-printing", "title": "Printing on Its Face", "learn": "Print a keyguard with a smooth top." },
+      { "num": "5.1", "id": "5.1-printing", "title": "Printing on Its Face", "learn": "Print a sloped-edge keyguard with little support material." },
       { "num": "5.2", "id": "5.2-testing-fit", "title": "Testing the Fit", "learn": "Check a printed keyguard and fix what's wrong." }
     ] },
     { "name": "Keeping things running", "items": [

@@ -1,6 +1,7 @@
 // How-to video 5.1: printing on its face. From the website page "Printing Your Keyguard on
-// Its Face": a keyguard normally prints with its back on the build plate; face down gives a
-// smoother top, and suits a sloped edge, but only when the top surface is flat.
+// Its Face": a keyguard normally prints with its back on the build plate. Face down is the
+// answer to a sloped edge, whose undercut outer edge would otherwise need a great deal of
+// support material (Ken, 26 Oct 2026); the smoother top is a bonus. Only when the top is flat.
 import { all, view, openSection, setParam, row, closeSections } from '../helpers.mjs';
 
 // The screenshot is turned off first: seen from below, it would show through mirrored.
@@ -17,9 +18,10 @@ export default {
       say: "Most keyguards print with their back on the printer's build plate. That needs little or no " +
            "support material, and holds the print to the plate well." },
     { before: view('top'), highlight: '#viewport',
-      page: "Printing face down gives a smoother top, and suits a keyguard with a sloped edge.",
-      say: "Printing it face down, with the top on the plate, gives a smoother top, especially on a " +
-           "smooth build sheet. It also suits a keyguard with a sloped edge." },
+      page: "A sloped edge prints face down, with far less support material. The top comes out smoother too.",
+      say: "A keyguard with a sloped edge is different. Its outer edge is undercut, and printed back " +
+           "down it needs a lot of support material. Printed face down, with the top on the plate, it " +
+           "needs very little. The top comes out smoother too, especially on a smooth build sheet." },
     { before: openSection('Keyguard Basics'), highlight: row('screen_area_thickness'),
       page: "Face down only works if the top is flat: the screen area as thick as the keyguard.",
       say: "Face down only works if the top is flat. The screen area thickness has to match the " +
