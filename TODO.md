@@ -48,6 +48,25 @@ quietly waits forever.
   - The User Manual's "Starting a project" chapter gains a section on the sample.
 - **Why not now:** Ken deferred it for future consideration on 2026-10-26.
 
+### How-to videos: what's left after the first full set
+- **Raised:** 2026-10-26 - Phase 3. Ken: "Go ahead and develop the remaining videos." All 27
+  in `scripts/video/course.json` have scripts and are made by "sync videos".
+- **Pictures only Ken can take**, to replace narration over app screens with the real thing.
+  Each video works without them; a picture goes in `Documents/video-pictures/` and the
+  script gets an `image:` step:
+  1. 2.1 - the back of an iPad with its model number, and the Easy Measurement Tool spanning a
+     case opening.
+  2. 2.3 - a ruler on the tablet's screen, measuring a bar.
+  3. 5.1 - a keyguard in a slicer, back down and face down.
+  4. 5.2 - a two-layer test mask in the case, over the app.
+- **Mounting videos** (the proposal's "one per mounting method") are Ken's existing
+  recordings. They aren't in the course list yet: which ones, and where they live, is his call.
+- **Publishing** isn't set up: no videos page on volksswitch.org yet (Phase 3's "Videos
+  page"). Until it is, `sync-videos.mjs --published <id>` records a video Ken has put up by
+  hand, so the next sync compares against it.
+- **Why not now:** the pictures and recordings are Ken's; publishing waits on his review of
+  the set.
+
 ### Phase 2 documents, pages and demos that wait on Ken
 - **Raised:** 2026-10-26 - Phase 2 of the support assets proposal, drafted the same day.
 - **Drafted, for Ken's review** (all in `Documents/`, built by `scripts/doc-generators/`):

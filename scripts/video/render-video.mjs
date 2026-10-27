@@ -166,17 +166,21 @@ async function showPicture(page, step) {
   const ox = (VIEW.width - iw * k) / 2, oy = (VIEW.height - ih * k) / 2;
   const sx = (v) => ox + v * k, sy = (v) => oy + v * k;
   const svg = (step.marks || []).map((m) => {
-    const label = m.label ? `<text x="${sx(m.at[0])}" y="${sy(m.at[1])}" font-family="Arial" font-size="20"
-      font-weight="bold" fill="#FF6D00" stroke="#fff" stroke-width="4" paint-order="stroke">${m.label}</text>` : '';
     if (m.line) return `<line x1="${sx(m.line[0])}" y1="${sy(m.line[1])}" x2="${sx(m.line[2])}" y2="${sy(m.line[3])}"
-      stroke="#FF6D00" stroke-width="4"/>${label}`;
+      stroke="#FF6D00" stroke-width="4"/>`;
     if (m.box) return `<rect x="${sx(m.box[0])}" y="${sy(m.box[1])}" width="${m.box[2] * k}" height="${m.box[3] * k}"
-      fill="none" stroke="#FF6D00" stroke-width="4" stroke-dasharray="10 6"/>${label}`;
-    return label;
+      fill="none" stroke="#FF6D00" stroke-width="4" stroke-dasharray="10 6"/>`;
+    return '';
   }).join('');
+  // A label is a white tag whose lower-left corner is at `at`, so it reads over anything in
+  // the picture (bare lettering ran into the words on an app's buttons).
+  const labels = (step.marks || []).filter((m) => m.label).map((m) => `<div style="position:absolute;
+    left:${sx(m.at[0])}px;top:${sy(m.at[1])}px;transform:translateY(-100%);background:#fff;color:#FF6D00;
+    font:bold 18px Arial;padding:2px 8px;border:2px solid #FF6D00;border-radius:4px;white-space:nowrap">${m.label}</div>`).join('');
   await page.setContent(`<!doctype html><html><body style="margin:0;width:100vw;height:100vh;overflow:hidden;background:#1d2733;">
     <img src="${data}" style="position:absolute;left:${ox}px;top:${oy}px;width:${iw * k}px;height:${ih * k}px;">
     <svg width="${VIEW.width}" height="${VIEW.height}" style="position:absolute;left:0;top:0">${svg}</svg>
+    ${labels}
     ${step.ring ? `<div id="vid-target" style="position:absolute;left:${sx(step.ring[0])}px;top:${sy(step.ring[1])}px;width:${step.ring[2] * k}px;height:${step.ring[3] * k}px"></div>` : ''}
     </body></html>`, { waitUntil: 'load' });
 }

@@ -1,6 +1,6 @@
 // How-to video 3.3: typing openings in pixels or millimeters, on the Custom Openings table.
 // The sample design measures the screen in millimeters from the upper-left corner.
-import { all, click, view, openOpenings, closeOpenings, sleep } from '../helpers.mjs';
+import { all, click, view, openOpenings, atView, sleep } from '../helpers.mjs';
 import { settled } from '../../lib/sample-project.mjs';
 
 const lastRow = '#og-screen tr:last-child';
@@ -36,9 +36,11 @@ export default {
       page: "Type its height, width and corner radius, and the x and y of its center. Press Enter.",
       say: "Type its height, width and corner radius, then the x and y of its center. Press Enter, " +
            "and the keyguard updates." },
-    { highlight: '#viewport',
-      say: "Each opening is placed by its center. For a circle, the height is the diameter." },
-    { highlight: '.og-add[data-grid="case"]',
+    // The ring is on the new opening: 120 by 70 millimeters lands there in the top view.
+    { before: all(click('#openings-tabs [data-tab="eye"]'), view('top')), ringBox: atView(0.545, 0.455, 100, 60),
+      say: "On the by eye tab, you can see it on the keyguard. Each opening is placed by its center. " +
+           "For a circle, the height is the diameter." },
+    { before: click('#openings-tabs [data-tab="table"]'), highlight: '.og-add[data-grid="case"]',
       page: "Case openings, beside the screen, are measured in millimeters from the case opening's lower-left corner.",
       say: "Case openings are for openings beside the screen. They're measured in millimeters, from " +
            "the lower-left corner of the case opening." },

@@ -2,8 +2,8 @@
 // Ridges around cells come from Grid Special Settings; a ridge anywhere and a rounded corner
 // come from Custom Openings. A corner can only be rounded if it's square, so the case
 // opening's corner radius is set to 0 first, which squares the keyguard's outer corners.
-import { all, click, view, openSection, setParam, row, openOpenings, closeOpenings, clickAt,
-  atView, onKeyguard, sleep } from '../helpers.mjs';
+import { all, click, view, openSection, setParam, row, openOpenings, closeOpenings, drag,
+  atView, onKeyguard, zoom } from '../helpers.mjs';
 import { settled } from '../../lib/sample-project.mjs';
 
 const clickCorner = async (page) => {
@@ -19,15 +19,18 @@ export default {
     "If ridge settings aren't in the list, set the skill level to Intermediate.",
   ],
   steps: [
-    { before: all(openSection('Grid Special Settings'), setParam('add_a_ridge_around_these_cells', '25'), view('fit')),
+    { before: all(openSection('Grid Special Settings'), setParam('add_a_ridge_around_these_cells', '25'), view('fit'), zoom(5)),
       highlight: row('add_a_ridge_around_these_cells'),
       page: "To put a raised ridge around a cell, list it in add a ridge around these cells.",
       say: "A raised ridge gives a finger something to find by touch. To put one around a cell, list " +
            "the cell's number in add a ridge around these cells." },
-    { highlight: '#viewport',
+    // The ring is on the ridge around cell 25, "eat", where it lands in this zoomed view.
+    { ringBox: atView(0.498, 0.488, 100, 60),
       say: "Height of ridge and thickness of ridge set its size, in millimeters." },
-    { before: all(view('top'), openOpenings('eye'), click('#oge-add-ridge'), clickAt([0.3, 0.92])),
-      ringBox: atView(0.33, 0.92, 120, 50),
+    // Dragged along the plain border under the bottom row, where a ridge shows clearly (a
+    // clicked one is 10 millimeters long, and was lost on a cell's picture).
+    { before: all(view('top'), openOpenings('eye'), click('#oge-add-ridge'), drag([0.25, 0.943], [0.55, 0.943])),
+      ringBox: atView(0.40, 0.943, 340, 44),
       page: "In Custom Openings, click + Ridge, then click the keyguard. Drag instead to set its length and direction.",
       say: "To put a ridge anywhere, open Custom Openings, click plus Ridge, then click on the " +
            "keyguard. Drag instead, and you set its length and direction, in steps of 45 degrees." },

@@ -59,23 +59,32 @@ export const all = (...fns) => async (page) => { for (const f of fns) await f(pa
 
 export const click = (sel) => async (page) => { await page.click(sel); await sleep(300); };
 
+// The Console emptied, when what a render wrote there isn't what the video is about.
+export const clearConsole = () => (page) => page.locator('#clear-btn').evaluate((el) => el.click());
+
 export const view = (name) => click(`#view-${name}`);      // top, bottom, front, back, left, right, fit
 
 // A Customizer section, opened (and every other one closed, so the screen shows just it).
-export const openSection = (name, { only = true } = {}) => async (page) => {
-  if (only) {
-    for (const sec of await page.locator('.section.open').all()) {
-      if ((await sec.getAttribute('data-section')) !== name) await sec.locator('.section-header').click();
-    }
+// The headers are clicked through the page itself: the Customizer scrolls under its own
+// header, and a header half hidden there can't take an ordinary click.
+// The others are closed in one pass in the page, from a fixed list: closing them one by one
+// through a list counted by position skipped every second one.
+const closeOthers = (page, keep) => page.evaluate((keep) => {
+  for (const s of [...document.querySelectorAll('.section.open')]) {
+    if (s.dataset.section !== keep) s.querySelector('.section-header').click();
   }
+}, keep);
+export const openSection = (name, { only = true } = {}) => async (page) => {
+  if (only) await closeOthers(page, name);
   const sec = page.locator(`.section[data-section="${name}"]`);
-  if (!(await sec.evaluate((el) => el.classList.contains('open')))) await sec.locator('.section-header').click();
+  if (!(await sec.count())) throw new Error(`STOPPING - no section named ${name} at this skill level`);
+  if (!(await sec.evaluate((el) => el.classList.contains('open')))) {
+    await sec.locator('.section-header').evaluate((el) => el.click());
+  }
   await sec.evaluate((el) => el.scrollIntoView({ block: 'start' }));
   await sleep(300);
 };
-export const closeSections = () => async (page) => {
-  for (const sec of await page.locator('.section.open').all()) await sec.locator('.section-header').click();
-};
+export const closeSections = () => (page) => closeOthers(page, null);
 
 // The control for a setting, by its name in the keyguard designer file.
 export const param = (name) => `[data-param-name="${name}"] input:not([type=range]), [data-param-name="${name}"] select`;
@@ -98,6 +107,15 @@ export const preset = (name) => async (page) => {
   await page.click('#preset-dropdown-btn');
   await page.locator('#preset-list li', { hasText: name }).first().click();
   await settled(page, 2500);
+};
+
+// Zooms the 3D view in (clicks > 0) or out, with the mouse wheel over it.
+export const zoom = (clicks) => async (page) => {
+  const p = await viewPoint(page, 0.5, 0.5);
+  await page.mouse.move(p.x, p.y);
+  for (let i = 0; i < Math.abs(clicks); i++) { await page.mouse.wheel(0, clicks > 0 ? -120 : 120); await sleep(80); }
+  await page.mouse.move(1, 1);
+  await settled(page, 800);
 };
 
 // A point in the 3D view, as fractions of its width and height.
@@ -141,7 +159,8 @@ export const openOpenings = (tab = 'eye') => async (page) => {
 export const closeOpenings = ({ save = false } = {}) => async (page) => {
   await page.click(save ? '#openings-save' : '#openings-cancel');
   await sleep(500);
-  const discard = page.locator('#confirm-overlay.open #confirm-ok, button:has-text("Discard")');
+  // Only a question that is showing: the app keeps its confirm box in the page, hidden.
+  const discard = page.locator('button:visible', { hasText: 'Discard' });
   if (await discard.count()) await discard.first().click();
   await settled(page, 1500);
 };

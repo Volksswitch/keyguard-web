@@ -11,7 +11,11 @@ export default {
     "If you're never offered updates, run Check my setup. Your network may be blocking the app's address.",
   ],
   steps: [
-    { before: async (page) => { await page.click('#open-project-btn'); await page.waitForSelector('#update-modal', { state: 'visible', timeout: 60000 }); },
+    { before: async (page) => {
+        await page.click('#open-project-btn');
+        await page.waitForSelector('#update-modal', { state: 'visible', timeout: 60000 });
+        await page.locator('#clear-btn').evaluate((el) => el.click());   // only what the video shows
+      },
       highlight: '#update-modal',
       page: "When a newer keyguard designer file is published, the app offers it as you open a project.",
       say: "When a newer keyguard designer file is published, the app offers it as you open your project." },
@@ -28,6 +32,8 @@ export default {
         await page.click('#update-now');
         await page.waitForFunction(() => /keyguard_v92/.test(document.getElementById('project-folder-label')?.textContent || ''), null, { timeout: 90000 });
         await settled(page, 3000);
+        // Reopening logs the local copy's own release number, one ahead of the public one.
+        await page.locator('#clear-btn').evaluate((el) => el.click());
       },
       highlight: '#project-folder-label',
       page: "After the update, the project shows the new version. Your designs are unchanged.",

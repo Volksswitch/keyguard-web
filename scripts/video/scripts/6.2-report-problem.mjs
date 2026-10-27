@@ -10,6 +10,10 @@ const write = (text) => async (page) => {
 
 export default {
   id: '6.2-report-problem',
+  // The live address, so the report shows the released app and its address, and the
+  // default skill level.
+  base: 'live',
+  project: { skill: null },
   trouble: [
     "If Email report doesn't open a message, click Copy report and paste the report into an email to ken@volksswitch.org.",
   ],

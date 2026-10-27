@@ -15,7 +15,6 @@ export default {
       say: "The keyguard data form collects everything a keyguard needs, in one place. It's on " +
            "volksswitch.org, as a Word file or a PDF." },
     { image: P1, ring: [90, 215, 900, 60],
-      page: "Give it a name you'll recognize: the app, the tablet and the case.",
       say: "Give it a name you'll recognize, such as the student's app, tablet and case." },
     { image: P1, ring: [90, 560, 1520, 500],
       page: "The first part is for whoever is closest to the student: the tablet, the case and the app.",

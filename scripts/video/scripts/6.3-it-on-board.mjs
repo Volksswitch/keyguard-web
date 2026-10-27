@@ -6,6 +6,7 @@ import { all, click, sleep } from '../helpers.mjs';
 export default {
   id: '6.3-it-on-board',
   base: 'live',
+  project: { skill: null },
   trouble: [
     "If the app won't open at all on a school computer, ask IT to allow keyguard.volksswitch.org, " +
     "and give them the letter.",

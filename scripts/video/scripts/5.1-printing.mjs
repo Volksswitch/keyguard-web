@@ -1,7 +1,10 @@
 // How-to video 5.1: printing on its face. From the website page "Printing Your Keyguard on
 // Its Face": a keyguard normally prints with its back on the build plate; face down gives a
 // smoother top, and suits a sloped edge, but only when the top surface is flat.
-import { all, view, openSection, row, closeSections } from '../helpers.mjs';
+import { all, view, openSection, setParam, row, closeSections } from '../helpers.mjs';
+
+// The screenshot is turned off first: seen from below, it would show through mirrored.
+const noScreenshot = all(openSection('Special Actions and Settings'), setParam('include_screenshot', 'no'));
 
 export default {
   id: '5.1-printing',
@@ -9,7 +12,7 @@ export default {
     "If a face-down print comes loose from the plate, the rails may be too narrow to hold it. Print it back down instead.",
   ],
   steps: [
-    { before: all(closeSections(), view('bottom')), highlight: '#viewport',
+    { before: all(noScreenshot, closeSections(), view('bottom')), highlight: '#viewport',
       page: "Most keyguards print with their back on the build plate.",
       say: "Most keyguards print with their back on the printer's build plate. That needs little or no " +
            "support material, and holds the print to the plate well." },

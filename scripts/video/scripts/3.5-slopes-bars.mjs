@@ -1,5 +1,5 @@
 // How-to video 3.5: sloped edges and the app's bars.
-import { all, view, openSection, setParam, row, skill } from '../helpers.mjs';
+import { all, view, openSection, setParam, row, skill, zoom } from '../helpers.mjs';
 
 export default {
   id: '3.5-slopes-bars',
@@ -13,12 +13,12 @@ export default {
            "Bar Info, choose which of them get an opening." },
     { highlight: row('expose_upper_message_bar'),
       say: "The message bar usually gets one, so it can be tapped to speak the message." },
-    { before: all(setParam('bar_edge_slope', 90), view('fit')), highlight: row('bar_edge_slope'),
+    { before: all(setParam('bar_edge_slope', 90), view('fit'), zoom(3)), highlight: row('bar_edge_slope'),
       page: "Bar edge slope tilts the sides of a bar's opening. 90 is straight down.",
       say: "Bar edge slope tilts the sides of a bar's opening. At 90, they go straight down." },
-    { before: all(setParam('bar_edge_slope', 30), view('fit')), highlight: '#viewport',
+    { before: all(setParam('bar_edge_slope', 30), view('fit'), zoom(3)), highlight: '#viewport',
       say: "A smaller angle slopes them, so a finger slides in more easily. This design uses 30." },
-    { before: all(skill('advanced'), openSection('Grid Special Settings'), setParam('cell_edge_slope', 60), view('fit')),
+    { before: all(skill('advanced'), openSection('Grid Special Settings'), setParam('cell_edge_slope', 60), view('fit'), zoom(6)),
       highlight: row('cell_edge_slope'),
       page: "At the Advanced skill level, cell edge slope does the same for every cell.",
       say: "At the Advanced skill level, cell edge slope does the same for every cell. Sloped sides " +
