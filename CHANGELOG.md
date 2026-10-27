@@ -13,6 +13,8 @@ notes, because nothing at this address could have been missed yet.
 
 ## Unreleased (next release)
 
+## Release 116
+
 - **Your keyguard files no longer have a version number in their names.** The keyguard designer file is now always called `keyguard.scad`, and your saved designs `keyguard.json`, instead of names like `keyguard_v92.scad` and `keyguard_v92.json`. The files in each project folder are renamed the first time you open it with this release. Nothing inside the files changes, and your designs are all still there. The version you have is shown beside the file name at the top of the Customizer, and in Settings → About. Updating the keyguard designer file now simply replaces it, so your saved designs keep the same file for good.
 - **Saved designs are no longer missed when their file's name doesn't match the keyguard designer file.** A folder holding, for example, `keyguard_v92.scad` beside `keyguard.json` used to open with only the design default values, as though you had no saved designs, and saving a design then started a second file holding just that one. The app now finds your saved designs whatever their file is called, and gives it the standard name.
 - Changing the skill level no longer makes the red * appear beside the preset name. A skill level only changes which settings you can see, so switching it on a design you haven't changed no longer looks like an unsaved change, and closing the tab no longer asks “Leave site?” because of it.
