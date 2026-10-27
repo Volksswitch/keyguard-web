@@ -32,8 +32,29 @@ quietly waits forever.
   figures into `Documents/Keyguard Designer User Manual.docx` (`um-presets.png` certainly;
   check the rest). The manual's text is already corrected, edited directly in the .docx,
   because Ken's copy has a filled-in table of contents a regenerate would drop.
-- **Also:** website pages and images that show the old names (a list was gathered for
-  Ken on 2026-10-26), and any workshop decks that do.
+- **Website pages and images that show the old names** (searched 2026-10-26: all 227
+  published pages' text, and every image on the 88 keyguard pages; Ken edits these
+  himself). Web app pages, which describe the new behaviour wrongly:
+  1. **Keyguard Designer Web App** (page 22444): the sentence saying the file name helps
+     tell designer versions apart; the "Update now" sentence saying the presets file is
+     renamed to match; screenshots `web-app-r11.png` (project line and Console read
+     `keyguard_v79`) and `keyguard-designer-update-available.png` (the old update dialog
+     wording). Its Settings → About description mentions only the app's release number.
+  2. **Using Presets** (page 1736): "same name (including version number)" and "will
+     automatically update the name of the JSON file"; images `json-and-scad-files.png`
+     (`keyguard_v38` files) and `preset-management-buttons.png` (`keyguard_v82.scad`).
+  3. **Tweaking the Ready-to-Print Keyguard Designs** (page 8594): the "-vXX will be
+     added" and "number after the _v" sentences; image `latest-files-added.png`
+     (`keyguard_v92` files).
+  4. **Managing Multiple Keyguard Designs** (page 1716): image `keyguard-design-folder.png`
+     (`keyguard_v62` files). Its text is still true.
+  Older pages about desktop OpenSCAD, MakerWorld or Thingiverse, which show versioned
+  names as history, Ken's call whether to touch: Upgrading from Version 67 to Version 68
+  (18593, text and two images), Strange Slicer Artifacts (2308, two images of exported
+  STLs), Designing on Maker World (20382), Using the Thingiverse Customizer (492), and
+  MAKING Assistive Technology (15884, a deliberate before-and-after). Not checked: 45
+  embedded videos on 19 keyguard pages, and anything visible only when logged in.
+- **Also:** any workshop decks that show the old names.
 - **Why not now:** the pictures should show what clinicians are given, so they are made
   from the released app, after Ken releases 116.
 
