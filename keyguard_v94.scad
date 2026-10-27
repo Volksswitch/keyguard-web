@@ -320,6 +320,7 @@ distance_between_horizontal_raised_tabs=60;
 vertical_raised_tab_length=8;
 vertical_raised_tab_width=20;
 distance_between_vertical_raised_tabs=60;
+//thickness of each raised tab in mm; the tab is built exactly this thick (a tab with embedded magnets is made thick enough to enclose them)
 preferred_raised_tab_thickness=2; // .1
 raised_tabs_starting_height = 0.0; // .1
 ramp_angle = 30;
@@ -355,7 +356,6 @@ cut_cell_openings_and_bars_through_frame = "yes"; //[yes,no]
 
 /*[Split Keyguard Info]*/
 split_line_location = 0; // [-300:.1:300]
-// set this option to "no" before rendering your design
 show_split_line = "no"; //[yes,no]
 split_line_type = "flat"; //[flat,dovetails]
 dovetail_width = 4.0; //[3:.1:6]
@@ -568,7 +568,7 @@ if (echo_dims=="yes") echo("__KG_DIMS__", swm=swm, shm=shm, awm=awm, ahm=ahm, sa
 //   tablet selection → screen/case geometry → grid geometry → bar geometry →
 //   cell geometry → opening/addition helpers → mounting geometry → text/SVG helpers
 
-keyguard_designer_version = 93; //*****************************
+keyguard_designer_version = 94; //*****************************
 
 
 // Boolean shorthands for the most-used string comparisons.
@@ -3415,7 +3415,7 @@ module raised_tab(depth, tab_width, tab_length){
 	b = raised_tab_height;
 	s = (raised_tabs_starting_height < depth - 1) ? raised_tabs_starting_height : depth - 1;
 	angle = ramp_angle;
-	e = min((depth-s+1)*cos(angle),preferred_raised_tab_thickness);
+	e = preferred_raised_tab_thickness;  // honored exactly; only the starting height (s) is limited
 	r_h = a * tan(angle);
 		
 	// magnet variables
@@ -3432,6 +3432,7 @@ module raised_tab(depth, tab_width, tab_length){
 		 0;
 		 
 	th1 = (embed_magnets=="no") ? e : max(e, mh+1);
+	th2 = (embed_magnets=="no") ? e : max(e, mh+2);  // ramp-only tab: its magnet pocket sits higher
 
 	if (r_h > b){  //tread exists
 		f = (sin(angle)!=0) ? (b-s)/sin(angle) : a;
@@ -3507,25 +3508,25 @@ module raised_tab(depth, tab_width, tab_length){
 			difference(){
 				union(){
 					translate([-2,0,0])
-					cube([f+2-2.5,tab_width,th1+1]);
-					
-					translate([f-2.5,2.5,0])
-					cube([2.5,tab_width-5,th1+1]);
-					
-					translate([f-2.5,2.5,0])
-					cylinder(h=th1+1,r=2.5);
-				
-					translate([f-2.5,tab_width-2.5,0])
-					cylinder(h=th1+1,r=2.5);
-				}
-				
-				translate([f+ff,0,(th1+1)/2])
-				rotate([0,-45,0])
-				cube([th1+1,tab_width,th1+1]);
+					cube([f+2-2.5,tab_width,th2]);
 
-				translate([-th1-1+2-ff,-ff,depth/2])
+					translate([f-2.5,2.5,0])
+					cube([2.5,tab_width-5,th2]);
+
+					translate([f-2.5,2.5,0])
+					cylinder(h=th2,r=2.5);
+
+					translate([f-2.5,tab_width-2.5,0])
+					cylinder(h=th2,r=2.5);
+				}
+
+				translate([f+ff,0,th2/2])
 				rotate([0,-45,0])
-				cube([th1+1,tab_width+2*ff,th1+1]);
+				cube([th2,tab_width,th2]);
+
+				translate([-th2+2-ff,-ff,depth/2])
+				rotate([0,-45,0])
+				cube([th2,tab_width+2*ff,th2]);
 				
 
 				if(embed_magnets=="yes"){
