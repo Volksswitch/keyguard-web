@@ -13,6 +13,8 @@ notes, because nothing at this address could have been missed yet.
 
 ## Unreleased (next release)
 
+- "Include screenshot" no longer tells you to set it to "no" before rendering your design. That advice is for the desktop OpenSCAD program; the app shows your screenshot over the keyguard and always leaves it out of the files you export, so you can leave it on.
+
 ## Release 116
 
 - **Your keyguard files no longer have a version number in their names.** The keyguard designer file is now always called `keyguard.scad`, and your saved designs `keyguard.json`, instead of names like `keyguard_v92.scad` and `keyguard_v92.json`. The files in each project folder are renamed the first time you open it with this release. Nothing inside the files changes, and your designs are all still there. The version you have is shown beside the file name at the top of the Customizer, and in Settings → About. Updating the keyguard designer file now simply replaces it, so your saved designs keep the same file for good.
