@@ -1721,6 +1721,9 @@ const RELEASE_NOTES = {
     "Saved designs are no longer missed when their file's name doesn't match the keyguard designer file. A folder holding, for example, keyguard_v92.scad beside keyguard.json used to open with only the design default values, as though you had no saved designs, and saving a design then started a second file holding just that one. The app now finds your saved designs whatever their file is called, and gives it the standard name.",
     "Changing the skill level no longer makes the red * appear beside the preset name. A skill level only changes which settings you can see, so switching it on a design you haven't changed no longer looks like an unsaved change, and closing the tab no longer asks “Leave site?” because of it.",
     "Settings and Custom Openings now spell color, center, behavior, millimeters and canceled the American way."
+  ],
+  "117": [
+    "\"Include screenshot\" no longer tells you to set it to \"no\" before rendering your design. That advice is for the desktop OpenSCAD program; the app shows your screenshot over the keyguard and always leaves it out of the files you export, so you can leave it on."
   ]
 };
 // @@RELEASE_NOTES_END@@
@@ -5046,6 +5049,14 @@ const RANGE_PARAMS_NO_SLIDER = new Set([
   'move_screenshot_vertically',
 ]);
 
+// Params whose help line in keyguard.scad is advice for desktop OpenSCAD only,
+// so it is not shown here. include_screenshot's "set this option to "no" before
+// rendering your design" does not apply: the app draws the screenshot as an
+// overlay and always exports with it off.
+const PARAMS_DESKTOP_ONLY_HELP = new Set([
+  'include_screenshot',
+]);
+
 function buildParamControl(p) {
   const wrap = document.createElement('div');
   wrap.className = 'param';
@@ -5056,7 +5067,7 @@ function buildParamControl(p) {
   label.textContent = p.name.replace(/_/g, ' ');
   wrap.appendChild(label);
 
-  if (p.help) {
+  if (p.help && !PARAMS_DESKTOP_ONLY_HELP.has(p.name)) {
     const helpEl = document.createElement('div');
     helpEl.className = 'param-help';
     helpEl.textContent = p.help;
