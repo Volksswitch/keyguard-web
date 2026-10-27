@@ -20,7 +20,7 @@ from kg_docstyle import DOCUMENTS, HERE, KgDoc, GREY  # noqa: E402
 OUT = sys.argv[1] if len(sys.argv) > 1 else os.path.join(
     DOCUMENTS, 'Keyguard Designer User Manual.docx')
 FIG = os.path.join(HERE, 'figures')
-UPDATED = 'October 26, 2026'
+UPDATED = 'October 27, 2026'
 
 
 def fig(name, caption, width=6.0):
@@ -455,8 +455,8 @@ d.p("The app updates itself. When a new release is out, the app loads it the nex
 d.h2('14.2  The keyguard designer file')
 d.p("When a newer keyguard designer file is published, the app offers it as you open a project. "
     "The **Keyguard update available** box shows your version, the new one and what changed.")
-d.b("**Update now** downloads the new file, replaces the old one in your folder, carries your "
-    "presets forward and opens the project again.")
+d.b("**Update now** downloads the new file, puts it in place of the old one in your folder and "
+    "opens the project again.")
 d.b("**Remind me in a week** keeps your current file and asks again in a week.")
 d.b("**Skip** keeps your current file for now.")
 d.p("Your designs come through an update unchanged. Some features need a recent keyguard designer "

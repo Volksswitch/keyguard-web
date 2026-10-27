@@ -28,10 +28,9 @@ quietly waits forever.
 - **What's wanted:** every how-to video, and the User Manual's figures, show the project
   line at the top of the Customizer, which read `keyguard_v92.scad` and now reads
   `keyguard.scad (version 92)`. **Videos: done 2026-10-26** — "sync videos" re-made all
-  27 after release 116, none failed. For the manual, re-run `capture-manual-figures.mjs` and `label-manual-figures.py` and put the new
-  figures into `Documents/Keyguard Designer User Manual.docx` (`um-presets.png` certainly;
-  check the rest). The manual's text is already corrected, edited directly in the .docx,
-  because Ken's copy has a filled-in table of contents a regenerate would drop.
+  27 after release 116, none failed. **Manual: done 2026-10-27** — "update the manual's
+  pictures" re-took all eight figures and put the five that changed into the .docx in
+  place, keeping Ken's filled-in table of contents. What's left is the website and decks.
 - **Website pages and images that show the old names** (searched 2026-10-26: all 227
   published pages' text, and every image on the 88 keyguard pages; Ken edits these
   himself). Web app pages, which describe the new behaviour wrongly:
@@ -113,7 +112,15 @@ quietly waits forever.
   recordings. They aren't in the course list yet: which ones, and where they live, is his call.
 - **Publishing** isn't set up: no videos page on volksswitch.org yet (Phase 3's "Videos
   page"). Until it is, `sync-videos.mjs --published <id>` records a video Ken has put up by
-  hand, so the next sync compares against it.
+  hand, so the next sync compares against it. Conversant's `scripts/wordpress/publish-videos.py`
+  does this job there (uploads, one watch page per video, the list page made as a draft) and
+  is the model to copy.
+- **The User Manual already links to the watch pages (2026-10-27)**, at the addresses they
+  will have: `volksswitch.org/index.php/keyguard-designer-videos/video-<n>-<n>/` (both
+  addresses checked free that day). Every one shows "not found" until the videos are
+  published there, so **the manual can't be published before the videos are.** Publishing
+  the videos at another address means changing `ALL_URL` in `add-manual-links.py` and
+  running "link the videos in the manual".
 - **Why not now:** the pictures and recordings are Ken's; publishing waits on his review of
   the set.
 

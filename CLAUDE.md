@@ -199,6 +199,8 @@ derive paths from `$env:OneDrive`, never hardcode `C:\Users\<name>`.
 | **"apply skill config"** | `node scripts/apply-skill-config.mjs` | Regenerates the `SKILL_LEVEL_DESCS` and `SKILL_CONFIG` blocks in `app.html` from `skill-config.txt`, which decides which Customizer settings each skill level sees. Edit the .txt, never the generated blocks. Moved here from the sibling 17 Sep 2026 (it had stayed behind and could only write the RETIRED app). <1 s. |
 | **"make video &lt;number&gt;"** | `node scripts/video/render-video.mjs scripts/video/scripts/<id>.mjs` | Makes one how-to video from its script: the real app with the sample project open, a ring on what the narration names, the narrator's voice from Azure (Conversant's Andrew, using Conversant's `.azure-key`), and a one-page guide from the same pictures. Writes `Videos/<id>.mp4`, `.srt`, `.pdf` and `.json`. **Stops if a ring points at nothing on screen**, so a moved or renamed button can't slip into a video. Takes a few minutes; run in the background. |
 | **"sync videos"** | `node scripts/video/sync-videos.mjs` | Re-makes **every** video from its script, then reports which ones changed since they were last published, and which couldn't be made (with the control each was looking for). Speech is cached, so only changed wording costs anything. **Run it after any app release that changes what the videos show.** `--published <id>` records a video as published once it's on the website; `--only 1.` limits it to a group. |
+| **"link the videos in the manual"** | `python scripts/video/add-manual-links.py --apply` | Adds a "Video:" line, linking the video's watch page, at the end of each User Manual section a video covers, and puts each video's current title on its link. Which section gets which video is the list in the script; a video in the course but not in that list is named. Never adds a link twice, leaves a manual with tracked changes or comments alone, and backs the manual up to `Documents/Doc Backups/` first. Without `--apply` it only shows what it would do. Run it after a video is added (give it a section first) or renamed. |
+| **"update the manual's pictures"** | `node scripts/doc-generators/capture-manual-figures.mjs http://localhost:8077`, then the same with `https://keyguard.volksswitch.org --only um-check.png`, then `python scripts/doc-generators/label-manual-figures.py`, then `python scripts/doc-generators/update-manual-figures.py --apply` | Re-takes the User Manual's screenshots from the running app and puts them into `Documents/Keyguard Designer User Manual.docx` in place, each found by the "Figure N." caption beneath it, so Ken's filled-in table of contents survives (regenerating the manual would drop it). Backs the manual up first. Afterwards, open the manual in Word and update the table of contents if pages moved. Takes a few minutes. |
 | **"publish app version"** | `node scripts/publish-app-version.mjs` | Rewrites `latest_app_version.json` from `APP_RELEASE`. **RELEASE-TIME ONLY** — part of the release merge, never day-to-day. |
 
 Because `CLAUDE.md` is auto-loaded per project, a new phrase only works after
@@ -319,6 +321,16 @@ video by editing its file: change the script (or the app) and re-make it. The co
 and titles live in `scripts/video/course.json`; a video's number never changes once it's
 published. Outputs go in `Videos/`, which is git-ignored. The figures and the videos open
 the app the same way, through `scripts/lib/sample-project.mjs`.
+
+**The User Manual links the videos section by section (Ken, 27 Oct 2026),** the same layout
+as Conversant's manuals: a "Video:" line at the end of each section a video covers, and the
+whole list in the Introduction. `scripts/video/add-manual-links.py` holds which section gets
+which video ("link the videos in the manual"); never edit those links by hand. ⚠ **The
+links point at addresses that don't exist yet**: each video's watch page at
+`volksswitch.org/index.php/keyguard-designer-videos/video-<n>-<n>/`, under a videos page
+that hasn't been made. They show "not found" until the videos are published there, so
+**the manual must not be published before the videos are.** If the videos page ends up at
+another address, change `ALL_URL` in that script and re-run it; it renames nothing else.
 
 ---
 
