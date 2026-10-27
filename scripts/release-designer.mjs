@@ -35,8 +35,9 @@
 //
 // ⚠ IT MUST NEVER CARRY THE APP'S OWN WORK. Pushing keyguard-web's main deploys
 // whatever is committed there, so this refuses to run when the app has unreleased
-// clinician-facing changes, or unpushed commits touching anything but the designer
-// files. That work deserves its own considered release (Ken, 1 Sep 2026).
+// clinician-facing changes, or unpushed commits touching anything but notes and tools
+// (CLAUDE.md, TODO.md, scripts/) and the APP_RELEASE pre-bump, which it holds back.
+// The app's work deserves its own considered release (Ken, 1 Sep 2026).
 //
 //   node scripts/release-designer.mjs            -> the real thing, two pushes
 //   node scripts/release-designer.mjs --dry-run  -> prints the plan, changes nothing
@@ -164,25 +165,32 @@ try {
     + `${NL}  break release 21 (which means stopping it offering keyguard updates first).`);
 }
 
-// Pushing this repo deploys whatever is committed on its main, so anything sitting
-// there unpushed would ride out with the designer file — unannounced, unversioned and
-// unreleased. The app's standing pre-bump commit (the APP_RELEASE constant alone) is
-// the one exception: it lives there permanently between releases, so it is allowed
-// to sit under the designer commit — and is held back at the push (see Phase 2).
-// Everything else must go out as its own considered release.
+// Pushing this repo deploys whatever is committed on its main, so nothing unreleased
+// may ride out with the designer file. Phase 2 holds back every unpushed commit (it
+// pushes the designer commit rebuilt on top of what is live), but only two kinds are
+// allowed to wait there: the app's standing pre-bump (the APP_RELEASE line alone), and
+// NOTES AND TOOLS — CLAUDE.md, TODO.md and scripts/, which clinicians never run (Ken,
+// 27 Oct 2026: they were blocking an urgent keyguard fix while the app had nothing new
+// to release). Anything else is the app's own work and goes out as its own release.
+const HELD_BACK_OK = f => f === 'CLAUDE.md' || f === 'TODO.md' || f.startsWith('scripts/');
 const unpushed = git(WEB_ROOT, 'log', '--format=%h %s', 'origin/main..main')
   .split(NL).filter(Boolean);
 if (unpushed.length) {
-  const touched = new Set(git(WEB_ROOT, 'diff', '--name-only', 'origin/main..main')
-    .split(NL).filter(Boolean));
-  const prebumpOnly = unpushed.every(l => /pre-bump/i.test(l));
-  touched.delete('app.html');
-  if (touched.size || !prebumpOnly) {
-    die(`the web app has unpushed commits, which this release would deploy:${NL}`
+  const touched = git(WEB_ROOT, 'diff', '--name-only', 'origin/main..main')
+    .split(NL).filter(Boolean);
+  const appChanges = git(WEB_ROOT, 'diff', '-U0', 'origin/main..main', '--', 'app.html')
+    .split(NL).filter(l => /^[-+](?![-+])/.test(l) && !/^[-+]const APP_RELEASE = \d+;$/.test(l));
+  const other = touched.filter(f => f !== 'app.html' && !HELD_BACK_OK(f));
+  if (other.length || appChanges.length) {
+    die(`the web app has unpushed work of its own, which needs its own release:${NL}`
       + unpushed.map(l => '    ' + l).join(NL)
-      + `${NL}${NL}  Pushing that repo serves whatever is on its main. Release that work`
+      + `${NL}${NL}  Changed beyond notes, tools and the version number: `
+      + [...other, ...(appChanges.length ? ['app.html'] : [])].join(', ')
+      + `${NL}  Pushing that repo serves whatever is on its main. Release that work`
       + `${NL}  deliberately with "bump keyguard web app" first, then run this.`);
   }
+  say(`Held back, staying on this computer: ${unpushed.length} unpushed web app commit(s) of`
+    + ` notes, tools and the version number.`);
 }
 
 say(`Keyguard designer v${publishedNow} -> v${N}   (${scadBullets.length} clinician note(s))`);
