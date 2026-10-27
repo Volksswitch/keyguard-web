@@ -121,8 +121,9 @@ quietly waits forever.
   (April 28 2026): a mistyped comment in the light-sensor table hides one entry. Also no
   sensor openings for the Tobii-Dynavox I-16 (its name is spelled differently in the
   lookup). Light-sensor openings are on by default, so every keyguard for those tablets
-  since April is affected. Claude recommends fixing it on its own, as soon as Ken agrees,
-  rather than waiting for the descriptions.
+  since April is affected. **Fixed and released 2026-10-27 as keyguard designer
+  version 93**, on its own at Ken's request; its notes tell clinicians to export those
+  keyguards again.
 - **The other twelve** (mounting holes missing in portrait, an empty laser-cutting file
   with Velcro or Suction Cups, no slide-in tabs with a frame, a portrait frame split on
   the wrong side, sloped edge with a frame or without a case, raised text in the tablet
