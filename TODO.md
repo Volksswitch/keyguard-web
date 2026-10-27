@@ -88,11 +88,55 @@ quietly waits forever.
   it too and the reference is built from the same words. The proposal pairs it with
   **What's this?**: choose it, click any button or setting, and see what it does with a
   link to the manual section and video.
-- **What it touches:** the keyguard designer file (the 147 missing descriptions, and a way
-  to tell a description from a warning note), released by "bump keyguard designer"; the
-  app, to show them, in an app release.
-- **Why not now:** Phase 4 was sequenced after the manual and videos, which now exist; it
-  waits on Ken's go-ahead and the order he wants.
+- **Decided 2026-10-27 (Ken): all at once**, together with the Design Settings Reference,
+  rather than Beginner settings first. Nothing reaches clinicians until all of it is ready:
+  a keyguard designer version carrying every description, an app release that shows them,
+  and the reference published, on the same day.
+- **Drafted 2026-10-27:** all 188 descriptions, from the designer's code and the how-to
+  pages, in `scripts/doc-generators/setting-descriptions.json`, and laid out for Ken in
+  `Documents/Keyguard Designer Setting Descriptions - Draft for Review.docx` (built by
+  `generate-setting-descriptions-review.py`), with 13 questions for him.
+- **The plan once Ken has reviewed it:** read his edits back from the .docx (it is then
+  the newer copy); write each description into `keyguard.scad` as the one comment line
+  directly above its setting (all OpenSCAD's Customizer shows), with any warning after
+  "Note:" on the same line, which the app shows as the gray note; the app shows the rest
+  when pointing at the setting's name, with a More link to its reference entry; build the
+  reference from the same words, with a picture per setting drawn by the app (the
+  drafts suggest the two values for each).
+- **Decisions waiting on Ken** (in the review document): where More opens (Claude leans
+  toward a page on volksswitch.org, plus a PDF for printing); whether What's this? joins
+  it; accepting that the retired address shows the descriptions as gray text.
+- **What it touches:** the keyguard designer file, released by "bump keyguard designer";
+  the app, in an app release (changelog, What's new, `SECURITY.md` if More opens a new
+  page); the documents page and "sync docs" for the reference.
+- **Why not now:** waiting on Ken's review of the draft.
+
+### Faults found in the keyguard designer file (2026-10-27)
+- **Raised:** 2026-10-27, while drafting the setting descriptions. 13 faults, each
+  confirmed by drawing keyguards with OpenSCAD, not only by reading the code. Listed with
+  what a clinician sees in the review document's "Found along the way" (and in
+  `setting-descriptions.json`, `faults`).
+- **The serious one: light-sensor openings in the wrong place** for the iPad Pro 13-inch
+  (M4, M5), iPad Air 11-inch (M2 to M4) and iPad Air 13-inch (M2 to M4), since version 78
+  (April 28 2026): a mistyped comment in the light-sensor table hides one entry. Also no
+  sensor openings for the Tobii-Dynavox I-16 (its name is spelled differently in the
+  lookup). Light-sensor openings are on by default, so every keyguard for those tablets
+  since April is affected. Claude recommends fixing it on its own, as soon as Ken agrees,
+  rather than waiting for the descriptions.
+- **The other twelve** (mounting holes missing in portrait, an empty laser-cutting file
+  with Velcro or Suction Cups, no slide-in tabs with a frame, a portrait frame split on
+  the wrong side, sloped edge with a frame or without a case, raised text in the tablet
+  region, an upside-down vertical mini clip, loose Braille dots on a recessed insert, add
+  symmetric openings without a case, trim to rectangle at 0,0, App Layout in px with the
+  lower command bar at 0, and the Console's move-screenshot advice): Ken's call whether
+  they go into the same keyguard designer version as the descriptions.
+- **Also found:** 11 how-to pages on volksswitch.org that describe a setting differently
+  from the designer (Ken edits pages himself), and a correction to the User Manual's
+  section 4.3 (step 1 says unit of measure for screen sets the unit for the bar heights;
+  it doesn't), for "sync docs" once Ken agrees. Both lists are in the review document.
+- **Where the fixes happen:** the keyguard designer folder (`../My SCAD files/keyguard
+  designer/`), under its own rules, released by "bump keyguard designer".
+- **Why not now:** each fix changes what clinicians print; Ken decides which and when.
 
 ### The security overview on the website predates release 116
 - **Raised:** 2026-10-27 - found while checking the new documents page, which links it.
