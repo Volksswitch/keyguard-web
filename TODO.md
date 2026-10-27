@@ -27,8 +27,8 @@ quietly waits forever.
   unreleased at the time of writing.
 - **What's wanted:** every how-to video, and the User Manual's figures, show the project
   line at the top of the Customizer, which read `keyguard_v92.scad` and now reads
-  `keyguard.scad (version 92)`. Run "sync videos" to re-make them all. For the manual,
-  re-run `capture-manual-figures.mjs` and `label-manual-figures.py` and put the new
+  `keyguard.scad (version 92)`. **Videos: done 2026-10-26** — "sync videos" re-made all
+  27 after release 116, none failed. For the manual, re-run `capture-manual-figures.mjs` and `label-manual-figures.py` and put the new
   figures into `Documents/Keyguard Designer User Manual.docx` (`um-presets.png` certainly;
   check the rest). The manual's text is already corrected, edited directly in the .docx,
   because Ken's copy has a filled-in table of contents a regenerate would drop.
