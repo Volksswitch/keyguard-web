@@ -934,6 +934,7 @@
     <div id="openings-note">
       Openings cut all the way through the keyguard (or the frame, if you have one).
       For a <b>circle</b>, the <b>height</b> is the diameter — width and corner radius are ignored.
+      A <b>hot dog</b> has fully rounded ends, so it takes only a height and a width.
       Each opening is positioned by its <b>center</b>.
       A <b>tinted box</b> is a number you've changed but not applied yet: press <b>Enter</b>, or
       click another box, to update the keyguard.
@@ -1726,7 +1727,8 @@ const RELEASE_NOTES = {
     "\"Include screenshot\" no longer tells you to set it to \"no\" before rendering your design. That advice is for the desktop OpenSCAD program; the app shows your screenshot over the keyguard and always leaves it out of the files you export, so you can leave it on."
   ],
   "118": [
-    "On the “by eye” tab of Custom Openings, the Shift and Ctrl keys now work on a shape's handles the way they do in PowerPoint. Hold Shift while dragging a corner handle to keep a rectangle's proportions; hold Ctrl while dragging any handle to grow or shrink the shape around its center instead of from the opposite side; hold both to do both at once. Ctrl on either end of a ridge stretches both ends together, keeping its middle still. You can press or let go of a key in the middle of a drag and the shape changes straight away. The yellow dot that rounds the corners ignores both keys, as in PowerPoint."
+    "On the “by eye” tab of Custom Openings, the Shift and Ctrl keys now work on a shape's handles the way they do in PowerPoint. Hold Shift while dragging a corner handle to keep a rectangle's proportions; hold Ctrl while dragging any handle to grow or shrink the shape around its center instead of from the opposite side; hold both to do both at once. Ctrl on either end of a ridge stretches both ends together, keeping its middle still. You can press or let go of a key in the middle of a drag and the shape changes straight away. The yellow dot that rounds the corners ignores both keys, as in PowerPoint.",
+    "There is a new opening shape: the hot dog, a long opening with fully rounded ends. On the “by eye” tab, drag one of a circle's side handles to stretch it into a hot dog; drag the sides back to equal and it becomes a circle again. A circle's corner handles still keep it a circle. A hot dog has no yellow dot, because its ends are always fully rounded. On the “pixels or millimeters” tab, hot dog is in the shape list and takes only a height and a width. Your openings-and-additions file stores a hot dog as a rectangle with fully rounded corners, so it cuts the same with any keyguard.scad."
   ]
 };
 // @@RELEASE_NOTES_END@@
@@ -8023,10 +8025,30 @@ function ogRidgeMinLen(perMM, dp) {
 // numbers. Ridges and rounded corners are drawn on the by-eye tab and keep their
 // own shape here — turning an opening into a ridge from a list of numbers was
 // never needed (Ken, 16 Oct 2026).
+//
+// A hot dog — a rectangle whose ends are fully rounded — is a shape of its own
+// in the app only (Ken, 29 Oct 2026). The openings file holds it as "r" with a
+// corner radius of half its shorter side, so every keyguard.scad and the
+// retired app cut it unchanged; reading the file recognises it again. It has no
+// corner radius of its own to set, and when its sides come out equal it is a
+// circle.
+const OG_PLAIN = ['r', 'c', 'hd'];
 function ogChangeShape(row, to) {
   if (to === row.shape) return true;
-  if ((to !== 'r' && to !== 'c') || (row.shape !== 'r' && row.shape !== 'c')) return false;
+  if (!OG_PLAIN.includes(to) || !OG_PLAIN.includes(row.shape)) return false;
+  if (row.shape === 'c') row.w = row.h;
+  // A hot dog with equal sides would just be a circle: make it twice as long.
+  if (to === 'hd' && row.w === row.h) row.w = row.h * 2;
+  if (to === 'r' && row.shape === 'hd') row.cr = Math.min(row.w, row.h) / 2;
+  if (to === 'r' && row.shape === 'c') row.cr = 0;
   row.shape = to;
+  return true;
+}
+const ogHotDogCr = row => Math.min(row.w, row.h) / 2;
+// A hot dog that has been made square — by its handles or its numbers.
+function ogHotDogToCircle(row) {
+  if (row.shape !== 'hd' || row.w !== row.h) return false;
+  row.shape = 'c'; row.w = 0; row.cr = 0;
   return true;
 }
 
@@ -8086,7 +8108,11 @@ function ogSimplify(row, grid, screenOrigin, perMM) {
     y += (grid === 'screen' && screenOrigin === 'upper-left') ? -eh / 2 : eh / 2;
     converted = true;
   }
-  return { id, shape, h, w: shape === 'c' ? 0 : w, cr: shape === 'c' ? 0 : cr, x, y, converted };
+  // Fully rounded ends on unequal sides: a hot dog. (A square one is a circle
+  // drawn as a rectangle, and is left as the rectangle it was typed as.)
+  const hotDog = shape === 'r' && w !== h && w > 0 && h > 0 && cr >= Math.min(w, h) / 2 - 0.001;
+  return { id, shape: hotDog ? 'hd' : shape, h, w: shape === 'c' ? 0 : w,
+           cr: shape === 'c' ? 0 : cr, x, y, converted };
 }
 
 // ---- Serialising ---------------------------------------------------------
@@ -8110,8 +8136,9 @@ function ogSerialize(rows, highlighted, kept = []) {
       return `[${id},"${r.shape}",0,0,${ogFmt(r.cr)},${ogFmt(r.x)},${ogFmt(r.y)},0,"","",0,0,[],[]],`;
     }
     const w  = r.shape === 'c' ? 0 : r.w;
-    const cr = r.shape === 'c' ? 0 : r.cr;
-    return `[${id},"${r.shape}",${ogFmt(r.h)},${ogFmt(w)},${ogFmt(cr)},` +
+    const cr = r.shape === 'c' ? 0 : r.shape === 'hd' ? ogHotDogCr(r) : r.cr;
+    const shape = r.shape === 'hd' ? 'r' : r.shape;
+    return `[${id},"${shape}",${ogFmt(r.h)},${ogFmt(w)},${ogFmt(cr)},` +
            `${ogFmt(r.x)},${ogFmt(r.y)},0,"c","",0,0,[],[]],`;
   }).join('') + kept.map(raw => `${raw},`).join('');
 }
@@ -8165,7 +8192,8 @@ function ogRenderGrid(grid) {
     // turned into anything else here — nor can anything be turned into one.
     const rowIsArc = ogIsArc(row.shape);
     const fixed = rowIsArc ? 'rounded corner' : row.shape === 'ridge' ? 'ridge' : null;
-    const shapes = fixed ? [[row.shape, fixed]] : [['r', 'rectangle'], ['c', 'circle']];
+    const shapes = fixed ? [[row.shape, fixed]]
+                         : [['r', 'rectangle'], ['c', 'circle'], ['hd', 'hot dog']];
     sel.disabled = !!fixed;
     for (const [val, label] of shapes) {
       const o = document.createElement('option');
@@ -8192,7 +8220,7 @@ function ogRenderGrid(grid) {
     const cols = [
       ['h',  isRidge || rowIsArc, true],
       [isRidge ? 'len' : 'w', isCircle || rowIsArc, true],
-      ['cr', isCircle || isRidge, true],
+      ['cr', isCircle || isRidge || row.shape === 'hd', true],
     ];
     if (isScreen) cols.push(['ang', !isRidge, false]);
     cols.push(['x', false, false], ['y', false, false]);
@@ -8256,6 +8284,7 @@ function ogRenderGrid(grid) {
         inp.classList.remove('pending');
         if (v === applied) return;         // nothing actually changed → no render
         applied = v;
+        if (ogHotDogToCircle(row)) ogRenderGrid(grid);
         ogPreview();
       });
 
@@ -8468,6 +8497,7 @@ function ogConvertScreenUnits(from, to) {
     row.h = Math.max(step, r(row.h));
     if (row.shape === 'c') { row.w = 0; row.cr = 0; continue; }
     row.w  = Math.max(step, r(row.w));
+    if (row.shape === 'hd') { if (!ogHotDogToCircle(row)) row.cr = ogHotDogCr(row); continue; }
     row.cr = Math.min(Math.max(0, r(row.cr)), Math.min(row.w, row.h) / 2);
   }
   // The field the .scad reads is now in the new unit too, so the keyguard is
@@ -8518,6 +8548,7 @@ const OGE_NS = 'http://www.w3.org/2000/svg';
 const OGE_HANDLE_PX = 9;    // resize handle side, in on-screen pixels
 const OGE_RADIUS_PX = 9;    // corner-radius dot diameter, in on-screen pixels
 const OGE_UNDO_MAX  = 80;
+const OGE_HOTDOG_SNAP_MM = 0.5;  // a hot dog this near square is dragged back to a circle
 const OGE_PINK      = 0xff4d4d;   // the highlight pink, as used by the grid tab
 
 const ogeGroup = new THREE.Group();   // the pink shapes, in scene coordinates
@@ -8806,14 +8837,16 @@ function ogeToModel(row, g) {
   const cy = g.origin === 'upper-left'
     ?  g.ohm / 2 - row.y / g.perMM
     : -g.ohm / 2 + row.y / g.perMM;
-  return { cx, cy, w, h, r: row.shape === 'c' ? 0 : row.cr / g.perMM };
+  const r = row.shape === 'c' ? 0 : row.shape === 'hd' ? Math.min(w, h) / 2 : row.cr / g.perMM;
+  return { cx, cy, w, h, r };
 }
 function ogeFromModel(row, m, g) {
   row.x = (m.cx + g.owm / 2) * g.perMM;
   row.y = (g.origin === 'upper-left' ? (g.ohm / 2 - m.cy) : (m.cy + g.ohm / 2)) * g.perMM;
   if (row.shape === 'ridge') { row.len = m.len * g.perMM; row.ang = m.ang; return; }
   if (ogIsArc(row.shape)) { row.cr = m.r * g.perMM; return; }
-  if (row.shape === 'c') row.h = Math.max(m.w, m.h) * g.perMM;
+  if (row.shape === 'c') { row.h = Math.max(m.w, m.h) * g.perMM; row.w = 0; row.cr = 0; }
+  else if (row.shape === 'hd') { row.w = m.w * g.perMM; row.h = m.h * g.perMM; row.cr = ogHotDogCr(row); }
   else { row.w = m.w * g.perMM; row.h = m.h * g.perMM; row.cr = m.r * g.perMM; }
 }
 
@@ -8833,6 +8866,7 @@ function ogeRoundRow(row, g) {
   row.h = Math.max(g.step, r(row.h));
   if (row.shape === 'c') { row.w = 0; row.cr = 0; return; }
   row.w  = Math.max(g.step, r(row.w));
+  if (row.shape === 'hd') { if (!ogHotDogToCircle(row)) row.cr = ogHotDogCr(row); return; }
   row.cr = Math.min(Math.max(0, r(row.cr)), Math.min(row.w, row.h) / 2);
 }
 
@@ -9254,12 +9288,23 @@ function ogeResize(row, drag, p, g, ev) {
   h = Math.max(min, h);
 
   const horiz = hasE || hasW, vert = hasN || hasS;
-  if (row.shape === 'c') {
-    w = h = horiz && vert ? Math.max(w, h) : horiz ? w : h;
+  const round = row.shape === 'c' || row.shape === 'hd';
+  if (row.shape === 'c' && horiz && vert) {
+    w = h = Math.max(w, h);
   } else if (ev.shiftKey && horiz && vert) {
     const s = Math.max(w / b.w, h / b.h, min / b.w, min / b.h);
     w = b.w * s;
     h = b.h * s;
+  }
+  // A circle's side handle stretches it into a hot dog; bring the sides back
+  // near equal and it snaps to a circle again, keeping the side not dragged.
+  if (round) {
+    if (Math.abs(w - h) < OGE_HOTDOG_SNAP_MM) {
+      w = h = horiz && !vert ? h : vert && !horiz ? w : Math.max(w, h);
+      row.shape = 'c';
+    } else {
+      row.shape = 'hd';
+    }
   }
   const cx = centred ? b.cx : hasW ? right - w / 2 : hasE ? left + w / 2 : b.cx;
   const cy = centred ? b.cy : hasS ? top - h / 2 : hasN ? bottom + h / 2 : b.cy;
