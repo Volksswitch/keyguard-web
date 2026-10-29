@@ -1724,6 +1724,9 @@ const RELEASE_NOTES = {
   ],
   "117": [
     "\"Include screenshot\" no longer tells you to set it to \"no\" before rendering your design. That advice is for the desktop OpenSCAD program; the app shows your screenshot over the keyguard and always leaves it out of the files you export, so you can leave it on."
+  ],
+  "118": [
+    "On the “by eye” tab of Custom Openings, the Shift and Ctrl keys now work on a shape's handles the way they do in PowerPoint. Hold Shift while dragging a corner handle to keep a rectangle's proportions; hold Ctrl while dragging any handle to grow or shrink the shape around its center instead of from the opposite side; hold both to do both at once. Ctrl on either end of a ridge stretches both ends together, keeping its middle still. You can press or let go of a key in the middle of a drag and the shape changes straight away. The yellow dot that rounds the corners ignores both keys, as in PowerPoint."
   ]
 };
 // @@RELEASE_NOTES_END@@
@@ -9230,29 +9233,37 @@ function ogeCommit(g) {
 // every drawing tool does and what the hand expects; the opening stays recorded
 // by its centre, so the centre simply follows. A circle has one dimension — its
 // diameter — so any handle sets that, anchored on the opposite side.
-function ogeResize(row, drag, p, g) {
+//
+// The keys do what they do in PowerPoint: Shift on a corner handle keeps the
+// rectangle's proportions, Ctrl grows it about its centre instead of the
+// opposite side, and Ctrl+Shift does both. (Shift on a side handle does nothing,
+// as there.)
+function ogeResize(row, drag, p, g, ev) {
   const b = drag.model, pos = drag.pos, min = g.step / g.perMM;
   const left = b.cx - b.w / 2, right = b.cx + b.w / 2;
   const bottom = b.cy - b.h / 2, top = b.cy + b.h / 2;
-  let x0 = left, x1 = right, y0 = bottom, y1 = top;
-  if (pos.indexOf('w') >= 0) x0 = Math.min(p.x, right - min);
-  if (pos.indexOf('e') >= 0) x1 = Math.max(p.x, left + min);
-  if (pos.indexOf('s') >= 0) y0 = Math.min(p.y, top - min);
-  if (pos.indexOf('n') >= 0) y1 = Math.max(p.y, bottom + min);
+  const hasW = pos.indexOf('w') >= 0, hasE = pos.indexOf('e') >= 0;
+  const hasS = pos.indexOf('s') >= 0, hasN = pos.indexOf('n') >= 0;
+  const centred = ev.ctrlKey || ev.metaKey;
+  let w = b.w, h = b.h;
+  if (hasE) w = centred ? 2 * (p.x - b.cx) : p.x - left;
+  if (hasW) w = centred ? 2 * (b.cx - p.x) : right - p.x;
+  if (hasN) h = centred ? 2 * (p.y - b.cy) : p.y - bottom;
+  if (hasS) h = centred ? 2 * (b.cy - p.y) : top - p.y;
+  w = Math.max(min, w);
+  h = Math.max(min, h);
 
+  const horiz = hasE || hasW, vert = hasN || hasS;
   if (row.shape === 'c') {
-    const horiz = pos.indexOf('e') >= 0 || pos.indexOf('w') >= 0;
-    const vert  = pos.indexOf('n') >= 0 || pos.indexOf('s') >= 0;
-    const d = Math.max(min, horiz && vert ? Math.max(x1 - x0, y1 - y0)
-                                          : horiz ? x1 - x0 : y1 - y0);
-    if (pos.indexOf('w') >= 0) x0 = right - d;
-    else if (pos.indexOf('e') < 0) x0 = b.cx - d / 2;
-    x1 = x0 + d;
-    if (pos.indexOf('s') >= 0) y0 = top - d;
-    else if (pos.indexOf('n') < 0) y0 = b.cy - d / 2;
-    y1 = y0 + d;
+    w = h = horiz && vert ? Math.max(w, h) : horiz ? w : h;
+  } else if (ev.shiftKey && horiz && vert) {
+    const s = Math.max(w / b.w, h / b.h, min / b.w, min / b.h);
+    w = b.w * s;
+    h = b.h * s;
   }
-  const m = { cx: (x0 + x1) / 2, cy: (y0 + y1) / 2, w: x1 - x0, h: y1 - y0, r: b.r };
+  const cx = centred ? b.cx : hasW ? right - w / 2 : hasE ? left + w / 2 : b.cx;
+  const cy = centred ? b.cy : hasS ? top - h / 2 : hasN ? bottom + h / 2 : b.cy;
+  const m = { cx, cy, w, h, r: b.r };
   // A corner radius can never exceed half the shorter side, so shrinking a
   // rectangle takes its rounding down with it rather than producing a shape the
   // .scad would refuse.
@@ -9265,19 +9276,30 @@ function ogeResize(row, drag, p, g) {
 // the pointer has gone. Once it is placed, its anchor is whichever end is now
 // the LEFT one (the bottom one if it stands upright) — the rule the openings
 // file uses — so a ridge dragged out leftward is recorded from its far end.
-function ogeRidgeEnd(row, drag, p, g) {
-  const f = drag.fixed;
+//
+// Ctrl, as on a PowerPoint line, holds the MIDDLE still instead and stretches
+// both ends at once (while drawing one, the middle is where the press landed).
+// Shift has nothing to add: a ridge already only ever points in steps of 45°.
+function ogeRidgeEnd(row, drag, p, g, ev) {
+  const centred = ev.ctrlKey || ev.metaKey;
+  const f = centred ? drag.mid : drag.fixed;
   const dx = p.x - f.x, dy = p.y - f.y;
   const step = Math.PI / 4;
   let deg = Math.round(Math.atan2(dy, dx) / step) * 45;     // -180 … 180
   const rad = deg * Math.PI / 180;
   const minLen = ogRidgeMinLen(g.perMM, g.dp) / g.perMM;
-  const len = Math.max(minLen, dx * Math.cos(rad) + dy * Math.sin(rad));
-  let ax = f.x, ay = f.y;
+  let len = Math.max(centred ? minLen / 2 : minLen, dx * Math.cos(rad) + dy * Math.sin(rad));
+  let fx = f.x, fy = f.y;
+  if (centred) {
+    fx = f.x - Math.cos(rad) * len;
+    fy = f.y - Math.sin(rad) * len;
+    len *= 2;
+  }
+  let ax = fx, ay = fy;
   if (!OG_RIDGE_ANGLES.includes(deg)) {
     // Pointing left (or straight down): the far end is the left (bottom) one.
-    ax = f.x + Math.cos(rad) * len;
-    ay = f.y + Math.sin(rad) * len;
+    ax = fx + Math.cos(rad) * len;
+    ay = fy + Math.sin(rad) * len;
     deg = deg > 0 ? deg - 180 : deg + 180;
   }
   ogeFromModel(row, { cx: ax, cy: ay, len, ang: deg }, g);
@@ -9338,7 +9360,7 @@ viewport.addEventListener('pointerdown', ev => {
     ogeSel = new Set([idx]);
     ogeRender();
     ogeStart(ev, {
-      kind: 'ridge-end', idx, g, start: p, fixed: { x: p.x, y: p.y },
+      kind: 'ridge-end', idx, g, start: p, fixed: { x: p.x, y: p.y }, mid: { x: p.x, y: p.y },
       moved: false, pushed: true, draw: { x: ev.clientX, y: ev.clientY },
     });
     return;
@@ -9353,7 +9375,7 @@ viewport.addEventListener('pointerdown', ev => {
       const [a, b] = ogeRidgeEnds(ogeToModel(row, g));
       ogeStart(ev, {
         kind: 'ridge-end', idx, g, start: p, fixed: ev.target.dataset.pos === 'a' ? b : a,
-        moved: false, pushed: false,
+        mid: { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }, moved: false, pushed: false,
       });
       return;
     }
@@ -9443,7 +9465,21 @@ viewport.addEventListener('pointermove', ev => {
     if (c !== ogeHotCorner) { ogeHotCorner = c; ogeSyncHandles(); }
     return;
   }
+  ogeDragMove(ev);
+});
+
+// Pressing or letting go of Shift or Ctrl mid-drag changes the shape at once,
+// as in PowerPoint, without waiting for the mouse to move again.
+function ogeDragKeys(e) {
+  if (!ogeDrag || !ogeDrag.last || !['Shift', 'Control', 'Meta'].includes(e.key)) return;
+  ogeDragMove({ ...ogeDrag.last, shiftKey: e.shiftKey, ctrlKey: e.ctrlKey, metaKey: e.metaKey });
+}
+document.addEventListener('keydown', ogeDragKeys);
+document.addEventListener('keyup', ogeDragKeys);
+
+function ogeDragMove(ev) {
   if (!ogeDrag) return;
+  ogeDrag.last = { clientX: ev.clientX, clientY: ev.clientY };
   const g = ogeDrag.g;
   const p = ogePlanePoint(ev, g);
   if (!p) return;
@@ -9469,7 +9505,7 @@ viewport.addEventListener('pointermove', ev => {
     }
   } else if (ogeDrag.kind === 'ridge-end') {
     const row = ogState.screen.rows[ogeDrag.idx];
-    if (row) ogeRidgeEnd(row, ogeDrag, p, g);
+    if (row) ogeRidgeEnd(row, ogeDrag, p, g, ev);
   } else if (ogeDrag.kind === 'arc-radius') {
     // The radius is however far the pointer has gone into the plastic along
     // either edge, so dragging along an edge puts the start of the curve
@@ -9489,12 +9525,12 @@ viewport.addEventListener('pointermove', ev => {
     }
   } else {
     const row = ogState.screen.rows[ogeDrag.idx];
-    if (row) ogeResize(row, ogeDrag, p, g);
+    if (row) ogeResize(row, ogeDrag, p, g, ev);
   }
   // Redrawn, not re-rendered: the pink shape follows the mouse while the hole
   // it stands for waits for the drag to finish.
   ogeRender();
-});
+}
 
 function ogeEndDrag(ev) {
   if (!ogeDrag) { ogeDragPendingDrop = null; return; }

@@ -13,6 +13,8 @@ notes, because nothing at this address could have been missed yet.
 
 ## Unreleased (next release)
 
+- On the “by eye” tab of Custom Openings, the Shift and Ctrl keys now work on a shape's handles the way they do in PowerPoint. Hold Shift while dragging a corner handle to keep a rectangle's proportions; hold Ctrl while dragging any handle to grow or shrink the shape around its center instead of from the opposite side; hold both to do both at once. Ctrl on either end of a ridge stretches both ends together, keeping its middle still. You can press or let go of a key in the middle of a drag and the shape changes straight away. The yellow dot that rounds the corners ignores both keys, as in PowerPoint.
+
 ## Release 117
 
 - "Include screenshot" no longer tells you to set it to "no" before rendering your design. That advice is for the desktop OpenSCAD program; the app shows your screenshot over the keyguard and always leaves it out of the files you export, so you can leave it on.
