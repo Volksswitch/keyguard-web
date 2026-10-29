@@ -41,6 +41,9 @@
 //
 //   node scripts/release-designer.mjs            -> the real thing, two pushes
 //   node scripts/release-designer.mjs --dry-run  -> prints the plan, changes nothing
+//   node scripts/release-designer.mjs --deliver  -> Phase 2 alone, for a version whose
+//        Phase 1 already pushed ("finish the keyguard delivery"). Never finish one by
+//        hand with a plain push of this repo: that would carry the held-back work out.
 
 import { readFileSync, writeFileSync, copyFileSync, unlinkSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
@@ -52,6 +55,7 @@ const SCAD_ROOT = process.env.KEYGUARD_DESIGNER_ROOT
   || resolve(WEB_ROOT, '..', 'My SCAD files', 'keyguard designer');
 
 const DRY = process.argv.includes('--dry-run');
+const DELIVER = process.argv.includes('--deliver');
 const NL = '\n';
 const UNRELEASED = '## Unreleased (next release)' + NL;
 const PUBLISHED_SCAD_URL =
@@ -116,24 +120,25 @@ const scadDirty = dirty(SCAD_ROOT, 'keyguard.scad', 'CHANGELOG.md', 'latest_scad
 // below), so a leftover change to one of them would ride along unannounced.
 const webDirty  = dirty(WEB_ROOT, 'app.html', 'sw.js', 'CHANGELOG.md', 'latest_app_version.json',
                         'keyguard_v*.scad', 'openings_and_additions.txt');
-if (scadDirty.length) die(`.scad repo has uncommitted changes to release files:${NL}  ${scadDirty.join(NL + '  ')}`);
+if (scadDirty.length && !DELIVER) die(`.scad repo has uncommitted changes to release files:${NL}  ${scadDirty.join(NL + '  ')}`);
 if (webDirty.length)  die(`web app repo has uncommitted changes to release files:${NL}  ${webDirty.join(NL + '  ')}`);
 
-// The .scad side: is there anything to release at all?
-const scadText = read(scadPath);
-const N = versionOf(scadText);
+// The .scad side: is there anything to release at all? With --deliver it is the
+// version Phase 1 already published, which the .scad repo's manifest records (its
+// keyguard.scad has moved on to the next pre-bump).
+const publishedNow = JSON.parse(read(scadManifest)).version;
+const N = DELIVER ? publishedNow : versionOf(read(scadPath));
 if (N == null) die(`no keyguard_designer_version found in ${scadPath}`);
 
-const publishedNow = JSON.parse(read(scadManifest)).version;
-if (N <= publishedNow) {
+if (!DELIVER && N <= publishedNow) {
   die(`keyguard.scad is at v${N} and v${publishedNow} is already published — nothing to release.${NL}`
     + `  The dev copy should lead the published one by one. If you meant to release app\n`
     + `  changes only, say "bump keyguard web app" instead.`);
 }
 
-const scadBullets = unreleasedBullets(read(scadChangelog));
+const scadBullets = DELIVER ? [] : unreleasedBullets(read(scadChangelog));
 if (scadBullets === null) die(`.scad CHANGELOG.md has no "${UNRELEASED.trim()}" heading.`);
-if (!scadBullets.length) {
+if (!scadBullets.length && !DELIVER) {
   die(`.scad CHANGELOG.md has nothing under "${UNRELEASED.trim()}", so v${N} has no clinician`
     + ` notes.${NL}  Those bullets ARE the "What's new" list in the update dialog — a version`
     + ` must never be${NL}  advertised without them. Write them, then run this again.`);
@@ -154,15 +159,18 @@ if (appWork.length) {
 // address are still offered every new keyguard version (Ken chose to leave that
 // alone, 1 Sep 2026), and that address is never released again — so a version they
 // cannot drive is a fault we could never send them a fix for. Checked here, before
-// the first push, while it is still cheap.
-say(`${NL}Checking compatibility with the retired app (release 21):`);
-try {
-  execFileSync(process.execPath, [join(WEB_ROOT, 'scripts', 'check-old-app-compat.mjs')],
-    { cwd: WEB_ROOT, stdio: 'inherit' });
-} catch {
-  die(`this keyguard version would break the retired app — nothing has been pushed.${NL}`
-    + `  See the explanation above. Fix the .scad, or take the deliberate decision to`
-    + `${NL}  break release 21 (which means stopping it offering keyguard updates first).`);
+// the first push, while it is still cheap. (--deliver: already checked by the run
+// that published it.)
+if (!DELIVER) {
+  say(`${NL}Checking compatibility with the retired app (release 21):`);
+  try {
+    execFileSync(process.execPath, [join(WEB_ROOT, 'scripts', 'check-old-app-compat.mjs')],
+      { cwd: WEB_ROOT, stdio: 'inherit' });
+  } catch {
+    die(`this keyguard version would break the retired app — nothing has been pushed.${NL}`
+      + `  See the explanation above. Fix the .scad, or take the deliberate decision to`
+      + `${NL}  break release 21 (which means stopping it offering keyguard updates first).`);
+  }
 }
 
 // Pushing this repo deploys whatever is committed on its main, so nothing unreleased
@@ -193,47 +201,57 @@ if (unpushed.length) {
     + ` notes, tools and the version number.`);
 }
 
-say(`Keyguard designer v${publishedNow} -> v${N}   (${scadBullets.length} clinician note(s))`);
+if (DELIVER) {
+  say(`Delivering keyguard designer v${N}, already published to GitHub by an earlier run.`);
+}
+else {
+  say(`Keyguard designer v${publishedNow} -> v${N}   (${scadBullets.length} clinician note(s))`);
+}
 say(`The web app is NOT released by this command and does not change.`);
-say(`${NL}Phase 1 — publish the keyguard designer:`);
 
 // ─── Phase 1: release the .scad ────────────────────────────────────────────
 
-let cl = read(scadChangelog);
-plan(`CHANGELOG: "Unreleased" -> "## Version ${N}", open a fresh Unreleased`);
-write(scadChangelog, cl.replace(UNRELEASED, UNRELEASED + NL + `## Version ${N}` + NL, 1));
+if (!DELIVER) {
+  say(`${NL}Phase 1 — publish the keyguard designer:`);
 
-plan('regenerate latest_scad_version.json from keyguard.scad + CHANGELOG');
-node(WEB_ROOT, join(WEB_ROOT, 'scripts', 'publish-scad-version.mjs'));
-if (!DRY) {
-  const got = JSON.parse(read(scadManifest)).version;
-  if (got !== N) die(`manifest says v${got} but keyguard.scad says v${N} — aborting before the push.`);
+  let cl = read(scadChangelog);
+  plan(`CHANGELOG: "Unreleased" -> "## Version ${N}", open a fresh Unreleased`);
+  write(scadChangelog, cl.replace(UNRELEASED, UNRELEASED + NL + `## Version ${N}` + NL, 1));
+
+  plan('regenerate latest_scad_version.json from keyguard.scad + CHANGELOG');
+  node(WEB_ROOT, join(WEB_ROOT, 'scripts', 'publish-scad-version.mjs'));
+  if (!DRY) {
+    const got = JSON.parse(read(scadManifest)).version;
+    if (got !== N) die(`manifest says v${got} but keyguard.scad says v${N} — aborting before the push.`);
+  }
+
+  plan(`commit the v${N} release in the .scad repo`);
+  git(SCAD_ROOT, 'add', 'keyguard.scad', 'CHANGELOG.md', 'latest_scad_version.json');
+  git(SCAD_ROOT, 'commit', '-m', `Release Keyguard Designer version ${N}`);
+
+  plan('PUSH the .scad repo — keyguard.scad on main is what clinicians download');
+  git(SCAD_ROOT, 'push', 'origin', 'main');
+
+  plan(`pre-bump keyguard_designer_version ${N} -> ${N + 1} (local only)`);
+  write(scadPath, read(scadPath).replace(
+    `keyguard_designer_version = ${N};`, `keyguard_designer_version = ${N + 1};`));
+  git(SCAD_ROOT, 'add', 'keyguard.scad');
+  git(SCAD_ROOT, 'commit', '-m', `Local version ${N + 1} pre-bump (dev leads public by one)`);
 }
-
-plan(`commit the v${N} release in the .scad repo`);
-git(SCAD_ROOT, 'add', 'keyguard.scad', 'CHANGELOG.md', 'latest_scad_version.json');
-git(SCAD_ROOT, 'commit', '-m', `Release Keyguard Designer version ${N}`);
-
-plan('PUSH the .scad repo — keyguard.scad on main is what clinicians download');
-git(SCAD_ROOT, 'push', 'origin', 'main');
-
-plan(`pre-bump keyguard_designer_version ${N} -> ${N + 1} (local only)`);
-write(scadPath, read(scadPath).replace(
-  `keyguard_designer_version = ${N};`, `keyguard_designer_version = ${N + 1};`));
-git(SCAD_ROOT, 'add', 'keyguard.scad');
-git(SCAD_ROOT, 'commit', '-m', `Local version ${N + 1} pre-bump (dev leads public by one)`);
 
 // ─── Phase 2: deliver it through the web app ───────────────────────────────
 
 say(`${NL}Phase 2 — deliver it through the web app:`);
 
-// GitHub serves the new bytes a moment after the push; publish-designer-file
+// GitHub serves the new bytes some time after the push; publish-designer-file
 // verifies what it fetched, so a stale read would abort it rather than ship the
-// wrong file. Wait for the version we just pushed.
+// wrong file. Wait for the version we just pushed. raw.githubusercontent.com lets
+// a copy be reused for up to five minutes (Cache-Control: max-age=300), so wait
+// longer than that: a two-minute wait stopped v97 halfway on 29 Oct 2026.
 plan(`wait for GitHub to serve keyguard.scad v${N}`);
 if (!DRY) {
   let seen = null;
-  for (let i = 0; i < 30; i++) {
+  for (let i = 0; i < 105; i++) {
     try {
       const resp = await fetch(PUBLISHED_SCAD_URL + '?t=' + Date.now(), { cache: 'no-store' });
       if (resp.ok) { seen = versionOf(await resp.text()); if (seen === N) break; }
@@ -241,10 +259,11 @@ if (!DRY) {
     await new Promise(r => setTimeout(r, 4000));
   }
   if (seen !== N) {
-    die(`GitHub is still serving v${seen} two minutes after the push.${NL}`
+    die(`GitHub is still serving v${seen} seven minutes after the push.${NL}`
       + `  The file IS published; only the delivery half is unfinished, so clinicians are`
-      + `${NL}  still on the old version. Once v${N} appears on GitHub, finish it: run`
-      + `${NL}  "publish the designer file", then commit and push this repo.`);
+      + `${NL}  still on the old version. Once v${N} appears on GitHub, finish it with`
+      + `${NL}  "finish the keyguard delivery" (node scripts/release-designer.mjs --deliver).`
+      + `${NL}  Never with a plain push of this repo: that would carry the held-back work out.`);
   }
 }
 
