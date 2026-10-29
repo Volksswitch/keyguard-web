@@ -102,10 +102,33 @@ export async function rememberFolder(page, opts = {}) {
   }, sampleFiles(opts));
 }
 
+// The sample folders keep the keyguard file they were made with, so once a newer one is
+// published the app offers it as the folder opens, and its question sits over every
+// control until it is answered (29 Oct 2026: the sample's v92 met v97 and every click
+// timed out). It is turned down with Skip, which keeps the file, so the pictures stay
+// those of the sample. Video 4.3, which is about this very question, opens its folder
+// itself and never comes through here.
+async function skipUpdateOffer(page, ms = 5000) {
+  const end = Date.now() + ms;
+  while (Date.now() < end) {
+    if (await page.locator('#update-overlay.open').count()) {
+      await page.click('#update-skip');
+      await settled(page, 1000);
+      return true;
+    }
+    await sleep(250);
+  }
+  return false;
+}
+
 // Waits for a project to finish opening, then picks the design and skill level.
 export async function projectReady(page, { preset = 'WordPower 42', skill = 'intermediate' } = {}) {
-  await page.waitForFunction(() => /keyguard design/.test(document.getElementById('project-folder-label')?.textContent || ''),
-    null, { timeout: 60000 });
+  const opened = () => /keyguard design/.test(document.getElementById('project-folder-label')?.textContent || '');
+  await page.waitForFunction(() =>
+    /keyguard design/.test(document.getElementById('project-folder-label')?.textContent || '') ||
+    !!document.getElementById('update-overlay')?.classList.contains('open'), null, { timeout: 60000 });
+  await skipUpdateOffer(page);
+  await page.waitForFunction(opened, null, { timeout: 60000 });
   await settled(page, 2500);
   if (preset) {
     await page.click('#preset-dropdown-btn');

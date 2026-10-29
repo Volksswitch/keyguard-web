@@ -29,8 +29,11 @@ export default {
       page: "Remind me in a week keeps your file and asks again in a week. Skip keeps it for now.",
       say: "Remind me in a week keeps your file, and asks again in a week. Skip keeps it for now." },
     { before: async (page) => {
+        // Whichever version is current when the video is made, not one written in here:
+        // a fixed number stopped matching at the next keyguard release.
+        const latest = await page.evaluate(async () => (await (await fetch('latest_scad_version.json', { cache: 'no-store' })).json()).version);
         await page.click('#update-now');
-        await page.waitForFunction(() => /version 92/.test(document.getElementById('project-folder-label')?.textContent || ''), null, { timeout: 90000 });
+        await page.waitForFunction((v) => new RegExp(`version ${v}\\b`).test(document.getElementById('project-folder-label')?.textContent || ''), latest, { timeout: 90000 });
         await settled(page, 3000);
         // Reopening logs the local copy's own release number, one ahead of the public one.
         await page.locator('#clear-btn').evaluate((el) => el.click());
