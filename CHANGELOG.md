@@ -13,6 +13,8 @@ notes, because nothing at this address could have been missed yet.
 
 ## Unreleased (next release)
 
+## Release 118
+
 - On the “by eye” tab of Custom Openings, the Shift and Ctrl keys now work on a shape's handles the way they do in PowerPoint. Hold Shift while dragging a corner handle to keep a rectangle's proportions; hold Ctrl while dragging any handle to grow or shrink the shape around its center instead of from the opposite side; hold both to do both at once. Ctrl on either end of a ridge stretches both ends together, keeping its middle still. You can press or let go of a key in the middle of a drag and the shape changes straight away. The yellow dot that rounds the corners ignores both keys, as in PowerPoint.
 - There is a new opening shape: the hot dog, a long opening with fully rounded ends. On the “by eye” tab, drag one of a circle's side handles to stretch it into a hot dog; drag the sides back to equal and it becomes a circle again. A circle's corner handles still keep it a circle. A hot dog has no yellow dot, because its ends are always fully rounded. On the “pixels or millimeters” tab, hot dog is in the shape list and takes only a height and a width. Your openings-and-additions file stores a hot dog as a rectangle with fully rounded corners, so it cuts the same with any keyguard.scad.
 
