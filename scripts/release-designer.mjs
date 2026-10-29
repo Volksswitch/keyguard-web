@@ -311,9 +311,14 @@ if (!DRY) {
     const env = { ...process.env, GIT_INDEX_FILE: tmpIndex };
     const run = (args, input) => execFileSync('git', args,
       { cwd: WEB_ROOT, encoding: 'utf8', env, input }).trim();
+    // A commit's patch, byte for byte. Not through git(), which trims: a patch whose
+    // last line is a blank context line (a lone space) loses it and git apply calls
+    // it corrupt. That stopped the re-stack after v97 was pushed (29 Oct 2026).
+    const patch = c => execFileSync('git', ['diff', '--binary', `${c}^`, c],
+      { cwd: WEB_ROOT, encoding: 'utf8' });
     try {
       run(['read-tree', live]);
-      run(['apply', '--cached', '--binary'], git(WEB_ROOT, 'diff', '--binary', `${D}^`, D) + NL);
+      run(['apply', '--cached', '--binary'], patch(D));
       const tree = run(['write-tree']);
       const msg  = git(WEB_ROOT, 'log', '-1', '--format=%B', D);
       const P = execFileSync('git', ['commit-tree', tree, '-p', live, '-F', '-'],
@@ -322,13 +327,20 @@ if (!DRY) {
       // Re-stack local main: live designer commit, then the held-back commits.
       // Their combined tree is D's tree, so the files on disk do not change.
       let parent = P;
-      for (const c of between) {
-        const cmsg = git(WEB_ROOT, 'log', '-1', '--format=%B', c);
-        // Tree = parent's tree plus this commit's own change.
-        run(['read-tree', parent]);
-        run(['apply', '--cached', '--binary'], git(WEB_ROOT, 'diff', '--binary', `${c}^`, c) + NL);
-        parent = execFileSync('git', ['commit-tree', run(['write-tree']), '-p', parent, '-F', '-'],
-          { cwd: WEB_ROOT, encoding: 'utf8', input: cmsg }).trim();
+      try {
+        for (const c of between) {
+          const cmsg = git(WEB_ROOT, 'log', '-1', '--format=%B', c);
+          // Tree = parent's tree plus this commit's own change.
+          run(['read-tree', parent]);
+          run(['apply', '--cached', '--binary'], patch(c));
+          parent = execFileSync('git', ['commit-tree', run(['write-tree']), '-p', parent, '-F', '-'],
+            { cwd: WEB_ROOT, encoding: 'utf8', input: cmsg }).trim();
+        }
+      } catch (e) {
+        die(`the designer file is pushed, but re-stacking local main failed (${e.message.split(NL)[0]}).`
+          + `${NL}  Local main was left as it was (${D.slice(0, 7)}). "git rebase origin/main" re-stacks it:`
+          + `${NL}  it drops the designer commit, which is already live, and keeps the held-back ones.`
+          + `${NL}  Then check the live address reports v${N} before telling Ken the release is out.`);
       }
       if (git(WEB_ROOT, 'rev-parse', `${parent}^{tree}`) !== git(WEB_ROOT, 'rev-parse', `${D}^{tree}`)) {
         die(`the designer file is pushed and live, but re-stacking local main came out`
