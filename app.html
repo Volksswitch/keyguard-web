@@ -420,6 +420,7 @@
                      display: flex; align-items: center; gap: 8px; }
   #openings-footer .msg { color: #666; margin-right: auto; }
   #openings-footer button { padding: 4px 14px; font-size: 12px; cursor: pointer; }
+  #openings-footer button:disabled { color: #aaa; cursor: default; }
 
   /* ---------- Confirm (unsaved-changes) modal ----------
      Above everything else (z-index 1300): a question is always about what is
@@ -957,12 +958,13 @@
       <button id="oge-add-ridge" type="button" title="Then click on the keyguard for a 10 mm ridge, or drag to draw one">+ Ridge</button>
       <button id="oge-add-arc" type="button" title="Then click one of the ringed square corners to round it, or drag from it to set how much">+ Rounded corner</button>
       <button id="oge-del" type="button" title="Delete the selected opening(s)">Delete</button>
-      <button id="oge-undo" type="button" title="Undo the last change (Ctrl+Z)">Undo</button>
     </div>
     <div id="oge-blocked"></div>
    </div>
   </div>
   <div id="openings-footer">
+    <button id="og-undo" type="button" title="Undo the last change to the openings (Ctrl+Z)">Undo</button>
+    <button id="og-redo" type="button" title="Redo the change you undid (Ctrl+Y or Ctrl+Shift+Z)">Redo</button>
     <span class="msg" id="openings-msg"></span>
     <button id="openings-save">Save</button>
     <button id="openings-cancel">Cancel</button>
@@ -1731,7 +1733,8 @@ const RELEASE_NOTES = {
     "There is a new opening shape: the hot dog, a long opening with fully rounded ends. On the “by eye” tab, drag one of a circle's side handles to stretch it into a hot dog; drag the sides back to equal and it becomes a circle again. A circle's corner handles still keep it a circle. A hot dog has no yellow dot, because its ends are always fully rounded. On the “pixels or millimeters” tab, hot dog is in the shape list and takes only a height and a width. Your openings-and-additions file stores a hot dog as a rectangle with fully rounded corners, so it cuts the same with any keyguard.scad."
   ],
   "119": [
-    "Changing the screen's unit of measure no longer moves your custom openings. Openings you placed with Custom Openings were converted to the new unit only if the Custom Openings panel happened to be open. With it closed, a 253-pixel opening became 253 mm and vanished off the screen. Now they are converted whenever you change between pixels and millimeters, so they stay exactly where they were, and one Undo takes back the unit and the conversion together. Screen openings typed into your openings-and-additions file are still yours to change."
+    "Changing the screen's unit of measure no longer moves your custom openings. Openings you placed with Custom Openings were converted to the new unit only if the Custom Openings panel happened to be open. With it closed, a 253-pixel opening became 253 mm and vanished off the screen. Now they are converted whenever you change between pixels and millimeters, so they stay exactly where they were, and one Undo takes back the unit and the conversion together. Screen openings typed into your openings-and-additions file are still yours to change.",
+    "Undo and Redo in Custom Openings. The Undo button has moved to the bottom of the Custom Openings panel, and a Redo button now sits beside it. Both work on either tab and remember your changes when you switch between tabs. On the “pixels or millimeters” tab, every change can now be undone: a number you change, a shape or angle you pick, a highlight, and an opening you add or delete. You can also press Ctrl+Z to undo, and Ctrl+Y or Ctrl+Shift+Z to redo."
   ]
 };
 // @@RELEASE_NOTES_END@@
@@ -8211,7 +8214,9 @@ function ogRenderGrid(grid) {
     }
     sel.value = row.shape;
     sel.addEventListener('change', () => {
-      if (!ogChangeShape(row, sel.value)) { sel.value = row.shape; return; }
+      const snap = ogeSnapshot();
+      if (sel.value === row.shape || !ogChangeShape(row, sel.value)) { sel.value = row.shape; return; }
+      ogePush(snap);
       ogRenderGrid(grid);        // which boxes are live follows the shape
       ogPreview();
     });
@@ -8245,7 +8250,7 @@ function ogRenderGrid(grid) {
           a.appendChild(o);
         }
         if (!disabled) a.value = String(row.ang);
-        a.addEventListener('change', () => { row.ang = Number(a.value); ogPreview(); });
+        a.addEventListener('change', () => { ogePush(); row.ang = Number(a.value); ogPreview(); });
         td.appendChild(a);
         tr.appendChild(td);
         continue;
@@ -8264,8 +8269,10 @@ function ogRenderGrid(grid) {
       // mean a render per increment. They keep focus in the box, so stepping up
       // and down is free — the box is tinted meanwhile to show the number hasn't
       // reached the viewport yet, and one render lands when the box is left.
-      let applied = row[key];
-      inp.addEventListener('focus', () => { applied = row[key]; });
+      // The undo step is the state from before the box was typed into, recorded
+      // only once the box is left with a different number.
+      let applied = row[key], before = null;
+      inp.addEventListener('focus', () => { applied = row[key]; before = ogeSnapshot(); });
 
       // Keep the row in step with the box as it is typed/stepped (cheap, no
       // render), so a Show or Save mid-edit sees the current number.
@@ -8293,6 +8300,7 @@ function ogRenderGrid(grid) {
         inp.classList.remove('pending');
         if (v === applied) return;         // nothing actually changed → no render
         applied = v;
+        if (before) { ogePush(before); before = null; }
         if (ogHotDogToCircle(row)) ogRenderGrid(grid);
         ogPreview();
       });
@@ -8322,6 +8330,7 @@ function ogRenderGrid(grid) {
     del.textContent = '✕';
     del.title = 'Delete this opening';
     del.addEventListener('click', () => {
+      ogePush();
       st.rows.splice(idx, 1);
       // Highlights are held as row indexes, so the rows after the deleted one
       // shift down by one.
@@ -8413,6 +8422,7 @@ let ogRenderOverride = null;
 // highlighting one opening never disturbs another.
 function ogHighlight(grid, idx) {
   const st = ogState[grid];
+  ogePush();     // a highlight is saved with the openings, as a "#" ID
   if (st.hl.has(idx)) st.hl.delete(idx);
   else st.hl.add(idx);
   ogRenderGrid(grid);
@@ -8466,9 +8476,11 @@ function ogSyncScreenUnits() {
 function ogConvertScreenUnits(from, to) {
   if (!ogState || ogState.screen.error || from === to) return;
   if (!ogCanConvertUnits()) return;
-  // Undoable as one step, like any other change made on the by-eye tab.
-  if (ogPanel.classList.contains('eye')) ogePush();
   ogConvertRows(ogState.screen.rows, to);
+  // Not a step of its own: the unit is a Customizer setting, and the
+  // Customizer's Undo takes it back. The history is converted with it instead,
+  // so an Undo here never brings back numbers meant for the other unit.
+  for (const snap of [...ogeUndo, ...ogeRedo]) ogConvertRows(snap.rows, to);
   // The field the .scad reads is now in the new unit too, so the keyguard is
   // cut in the same places it was before the switch.
   ogPreview();
@@ -8606,6 +8618,7 @@ scene.add(ogeGroup);
 
 let ogeSel     = new Set(); // selected indexes into ogState.screen.rows
 let ogeUndo    = [];        // snapshots, newest last
+let ogeRedo    = [];        // snapshots undone, newest last; any new change clears it
 let ogeDrag    = null;      // the gesture in progress, or null
 let ogeGeomKey = null;      // last-drawn screen size, to spot a unit change
 let ogeDragPendingDrop = null;   // shift-clicked an already-selected opening
@@ -8923,26 +8936,54 @@ function ogeRoundRow(row, g) {
 // hundred mouse-moves it was made of. The stack is pushed at the START of a
 // gesture and only once the pointer has genuinely travelled, so a click that
 // merely selects something leaves no entry behind.
+//
+// One history for the whole panel (Ken, 29 Oct 2026): both tabs, both grids,
+// kept across a switch of tab and emptied only when the panel opens. Edits on
+// the grid tab are recorded too — each box when it is left with a new number,
+// each shape, angle, highlight, add and delete — so Undo and Redo, in the
+// footer, take back or put back any change whichever tab made it.
 function ogeSnapshot() {
   return {
-    rows: ogState.screen.rows.map(r => ({ ...r })),
-    hl:   [...ogState.screen.hl],
-    sel:  [...ogeSel],
+    rows:     ogState.screen.rows.map(r => ({ ...r })),
+    hl:       [...ogState.screen.hl],
+    caseRows: ogState.case.rows.map(r => ({ ...r })),
+    caseHl:   [...ogState.case.hl],
+    sel:      [...ogeSel],
   };
 }
-function ogePush() {
-  ogeUndo.push(ogeSnapshot());
+// `snap` lets a grid box record the state from BEFORE it was typed into.
+function ogePush(snap = ogeSnapshot()) {
+  ogeUndo.push(snap);
   if (ogeUndo.length > OGE_UNDO_MAX) ogeUndo.shift();
+  ogeRedo = [];
+  ogUpdateUndoBtns();
 }
-function ogeUndoOne() {
-  const snap = ogeUndo.pop();
-  if (!snap) return;
+function ogeRestore(snap) {
   ogState.screen.rows = snap.rows;
   ogState.screen.hl   = new Set(snap.hl);
-  ogeSel              = new Set(snap.sel);
-  ogeRender();
+  ogState.case.rows   = snap.caseRows;
+  ogState.case.hl     = new Set(snap.caseHl);
+  ogeSel = new Set(snap.sel.filter(i => i < snap.rows.length));
+  if (ogeLive()) ogeRender();
   ogRenderGrid('screen');
+  ogRenderGrid('case');
+  ogUpdateUndoBtns();
   ogPreview();
+}
+// Not in the middle of a drag or a held arrow key: that change isn't finished.
+function ogeUndoOne() {
+  if (!ogState || ogeDrag || ogeKeyRun || !ogeUndo.length) return;
+  ogeRedo.push(ogeSnapshot());
+  ogeRestore(ogeUndo.pop());
+}
+function ogeRedoOne() {
+  if (!ogState || ogeDrag || ogeKeyRun || !ogeRedo.length) return;
+  ogeUndo.push(ogeSnapshot());
+  ogeRestore(ogeRedo.pop());
+}
+function ogUpdateUndoBtns() {
+  document.getElementById('og-undo').disabled = !ogeUndo.length;
+  document.getElementById('og-redo').disabled = !ogeRedo.length;
 }
 
 // ---- The pink shapes -----------------------------------------------------
@@ -9216,7 +9257,7 @@ function ogeRender() {
 // opening, and this panel sits over the keyguard the clinician is looking at.
 function ogeUpdateBar() {
   document.getElementById('oge-del').disabled  = ogeSel.size === 0;
-  document.getElementById('oge-undo').disabled = ogeUndo.length === 0;
+  ogUpdateUndoBtns();
 }
 
 // Redraw after something outside this tab moved — a finished render (which is
@@ -9721,7 +9762,8 @@ document.getElementById('oge-add-arc').addEventListener('click', () => {
   ogeSetDrawing('arc');
 });
 document.getElementById('oge-del').addEventListener('click', ogeDelete);
-document.getElementById('oge-undo').addEventListener('click', ogeUndoOne);
+document.getElementById('og-undo').addEventListener('click', ogeUndoOne);
+document.getElementById('og-redo').addEventListener('click', ogeRedoOne);
 
 // Look at the keyguard face-on. Dragging a corner handle while the model is
 // turned edge-on is meaningless, so the tab starts from a square view. The way
@@ -9761,7 +9803,6 @@ function ogSwitchTab(name) {
     btn.classList.toggle('on', btn.dataset.tab === name);
   }
   if (eye) {
-    ogeUndo = [];
     ogeSel = new Set();
     ogeGeomKey = null;
     ogeRender();
@@ -9787,8 +9828,27 @@ for (const btn of document.querySelectorAll('.og-tab')) {
 }
 ogeBooted = true;
 
-// Keyboard, while the by-eye tab is the one on show. Ctrl+Z takes back a whole
-// drag; Delete removes the selection; Escape lets go of the selection before it
+// Undo and Redo from the keyboard, on either tab, while the panel is open. Ctrl+Z
+// takes back a whole drag; Ctrl+Y or Ctrl+Shift+Z puts it back. In a number box
+// the browser's own typing undo is left alone, as the Customizer leaves it.
+// stopPropagation matters as much as preventDefault: the app's own undo is
+// listening further along and would take back a Customizer change on top of
+// this one, which is not what a clinician means by undoing a nudge.
+document.addEventListener('keydown', e => {
+  if (!ogState || !ogPanel.classList.contains('open')) return;
+  if (document.getElementById('confirm-overlay').classList.contains('open')) return;
+  const t = e.target;
+  if (t && (t.tagName === 'INPUT' || t.tagName === 'SELECT' || t.tagName === 'TEXTAREA')) return;
+  if (!(e.ctrlKey || e.metaKey) || e.altKey) return;
+  const key = String(e.key).toLowerCase();
+  const isRedo = (key === 'z' && e.shiftKey) || (key === 'y' && !e.metaKey);
+  const isUndo = key === 'z' && !e.shiftKey;
+  if (!isUndo && !isRedo) return;
+  e.preventDefault(); e.stopPropagation();
+  if (isUndo) ogeUndoOne(); else ogeRedoOne();
+}, true);
+
+// Keyboard, while the by-eye tab is the one on show. Delete removes the selection; Escape lets go of the selection before it
 // closes the panel, so it takes two presses to leave with something selected.
 document.addEventListener('keydown', e => {
   if (!ogeLive()) return;
@@ -9796,12 +9856,6 @@ document.addEventListener('keydown', e => {
   if (document.getElementById('confirm-overlay').classList.contains('open')) return;
   const t = e.target;
   if (t && (t.tagName === 'INPUT' || t.tagName === 'SELECT' || t.tagName === 'TEXTAREA')) return;
-  if ((e.ctrlKey || e.metaKey) && !e.shiftKey && String(e.key).toLowerCase() === 'z') {
-    // stopPropagation matters as much as preventDefault: the app's own undo is
-    // listening further along and would take back a Customizer change on top of
-    // this one, which is not what a clinician means by undoing a nudge.
-    e.preventDefault(); e.stopPropagation(); ogeUndoOne(); return;
-  }
   if ((e.key === 'Delete' || e.key === 'Backspace') && ogeSel.size) {
     e.preventDefault(); e.stopPropagation(); ogeDelete(); return;
   }
@@ -9897,6 +9951,8 @@ function openOpenings() {
   ogRenderWarnings();
   ogMsgEl.textContent = '';
   ogeUndo = [];
+  ogeRedo = [];
+  ogUpdateUndoBtns();
   ogeSel = new Set();
   ogeGeomKey = null;
   ogGridSize = null;
@@ -9986,6 +10042,7 @@ document.querySelectorAll('.og-add').forEach(btn => {
     if (!ogState || ogState[grid].error) return;
     // ID 0 for a new opening: the field format wants an ID, nothing reads it,
     // and "#" is reserved for the highlight.
+    ogePush();
     ogState[grid].rows.push({ id: 0, shape: 'r', h: 0, w: 0, cr: 0, x: 0, y: 0 });
     ogRenderGrid(grid);
   });

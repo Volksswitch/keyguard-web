@@ -14,6 +14,7 @@ notes, because nothing at this address could have been missed yet.
 ## Unreleased (next release)
 
 - **Changing the screen's unit of measure no longer moves your custom openings.** Openings you placed with Custom Openings were converted to the new unit only if the Custom Openings panel happened to be open. With it closed, a 253-pixel opening became 253 mm and vanished off the screen. Now they are converted whenever you change between pixels and millimeters, so they stay exactly where they were, and one Undo takes back the unit and the conversion together. Screen openings typed into your openings-and-additions file are still yours to change.
+- **Undo and Redo in Custom Openings.** The Undo button has moved to the bottom of the Custom Openings panel, and a Redo button now sits beside it. Both work on either tab and remember your changes when you switch between tabs. On the “pixels or millimeters” tab, every change can now be undone: a number you change, a shape or angle you pick, a highlight, and an opening you add or delete. You can also press Ctrl+Z to undo, and Ctrl+Y or Ctrl+Shift+Z to redo.
 
 ## Release 118
 
