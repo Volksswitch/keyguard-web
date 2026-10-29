@@ -13,6 +13,8 @@ notes, because nothing at this address could have been missed yet.
 
 ## Unreleased (next release)
 
+- **Changing the screen's unit of measure no longer moves your custom openings.** Openings you placed with Custom Openings were converted to the new unit only if the Custom Openings panel happened to be open. With it closed, a 253-pixel opening became 253 mm and vanished off the screen. Now they are converted whenever you change between pixels and millimeters, so they stay exactly where they were, and one Undo takes back the unit and the conversion together. Screen openings typed into your openings-and-additions file are still yours to change.
+
 ## Release 118
 
 - On the “by eye” tab of Custom Openings, the Shift and Ctrl keys now work on a shape's handles the way they do in PowerPoint. Hold Shift while dragging a corner handle to keep a rectangle's proportions; hold Ctrl while dragging any handle to grow or shrink the shape around its center instead of from the opposite side; hold both to do both at once. Ctrl on either end of a ridge stretches both ends together, keeping its middle still. You can press or let go of a key in the middle of a drag and the shape changes straight away. The yellow dot that rounds the corners ignores both keys, as in PowerPoint.

@@ -1729,6 +1729,9 @@ const RELEASE_NOTES = {
   "118": [
     "On the “by eye” tab of Custom Openings, the Shift and Ctrl keys now work on a shape's handles the way they do in PowerPoint. Hold Shift while dragging a corner handle to keep a rectangle's proportions; hold Ctrl while dragging any handle to grow or shrink the shape around its center instead of from the opposite side; hold both to do both at once. Ctrl on either end of a ridge stretches both ends together, keeping its middle still. You can press or let go of a key in the middle of a drag and the shape changes straight away. The yellow dot that rounds the corners ignores both keys, as in PowerPoint.",
     "There is a new opening shape: the hot dog, a long opening with fully rounded ends. On the “by eye” tab, drag one of a circle's side handles to stretch it into a hot dog; drag the sides back to equal and it becomes a circle again. A circle's corner handles still keep it a circle. A hot dog has no yellow dot, because its ends are always fully rounded. On the “pixels or millimeters” tab, hot dog is in the shape list and takes only a height and a width. Your openings-and-additions file stores a hot dog as a rectangle with fully rounded corners, so it cuts the same with any keyguard.scad."
+  ],
+  "119": [
+    "Changing the screen's unit of measure no longer moves your custom openings. Openings you placed with Custom Openings were converted to the new unit only if the Custom Openings panel happened to be open. With it closed, a 253-pixel opening became 253 mm and vanished off the screen. Now they are converted whenever you change between pixels and millimeters, so they stay exactly where they were, and one Undo takes back the unit and the conversion together. Screen openings typed into your openings-and-additions file are still yours to change."
   ]
 };
 // @@RELEASE_NOTES_END@@
@@ -6055,6 +6058,12 @@ container.addEventListener('change', async e => {
       t.value !== '' && !Number.isNaN(parseFloat(t.value))) {
     t.value = parseFloat(t.value).toFixed(+t.dataset.decimals);
   }
+  // A new screen unit converts the screen openings with it, before the change is
+  // recorded, so they stay put and one Undo takes back both.
+  if (t.dataset.paramName === 'unit_of_measure_for_screen' && histBase) {
+    ogConvertScreenField(histBase.unit_of_measure_for_screen === 'mm' ? 'mm' : 'px',
+                         t.value === 'mm' ? 'mm' : 'px');
+  }
   updateDirty();
   commitHistory();   // one undo step per committed value (focus left the field)
   // When the user flips include_screenshot: ON → rescan (a folder change
@@ -8449,16 +8458,60 @@ function ogSyncScreenUnits() {
 // would be left alone and re-read in the new unit, which moves and resizes
 // every opening at once: a 300-pixel-wide opening silently becomes a 300 mm one.
 //
-// Only openings this panel manages are converted, and only while it is open.
-// Case openings are always millimetres, and rows written by hand in
-// openings_and_additions.txt belong to that file, not to the app.
+// Only openings this panel manages are converted. Case openings are always
+// millimetres, and rows written by hand in openings_and_additions.txt belong to
+// that file, not to the app. This one converts the panel's own rows while it is
+// open; ogConvertScreenField below converts the Customizer field itself, which
+// is where the openings live whether the panel is open or not.
 function ogConvertScreenUnits(from, to) {
   if (!ogState || ogState.screen.error || from === to) return;
+  if (!ogCanConvertUnits()) return;
+  // Undoable as one step, like any other change made on the by-eye tab.
+  if (ogPanel.classList.contains('eye')) ogePush();
+  ogConvertRows(ogState.screen.rows, to);
+  // The field the .scad reads is now in the new unit too, so the keyguard is
+  // cut in the same places it was before the switch.
+  ogPreview();
+}
+
+// Both sizes have to be known to convert between them. A keyguard.scad too old
+// to report the pixel size is the realistic way to be without; the numbers are
+// then left untouched rather than scaled by a guess.
+function ogCanConvertUnits() {
   const dims = project && project.dims;
-  // Both sizes have to be known to convert between them. A keyguard.scad too old
-  // to report the pixel size is the realistic way to be here; leave the numbers
-  // untouched rather than scale them by a guess.
-  if (!dims || !(dims.swm > 0) || !(dims.swp > 0)) return;
+  return !!(dims && dims.swm > 0 && dims.swp > 0);
+}
+
+// Until 29 Oct 2026 only the panel converted, so a unit changed with it CLOSED
+// left the field's numbers to be re-read in the new unit: Ken's 253-pixel
+// opening became 253 mm and vanished off the screen. Called by the Customizer
+// before it records the change, so one Undo takes back the unit and the
+// conversion together. Rows the panel can't model are kept exactly as typed.
+function ogConvertScreenField(from, to) {
+  if (from === to || !ogCanConvertUnits()) return;
+  const el = ogFieldInput('my_screen_openings');
+  if (!el || !el.value.trim()) return;
+  const parsed = parseOAText(el.value);
+  if (!parsed.ok) return;
+  const vals = currentFormValues();
+  const origin = vals.starting_corner_for_screen_measurements === 'lower-left'
+    ? 'lower-left' : 'upper-left';
+  const d = project.dims;
+  const perMM = from === 'mm' ? 1 : d.swp / d.swm;
+  const rows = [], kept = [], hl = new Set();
+  for (const row of parsed.rows) {
+    const simple = ogSimplify(row, 'screen', origin, perMM);
+    if (!simple) { kept.push(row.raw); continue; }
+    if (simple.id === '#') { simple.id = 0; hl.add(rows.length); }
+    rows.push(simple);
+  }
+  if (!rows.length) return;
+  ogConvertRows(rows, to);
+  el.value = ogSerialize(rows, hl, kept);
+}
+
+function ogConvertRows(rows, to) {
+  const dims = project.dims;
   const perMM = dims.swp / dims.swm;               // pixels per millimetre
   const factor = to === 'mm' ? 1 / perMM : perMM;
   const dp = to === 'px' ? 0 : 1;
@@ -8476,9 +8529,7 @@ function ogConvertScreenUnits(from, to) {
   const rp = (v, inset) => parseFloat((to === 'mm'
     ? (v || 0) / perMM - inset
     : ((v || 0) + inset) * perMM).toFixed(dp));
-  // Undoable as one step, like any other change made on the by-eye tab.
-  if (ogPanel.classList.contains('eye')) ogePush();
-  for (const row of ogState.screen.rows) {
+  for (const row of rows) {
     if (ogIsArc(row.shape)) {
       // Its point stays exactly on its corner, unrounded — see ogeRoundRow.
       const ex = (v, inset) => to === 'mm' ? (v || 0) / perMM - inset : ((v || 0) + inset) * perMM;
@@ -8500,9 +8551,6 @@ function ogConvertScreenUnits(from, to) {
     if (row.shape === 'hd') { if (!ogHotDogToCircle(row)) row.cr = ogHotDogCr(row); continue; }
     row.cr = Math.min(Math.max(0, r(row.cr)), Math.min(row.w, row.h) / 2);
   }
-  // The field the .scad reads is now in the new unit too, so the keyguard is
-  // cut in the same places it was before the switch.
-  ogPreview();
 }
 
 function ogPreview() {
