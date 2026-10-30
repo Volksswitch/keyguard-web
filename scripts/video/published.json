@@ -5,40 +5,40 @@
       "published": "2026-10-30"
     },
     "1.2-open-and-start": {
-      "signature": "93fe2ecb176c8b6dd656ed314d6fef603a45c6ddfb5bdb5436d01e1305b71ca8",
-      "published": "2026-10-27"
+      "signature": "a5a3e9f6a299a73ceb1a77cd4c928db2da3b27781340fa927a8ec45a391401d2",
+      "published": "2026-10-30"
     },
     "1.3-screen-tour": {
       "signature": "61fbb66e8154d8dd990c5236ecd74aa90cba60352109f322c608d46012e1dc05",
       "published": "2026-10-27"
     },
     "1.4-first-grid": {
-      "signature": "fee1aab9e58e241c1ad637af444443f60a915eca26f58ffae3e12a66c8a8ea29",
-      "published": "2026-10-27"
+      "signature": "064c920f5c354967d4df82a292aea9352d324b25d4d6bbe4ae6bae796c22c16e",
+      "published": "2026-10-30"
     },
     "1.5-check-screenshot": {
       "signature": "2203ac3946bddc7ef37b897e184e5ff393697cab4ff90b4d234d409c64eb5dbf",
       "published": "2026-10-30"
     },
     "1.6-exporting": {
-      "signature": "b3abffef909799eba8261566a779ae34a8681b8e2a18ec7cde2c550ed821f6cf",
-      "published": "2026-10-27"
+      "signature": "8e25a21df050e408d1f4ecf883c96af9d0b01b9d244f065429518e3e51424718",
+      "published": "2026-10-30"
     },
     "2.1-tablet-and-case": {
       "signature": "1c018e8e8a990f3037f3fbd35906de1ad7cb0141f7600e2d92d20d4bf5a745b9",
       "published": "2026-10-27"
     },
     "2.2-layout-from-screenshot": {
-      "signature": "cd49ccce42301cfbde9c3d17df1f54f98bb7921f1731ab7097ef216c8610ab26",
-      "published": "2026-10-27"
+      "signature": "c0d89ae22c13d81b6012a9158b8dd6c187f584487e172401c56593340210562a",
+      "published": "2026-10-30"
     },
     "2.3-millimeters": {
-      "signature": "a6fa35668cd2b94b6efdf9941059ceaf52cf3d153daf3863186955acad34638d",
-      "published": "2026-10-27"
+      "signature": "3a6f02b5e611a5af9eb2ab9949a397c36425e3ed1f0a8033ac8887c6ce9779b5",
+      "published": "2026-10-30"
     },
     "2.4-data-form": {
-      "signature": "bad72958403f7b952944203e35862d4545b49a0e6e15d376183b43d87f4bca0f",
-      "published": "2026-10-27"
+      "signature": "0bd7cebcc5818be42b9713e90c5fa805e004de91875e76d14ddf1c4576b30a73",
+      "published": "2026-10-30"
     },
     "3.1-cover-merge": {
       "signature": "4d02046b290d540420f7bba512a98211ea622959cbeefb03b2d31e763bfe2be3",
@@ -49,7 +49,7 @@
       "published": "2026-10-30"
     },
     "3.3-typing-openings": {
-      "signature": "4d9363e344b208a674b01952b8b0cc6602364ec69a3bbc21d4857c5eab156682",
+      "signature": "fb85f9bdaa563c2107ddd8ee55ff9ed03a236c420cbb7a36ea90d5b762adc76a",
       "published": "2026-10-30"
     },
     "3.4-ridges-corners": {
@@ -70,15 +70,15 @@
     },
     "3.8-text-braille": {
       "signature": "1d00685b5ad751e7160e182ad8794373847a971402c9da15f8d563a51fbec423",
-      "published": "2026-10-27"
+      "published": "2026-10-30"
     },
     "4.1-presets": {
       "signature": "24b4e954d9875936fa81448762839444e1699d6976c8ca5073817f5e2bcab817",
       "published": "2026-10-27"
     },
     "4.2-sharing": {
-      "signature": "a3897b31ca1133a91ee5472f4e67ae659aff94e8a4bba06da02f6be7c8eacf6b",
-      "published": "2026-10-27"
+      "signature": "46b70f277ab12f23604b08772f16a5db528f90f62ca06a6f3f9e362980bf9855",
+      "published": "2026-10-30"
     },
     "4.3-update-offered": {
       "signature": "3f64a042ba1ee6eb7ab8db18a4e4a0dfc96c7d310d4006e42577b193657ed79e",
@@ -98,7 +98,7 @@
     },
     "6.1-looks-wrong": {
       "signature": "4b6ef5becb0dce3d4ce1442fe0f114d7e7881d9722bf3e915ea330b3797ccca7",
-      "published": "2026-10-27"
+      "published": "2026-10-30"
     },
     "6.2-report-problem": {
       "signature": "a6abec8212380da75a008cdf57fff3d11c4acb3425f9fbe99a2f0e8bbd7fdeb5",
@@ -106,6 +106,10 @@
     },
     "6.3-it-on-board": {
       "signature": "020c3c3db23bc9409787d538ca8546ba4a39668fb2a4c8942842f4a2c8a75ea4",
+      "published": "2026-10-30"
+    },
+    "2.5-pixels-or-millimeters": {
+      "signature": "ae6a9e9254ce30d94df93476169ed6107b922c13cd56136e10e80b404a17b848",
       "published": "2026-10-30"
     }
   }
