@@ -3,6 +3,10 @@
 // It builds the sample keyguard from the design default values: the TouchChat WordPower 42
 // exercise from the Basic workshop, an iPad 9th generation in a case, measured in
 // millimeters. Every value typed here is the exercise's own solution.
+//
+// It doesn't set the unit of measure for the screen (Ken, 30 Oct 2026): that matters only for
+// openings typed as numbers, in Custom Openings or the openings and additions file, and the
+// bars and the grid use their own sections' units whatever it says. Video 2.5 explains.
 import { all, view, openSection, setParam, param, row, click, closeSections } from '../helpers.mjs';
 
 export default {
@@ -27,17 +31,13 @@ export default {
       page: "In Tablet Case, enter the case opening's height, width and corner radius, in millimeters.",
       say: "In Tablet Case, enter the size of the window in the case: here, 163 by 239 millimeters, " +
            "with corners of 5 millimeters." },
-    { before: all(openSection('Free-form and Hybrid Keyguard Openings'),
-        setParam('unit_of_measure_for_screen', 'mm')),
-      highlight: row('unit_of_measure_for_screen'),
-      say: "This app was measured with a ruler, so set the unit of measure for the screen to " +
-           "millimeters." },
     { before: all(openSection('App Layout in mm'), setParam('status_bar_height', 3),
         setParam('upper_message_bar_height', 6), setParam('upper_command_bar_height', 9)),
       highlight: '.section[data-section="App Layout in mm"]',
       page: "In App Layout, enter the height of each of the app's bars.",
-      say: "In App Layout, enter how tall each of the app's bars is. Here the status bar is 3 " +
-           "millimeters, the message bar 6, and the command bar 9." },
+      say: "This app was measured with a ruler, in millimeters, so its bars go in App Layout in " +
+           "millimeters. Enter how tall each one is. Here the status bar is 3 millimeters, the message " +
+           "bar 6, and the command bar 9." },
     { before: all(openSection('Bar Info'), setParam('expose_upper_message_bar', 'yes')),
       highlight: row('expose_upper_message_bar'),
       page: "In Bar Info, choose which bars get an opening.",

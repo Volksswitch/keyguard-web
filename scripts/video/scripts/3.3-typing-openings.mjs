@@ -1,5 +1,8 @@
 // How-to video 3.3: typing openings in pixels or millimeters, on the Custom Openings table.
 // The sample design measures the screen in millimeters from the upper-left corner.
+// This is where the unit of measure for the screen and its starting corner are explained, as
+// a footnote (Ken, 30 Oct 2026): openings typed as numbers are the one place in the app they
+// matter, with the openings and additions file. Video 2.5 has the whole story.
 import { all, click, view, openOpenings, atView, sleep } from '../helpers.mjs';
 import { settled } from '../../lib/sample-project.mjs';
 
@@ -27,8 +30,11 @@ export default {
       say: "The pixels or millimeters tab lists your openings as numbers. Use it to place an opening " +
            "exactly, or to check one you placed by eye." },
     { highlight: '#og-screen-units',
-      say: "Screen openings use the same unit as the design. The heading says which corner the " +
-           "measurements start from." },
+      page: "Screen openings are in the unit of measure for the screen, from its starting corner. The heading says which.",
+      say: "Screen openings are measured in the unit of measure for the screen, pixels or millimeters, " +
+           "counted from its starting corner. Both are set in Free-form and Hybrid Keyguard Openings, " +
+           "and the heading here says which. Set them before you type. If you change the unit later, " +
+           "the openings are converted, so they stay put." },
     { before: click('.og-add[data-grid="screen"]'), highlight: lastRow,
       page: "Click + Add opening. A row appears for the new opening.",
       say: "Click plus Add opening. A row appears for the new opening." },

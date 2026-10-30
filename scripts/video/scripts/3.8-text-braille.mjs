@@ -2,7 +2,9 @@
 // keyguard itself; braille goes on cell inserts, small pieces that fit into a cell opening.
 import { all, view, openSection, setParam, row, closeSections, onKeyguard, clearConsole } from '../helpers.mjs';
 
-// The words go on the solid border below the grid: in the case region, at the bottom.
+// The words go on the solid border below the grid: in the case region, at the bottom. They're
+// 4 millimeters high: that border is under 8 millimeters, and 5 ran into the bottom openings
+// once the sample's cells were their real size (30 Oct 2026).
 const onBorder = onKeyguard([0.33, 0.86, 0.34, 0.14]);
 
 // The VocoChat sample with its Back, Delete and Clear openings in place
@@ -20,7 +22,7 @@ export default {
   ],
   steps: [
     { before: all(openSection('Special Actions and Settings'), setParam('include_screenshot', 'no'),
-        openSection('Engraved/Embossed Text'), setParam('text', 'TALK'), setParam('text_height', 5),
+        openSection('Engraved/Embossed Text'), setParam('text', 'TALK'), setParam('text_height', 4),
         setParam('keyguard_region', 'case region'), setParam('text_vertical_alignment', 'bottom'),
         setParam('slide_horizontally', 50), setParam('slide_vertically', 1), view('top'), clearConsole()),
       highlight: row('text'),

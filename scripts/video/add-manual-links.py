@@ -53,7 +53,7 @@ MAP = [
     ('3.3  Starting a project', ['1.2-open-and-start']),
     ('3.5  The screen', ['1.3-screen-tour']),
     ('4.  Your First Keyguard', ['1.4-first-grid']),
-    ('4.3  ', ['2.2-layout-from-screenshot', '2.3-millimeters']),
+    ('4.3  ', ['2.2-layout-from-screenshot', '2.3-millimeters', '2.5-pixels-or-millimeters']),
     ('4.4  Check it against the screenshot', ['1.5-check-screenshot']),
     ('4.6  Export and print', ['5.1-printing', '5.2-testing-fit']),
     ('5.1  Sections and settings', ['3.1-cover-merge', '3.5-slopes-bars', '3.7-splitting',

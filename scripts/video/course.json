@@ -13,7 +13,8 @@
       { "num": "2.1", "id": "2.1-tablet-and-case", "title": "Which Tablet and Case Do You Have?", "learn": "Identify the tablet and measure the case opening." },
       { "num": "2.2", "id": "2.2-layout-from-screenshot", "title": "The App Layout from a Screenshot", "learn": "Read bar heights and button positions in pixels." },
       { "num": "2.3", "id": "2.3-millimeters", "title": "Measuring in Millimeters", "learn": "Measure the app on the screen with a ruler." },
-      { "num": "2.4", "id": "2.4-data-form", "title": "Filling In the Keyguard Data Form", "learn": "Collect everything a keyguard needs in one place." }
+      { "num": "2.4", "id": "2.4-data-form", "title": "Filling In the Keyguard Data Form", "learn": "Collect everything a keyguard needs in one place." },
+      { "num": "2.5", "id": "2.5-pixels-or-millimeters", "title": "Pixels or Millimeters: Which Numbers Count", "learn": "Know which numbers are used when both are filled in, and when the screen's unit of measure matters." }
     ] },
     { "name": "Shaping the keyguard", "items": [
       { "num": "3.1", "id": "3.1-cover-merge", "title": "Covering and Merging Cells", "learn": "Close cells, or join them into one opening." },

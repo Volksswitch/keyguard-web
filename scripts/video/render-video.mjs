@@ -22,6 +22,10 @@
 // Narration never says where something is ("top right"). It names the thing and the ring
 // points to it, so a layout change can't make the words wrong.
 //
+// A file box (choosing a folder, Save As, Open) belongs to the computer, not the page, and
+// is never captured, since only the page is: a step's `dialog` draws a generic stand-in
+// over the app (file-dialog.mjs), and its parts can be ringed like any control.
+//
 // A step whose ring matches nothing on screen stops the render. That is the check that
 // keeps a video from quietly showing a button that has moved or been renamed.
 //
@@ -36,6 +40,7 @@ import { spawn, spawnSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
 import { PROJECT, launch, openSampleProject, settled, sleep } from '../lib/sample-project.mjs';
 import { makeCompanion, placeInCourse, MAX_PAGE_STEPS } from './companion.mjs';
+import { showDialog, hideDialog } from './file-dialog.mjs';
 
 const CONVERSANT = path.join(process.env.OneDrive, '4 T-Z', 'Volksswitch', 'AI-driven AAC');
 const { readAzureKey, synthesize, pace } = await import(
@@ -154,7 +159,8 @@ async function mark(page, selector, ringBox) {
 // A still picture instead of the app: a photo or screenshot that isn't the app's own screen
 // (a tablet's settings, a data form, a ruler on a case). `image` is a path inside the
 // project folder; `ring` is a box to point at and `marks` are lines or boxes to draw, all in
-// the picture's own pixels. The picture is fitted to the video's frame.
+// the picture's own pixels. The picture is fitted to the video's frame, or with `crop` (a box
+// in its pixels, too) only that part of it is, so a page of a document can be read.
 async function showPicture(page, step) {
   const file = path.resolve(PROJECT, step.image);
   if (!fs.existsSync(file)) throw new Error(`STOPPING - the picture ${step.image} is missing`);
@@ -162,8 +168,9 @@ async function showPicture(page, step) {
   const data = `data:image/${ext};base64,${fs.readFileSync(file).toString('base64')}`;
   const [iw, ih] = run(FFPROBE, ['-v', 'error', '-select_streams', 'v', '-show_entries', 'stream=width,height',
     '-of', 'csv=p=0', file]).trim().split(',').map(Number);
-  const k = Math.min(VIEW.width / iw, VIEW.height / ih);
-  const ox = (VIEW.width - iw * k) / 2, oy = (VIEW.height - ih * k) / 2;
+  const [cx, cy, cw, ch] = step.crop || [0, 0, iw, ih];
+  const k = Math.min(VIEW.width / cw, VIEW.height / ch);
+  const ox = (VIEW.width - cw * k) / 2 - cx * k, oy = (VIEW.height - ch * k) / 2 - cy * k;
   const sx = (v) => ox + v * k, sy = (v) => oy + v * k;
   const svg = (step.marks || []).map((m) => {
     if (m.line) return `<line x1="${sx(m.line[0])}" y1="${sy(m.line[1])}" x2="${sx(m.line[2])}" y2="${sy(m.line[3])}"
@@ -275,6 +282,8 @@ async function main() {
       else {
         if (step.before) await step.before(page);
         await settle(page);
+        // The computer's own file box, drawn over the app (file-dialog.mjs).
+        if (step.dialog) await showDialog(page, step.dialog);
       }
       const box = await mark(shotPage, step.image ? (step.ring ? '#vid-target' : null) : step.highlight,
         step.image ? null : step.ringBox);
@@ -283,6 +292,7 @@ async function main() {
       await shotPage.screenshot({ path: shot, timeout: 180000 });
       frames.push({ file: shot, box, view: { ...VIEW, deviceScaleFactor: SCALE } });
       await shotPage.evaluate(() => document.getElementById('vid-mark')?.remove());
+      if (step.dialog) await hideDialog(page);
       if (PICTURES_ONLY) { console.log(`picture ${i + 1}/${script.steps.length}`); continue; }
 
       const clip = await speech(step.speaker || 'narrator', step.say);
@@ -296,7 +306,9 @@ async function main() {
         '-c:v', 'libx264', '-tune', 'stillimage', '-pix_fmt', 'yuv420p', '-r', '30',
         '-c:a', 'aac', '-b:a', '160k', '-ar', '48000', '-ac', '2', seg]);
       segments.push(seg);
-      signature.update(JSON.stringify({ speaker: step.speaker || 'narrator', said: step.say, page: step.page || null }));
+      // A file box's wording counts too; a step without one signs exactly as it always has.
+      signature.update(JSON.stringify({ speaker: step.speaker || 'narrator', said: step.say, page: step.page || null,
+        ...(step.dialog && { dialog: step.dialog }) }));
       run(FFMPEG, ['-y', '-v', 'error', '-i', shot, '-vf', 'scale=960:540', path.join(frameDir, `${String(i).padStart(2, '0')}.png`)]);
       srt.push(`${i + 1}\n${srtTime(t + LEAD_S)} --> ${srtTime(t + LEAD_S + speak)}\n${step.say}\n`);
       t += dur;

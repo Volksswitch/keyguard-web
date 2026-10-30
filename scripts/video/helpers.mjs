@@ -86,6 +86,11 @@ export const openSection = (name, { only = true } = {}) => async (page) => {
 };
 export const closeSections = () => (page) => closeOthers(page, null);
 
+// A part of the file box a step draws with `dialog` (file-dialog.mjs): 'name', 'ok',
+// 'cancel', 'newfolder', 'path', 'list', 'selected', 'type', 'box'; for the browser's
+// question, 'question', 'always', 'once', 'deny'.
+export const inDialog = (part) => `#vid-dialog [data-part="${part}"]`;
+
 // The control for a setting, by its name in the keyguard designer file.
 export const param = (name) => `[data-param-name="${name}"] input:not([type=range]), [data-param-name="${name}"] select`;
 // The whole row of a setting: its name, its box and its note.
