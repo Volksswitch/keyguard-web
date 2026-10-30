@@ -139,15 +139,6 @@ quietly waits forever.
   designer/`), under its own rules, released by "bump keyguard designer".
 - **Why not now:** each fix changes what clinicians print; Ken decides which and when.
 
-### The security overview on the website predates release 116
-- **Raised:** 2026-10-27 - found while checking the new documents page, which links it.
-- **What's wanted:** the PDF at `wp-content/uploads/2026/08/SECURITY.pdf` was uploaded
-  2026-10-26 at 15:46 and lacks that evening's `SECURITY.md` changes for release 116 (the
-  folder permission is now read and write; the standard file names). `SECURITY.docx` was
-  rebuilt with them. Ken converts it to PDF and replaces the file in place in WordPress,
-  so the address the app, the IT letter and the documents page use keeps working.
-- **Why not now:** it's Ken's step by his rule (CLAUDE.md); Claude doesn't upload it.
-
 ### Folders with two files of saved designs
 - **Raised:** 2026-10-26 - the plain file names change. Before it, a folder holding
   `keyguard_v92.scad` beside a presets file with another name (say `keyguard.json`) opened
