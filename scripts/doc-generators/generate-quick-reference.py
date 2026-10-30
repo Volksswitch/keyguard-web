@@ -71,8 +71,8 @@ d.table(['Level', 'Shows'], [
 ], W, size=9)
 
 d.h1('Help')
-d.p("The **?** button has the Custom Openings moves, the how-to pages, known issues, Check my "
-    "setup and Report a problem. The User Manual covers each step in full. Questions go to "
+d.p("The **?** button has the how-to pages, how-to videos, documents, known issues, the Custom "
+    "Openings moves, Check my setup and Report a problem. The User Manual covers each step in full. Questions go to "
     "ken@volksswitch.org.")
 
 # ============================== side 2 ==============================

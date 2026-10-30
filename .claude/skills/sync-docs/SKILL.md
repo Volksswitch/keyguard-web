@@ -8,8 +8,9 @@ description: The "sync docs" procedure for the Keyguard Designer's published doc
 Ken, 27 Oct 2026. Moved here from the project's root CLAUDE.md on 30 Oct 2026 (Ken's
 /doctor cleanup); the trigger-phrase table there still lists the phrase and points here.
 
-The documents are the five in `scripts/wordpress/documents.json`: Product Overview, User
-Manual, Quick Reference Card, IT Request Letter, Keyguard Data Form. The data form and the IT
+The documents are the four in `scripts/wordpress/documents.json`: User Manual, Quick
+Reference Card, IT Request Letter, Keyguard Data Form. (The Product Overview came off the
+documents page on 30 Oct 2026 at Ken's request; its .docx stays in `Documents/`, unpublished.) The data form and the IT
 letter are published as PDFs you can type into (made by `scripts/doc-generators/fillable_form.py`),
 each with its Word file linked beside it ("fillable" and "word" in the list; 30 Oct 2026).
 Video 2.4 is made from the data form's pictures, so after changing the form run

@@ -424,9 +424,9 @@ d.h1('13.  Getting Help')
 d.h2('13.1  The Help menu')
 d.p("The **?** button beside the gear opens the Help menu.")
 fig('um-help.png', 'Figure 7. The Help menu.', 3.0)
+d.b("**Web app guide, How-to pages, How-to videos, Documents** and **Known issues** open "
+    "pages on volksswitch.org in a new tab.")
 d.b("**Custom Openings moves:** a card of every move, built into the app.")
-d.b("**Web app guide**, **Keyguard how-to pages** and **Known issues** open pages on "
-    "volksswitch.org in a new tab.")
 d.b("**Check my setup** opens Settings, Troubleshooting and runs the check. **Report a "
     "problem** opens the same tab at the report.")
 d.b("**Contact Volksswitch** starts an email to Volksswitch.")
@@ -553,6 +553,8 @@ d.b('**The app:** keyguard.volksswitch.org')
 d.b('**Keyguard Designer pages,** on measuring, printing, mounting and the openings-and-additions '
     'file: volksswitch.org, under Volks-Devices')
 d.b('**Known issues:** volksswitch.org/index.php/keyguard-designer-known-issues/')
+d.b('**How-to videos:** volksswitch.org/index.php/keyguard-designer-videos/')
+d.b('**Documents:** volksswitch.org/index.php/keyguard-designer-documents/')
 d.b('**Questions:** ken@volksswitch.org')
 
 d.save(OUT)
