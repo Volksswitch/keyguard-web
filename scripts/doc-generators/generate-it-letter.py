@@ -16,10 +16,14 @@ from docx.shared import Inches, Pt  # noqa: E402
 
 OUT = sys.argv[1] if len(sys.argv) > 1 else os.path.join(
     DOCUMENTS, 'Keyguard Designer IT Request Letter.docx')
-UPDATED = 'October 26, 2026'
+UPDATED = 'October 30, 2026'
 
 d = KgDoc(footer='Volksswitch.org  |  Keyguard Designer  |  Request for IT', body_pt=11,
           margin=0.75)
+# The .docx itself is downloaded, so it carries its own name rather than the library's.
+props = d.doc.core_properties
+props.title, props.author, props.last_modified_by = 'Request to Allow the Keyguard Designer', 'Volksswitch', 'Volksswitch'
+props.comments = ''
 d.centered('Request to Allow the Keyguard Designer', 18, NAVY, bold=True, after=2)
 d.centered(f'Volksswitch.org  |  Last updated {UPDATED}', 9, GREY, after=8)
 
@@ -55,7 +59,10 @@ d.h2('Results from Check my setup')
 d.p("If the app opens, its own check lists what's missing: Settings, then Troubleshooting, then "
     "Check my setup. Paste the results here.")
 box = d.callout(' ', label='Results', fill='FFFFFF', border='808080')
-box.rows[0].height = Inches(0.8)
+# Room for the dozen or so lines Check my setup gives. "sync docs" publishes this letter as a
+# PDF that can be typed into (the To, From and Date lines, and this box) and as a Word file
+# (Ken, 30 Oct 2026), so the box is sized for pasting into, not only for a printout.
+box.rows[0].height = Inches(1.5)
 
 d.p("Thank you. Questions about the app itself can go to Volksswitch at ken@volksswitch.org.")
 

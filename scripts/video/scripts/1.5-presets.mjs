@@ -1,8 +1,8 @@
-// How-to video 4.1: saving designs as presets.
+// How-to video 1.5: saving designs as presets.
 import { all, click, view, openSection, setParam, closeSections } from '../helpers.mjs';
 
 export default {
-  id: '4.1-presets',
+  id: '1.5-presets',
   answers: ['WordPower 42 with 5 rows'],
   trouble: [
     "If the app says the preset file is damaged, it was probably edited in a text editor. Restore " +

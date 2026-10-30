@@ -1,11 +1,11 @@
-// How-to video 4.3: when a keyguard update is offered.
+// How-to video 4.2: when a keyguard update is offered.
 // Its project folder holds an older keyguard designer file (Documents/video-samples/update/,
 // version 91, from this repository's history), so the app offers the current one.
 import { all, click } from '../helpers.mjs';
 import { settled } from '../../lib/sample-project.mjs';
 
 export default {
-  id: '4.3-update-offered',
+  id: '4.2-update-offered',
   project: { dir: 'Documents/video-samples/update', open: false },
   trouble: [
     "If you're never offered updates, run Check my setup. Your network may be blocking the app's address.",

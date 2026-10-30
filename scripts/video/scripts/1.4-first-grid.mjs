@@ -53,6 +53,7 @@ export default {
     { before: click('#add-preset-btn'), highlight: '#preset-input',
       page: "To save it, click the plus beside the preset box, type a name and press Enter.",
       say: "To save it, click the plus beside the preset box, type a name, and press Enter." },
-    { say: "Before you print it, check it against a screenshot. {next}" },
+    // Saving designs is next (Ken, 30 Oct 2026), so the video simply names it.
+    { say: "{next}" },
   ],
 };

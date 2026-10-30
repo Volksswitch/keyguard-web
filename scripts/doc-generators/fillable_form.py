@@ -1,7 +1,7 @@
 """Makes a form's PDF fillable: typing boxes where the answers go, clickable checkboxes on
 its printed boxes. For the Keyguard Data Form (Ken, 30 Oct 2026: "Fillable PDF and Word"),
-so it can be filled in on the computer in Acrobat Reader, Chrome, Edge, a Mac or an iPad,
-with nothing to install, and still prints as a paper form.
+and the same day the IT request letter, so either can be filled in on the computer in
+Acrobat Reader, Chrome, Edge, a Mac or an iPad, with nothing to install, and still prints.
 
     python scripts/doc-generators/fillable_form.py <form.pdf> [out.pdf]
 
@@ -15,7 +15,9 @@ anything a reader can type in, so they are found again in the PDF's layout:
   - each printed box (U+2610) becomes a checkbox, named after the words that follow it;
   - each blank line (______) becomes a typing box over it, named after the words before it;
   - a label ending in a colon with nothing after it on its line ("make and model:") gets a
-    typing box from there to the cell's edge.
+    typing box from there to the cell's edge;
+  - outside the tables, a blank line in the text ("To: ______") gets a typing box over it,
+    and a bordered box with only a label at its top ("Results.") one filling the rest of it.
 
 A row spanning both columns is a note, and gets nothing. Every box carries its question as
 its name, which is also what a screen reader says for it.
@@ -100,13 +102,13 @@ def make_fillable(src, dst=None):
         names.add(name)
         return name
 
-    def text_box(page, rect, name):
+    def text_box(page, rect, name, size=FONT_SIZE):
         nonlocal n_text
         w = fitz.Widget()
         w.field_type = fitz.PDF_WIDGET_TYPE_TEXT
         w.field_name = w.field_label = unique(name)
         w.rect = rect
-        w.text_font, w.text_fontsize = 'Helv', FONT_SIZE
+        w.text_font, w.text_fontsize = 'Helv', size
         w.border_width, w.border_color, w.fill_color = 0, None, None
         if rect.height >= MULTILINE_PT:
             w.field_flags = fitz.PDF_TX_FIELD_IS_MULTILINE
@@ -127,7 +129,34 @@ def make_fillable(src, dst=None):
     for page in doc:
         words = page.get_text('words')
         boxes = _boxes(page)
-        for t in page.find_tables(strategy='lines_strict').tables:
+        tables = page.find_tables(strategy='lines_strict').tables
+        taken = [fitz.Rect(t.bbox) for t in tables]
+        outside = lambda r: not any(t.intersects(r) for t in taken)
+
+        # Blank lines in the running text, outside the tables: "To: ______".
+        loose = [('word', fitz.Rect(w[:4]), w[4]) for w in words if outside(fitz.Rect(w[:4]))]
+        for line in _lines(loose):
+            for i, (_kind, r, text) in enumerate(line):
+                if re.fullmatch(r'_{3,}', text):
+                    label = [t2 for _k, _r, t2 in line[:i] if not re.fullmatch(r'_{3,}', t2)]
+                    text_box(page, fitz.Rect(r.x0, r.y1 - FONT_SIZE - 3, r.x1, r.y1 + 1),
+                             _name(_clean(' '.join(label)), ''))
+
+        # A bordered box holding only a label at its top ("Results."), for something pasted
+        # in. Its text shrinks to fit, since what is pasted can run long.
+        for dr in page.get_drawings():
+            area = dr['rect']
+            if (dr.get('fill') != (1.0, 1.0, 1.0) or area.width < 200 or area.height < 40
+                    or not outside(area)):
+                continue
+            inside = [w for w in words if area.contains(fitz.Rect(w[:4]))]
+            if not inside or max(w[3] for w in inside) - area.y0 > 24:
+                continue                         # empty, or more than a label
+            top = max(w[3] for w in inside) + 2
+            text_box(page, fitz.Rect(area.x0 + PAD, top, area.x1 - PAD, area.y1 - PAD),
+                     _name(_clean(' '.join(w[4] for w in inside)), ''), size=0)
+
+        for t in tables:
             for row in t.rows[1:]:
                 cells = row.cells
                 if len(cells) < 2 or cells[0] is None or cells[1] is None:

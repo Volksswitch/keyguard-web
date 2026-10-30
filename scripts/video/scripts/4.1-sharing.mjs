@@ -1,4 +1,4 @@
-// How-to video 4.2: sharing a design. The buttons open the computer's own file boxes, shown
+// How-to video 4.1: sharing a design. The buttons open the computer's own file boxes, shown
 // as the generic stand-ins in file-dialog.mjs: Save As for the design's own file, with the
 // name the app suggests, and Open in the colleague's folder. An Open box shows only the
 // kind of file it asks for, so that folder shows its own presets file and the one sent.
@@ -7,7 +7,7 @@ import { all, view, closeSections, inDialog } from '../helpers.mjs';
 const THEIRS = [['keyguard.json', 'JSON file'], ['WordPower 42.json', 'JSON file']];
 
 export default {
-  id: '4.2-sharing',
+  id: '4.1-sharing',
   trouble: [
     "Many designs are named after students. Check the name before you share a file outside your team.",
   ],

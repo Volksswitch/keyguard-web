@@ -1,4 +1,4 @@
-// How-to video 1.6: exporting for printing or cutting.
+// How-to video 1.7: exporting for printing or cutting.
 //
 // The export buttons open the computer's Save As box, shown as the generic stand-in
 // (file-dialog.mjs) with the name the app suggests: the design's name, then what it makes.
@@ -10,7 +10,7 @@ const STL_BOX = { kind: 'save', name: 'WordPower 42 - keyguard.stl', type: 'STL 
 const SVG_BOX = { kind: 'save', name: 'WordPower 42 - keyguard.svg', type: 'SVG file (*.svg)', faded: true };
 
 export default {
-  id: '1.6-exporting',
+  id: '1.7-exporting',
   trouble: [
     "If your slicer reports problems with the file, export again with STL star.",
     "A keyguard frame, and a keyguard that snaps into one, can't be laser-cut.",

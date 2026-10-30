@@ -1,8 +1,8 @@
-// How-to video 1.5: checking a design against a screenshot of the AAC app.
+// How-to video 1.6: checking a design against a screenshot of the AAC app.
 import { all, view, openSection, setParam, row, closeSections } from '../helpers.mjs';
 
 export default {
-  id: '1.5-check-screenshot',
+  id: '1.6-check-screenshot',
   trouble: [
     "If no screenshot appears, check that the picture is in the project folder, as a PNG or " +
     "JPEG file, and that include screenshot is yes.",

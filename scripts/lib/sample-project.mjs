@@ -106,7 +106,7 @@ export async function rememberFolder(page, opts = {}) {
 // published the app offers it as the folder opens, and its question sits over every
 // control until it is answered (29 Oct 2026: the sample's v92 met v97 and every click
 // timed out). It is turned down with Skip, which keeps the file, so the pictures stay
-// those of the sample. Video 4.3, which is about this very question, opens its folder
+// those of the sample. Video 4.2, which is about this very question, opens its folder
 // itself and never comes through here.
 //
 // On a busy computer the question can come later than 5 seconds (30 Oct 2026, while "sync

@@ -1,13 +1,14 @@
 {
-  "_note": "The Keyguard Designer how-to course: every video in viewing order, from the support assets proposal (October 2026). The renderer reads titles and 'watch next' from here, so a title is changed in one place. 'id' is the script's id (scripts/video/scripts/<id>.mjs); an entry with no id has no script yet. 'path': true marks the groups watched in order. A video's number never changes once it's published, because its watch page's address comes from it; a new video goes at the end of its group.",
+  "_note": "The Keyguard Designer how-to course: every video in viewing order, from the support assets proposal (October 2026). The renderer reads titles and 'watch next' from here, so a title is changed in one place. 'id' is the script's id (scripts/video/scripts/<id>.mjs); an entry with no id has no script yet. 'path': true marks the groups watched in order. A video's number stays put once it's published, because its watch page's address comes from it, unless Ken decides otherwise (he did once, 30 Oct 2026, moving Saving Designs as Presets to 1.5: see CLAUDE.md, Renumbering); a new video goes at the end of its group.",
   "groups": [
     { "name": "Getting started", "path": true, "items": [
       { "num": "1.1", "id": "1.1-what-for", "title": "What the Keyguard Designer Is For", "learn": "What the Keyguard Designer does, and why you'd print a keyguard." },
       { "num": "1.2", "id": "1.2-open-and-start", "title": "Opening the App and Starting a Project", "learn": "Open the app and set up a project folder." },
       { "num": "1.3", "id": "1.3-screen-tour", "title": "A Tour of the Screen", "learn": "Name each part of the screen." },
       { "num": "1.4", "id": "1.4-first-grid", "title": "Your First Grid Keyguard", "learn": "Describe a tablet, its case and a grid app." },
-      { "num": "1.5", "id": "1.5-check-screenshot", "title": "Checking It Against a Screenshot", "learn": "See each opening over its button before you print." },
-      { "num": "1.6", "id": "1.6-exporting", "title": "Exporting for Printing or Cutting", "learn": "Save a file for a 3D printer or a laser cutter." }
+      { "num": "1.5", "id": "1.5-presets", "title": "Saving Designs as Presets", "learn": "Save, rename and switch between designs." },
+      { "num": "1.6", "id": "1.6-check-screenshot", "title": "Checking It Against a Screenshot", "learn": "See each opening over its button before you print." },
+      { "num": "1.7", "id": "1.7-exporting", "title": "Exporting for Printing or Cutting", "learn": "Save a file for a 3D printer or a laser cutter." }
     ] },
     { "name": "Measuring", "path": true, "items": [
       { "num": "2.1", "id": "2.1-tablet-and-case", "title": "Which Tablet and Case Do You Have?", "learn": "Identify the tablet and measure the case opening." },
@@ -27,10 +28,9 @@
       { "num": "3.8", "id": "3.8-text-braille", "title": "Engraved Text and Braille", "learn": "Add words and braille to the keyguard." }
     ] },
     { "name": "Saving and sharing", "items": [
-      { "num": "4.1", "id": "4.1-presets", "title": "Saving Designs as Presets", "learn": "Save, rename and switch between designs." },
-      { "num": "4.2", "id": "4.2-sharing", "title": "Sharing a Design", "learn": "Send a design to a colleague or a maker." },
-      { "num": "4.3", "id": "4.3-update-offered", "title": "When a Keyguard Update Is Offered", "learn": "Take a new keyguard designer file, or wait." },
-      { "num": "4.4", "id": "4.4-skill-levels", "title": "Showing More Settings", "learn": "Choose a skill level." }
+      { "num": "4.1", "id": "4.1-sharing", "title": "Sharing a Design", "learn": "Send a design to a colleague or a maker." },
+      { "num": "4.2", "id": "4.2-update-offered", "title": "When a Keyguard Update Is Offered", "learn": "Take a new keyguard designer file, or wait." },
+      { "num": "4.3", "id": "4.3-skill-levels", "title": "Showing More Settings", "learn": "Choose a skill level." }
     ] },
     { "name": "Printing, fitting and mounting", "items": [
       { "num": "5.1", "id": "5.1-printing", "title": "Printing on Its Face", "learn": "Print a sloped-edge keyguard with little support material." },

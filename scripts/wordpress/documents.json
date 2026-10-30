@@ -41,7 +41,9 @@
       "title": "Request to Allow the Keyguard Designer (for IT)",
       "date": "2026-10-26",
       "mediaId": 24654,
-      "url": "https://volksswitch.org/wp-content/uploads/2026/10/Keyguard-Designer-IT-Request-Letter.pdf"
+      "url": "https://volksswitch.org/wp-content/uploads/2026/10/Keyguard-Designer-IT-Request-Letter.pdf",
+      "fillable": true,
+      "word": true
     },
     {
       "external": true,

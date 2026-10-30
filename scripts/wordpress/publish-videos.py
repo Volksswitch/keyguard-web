@@ -21,7 +21,10 @@ With no ids, every made video whose signature differs from the one published goe
 here (scripts/video/add-manual-links.py builds the same ones): the videos page at
 /index.php/keyguard-designer-videos/ and each watch page at video-<n>-<n>/ beneath it.
 A watch page's address comes from the video's number, which is why a published video is
-never renumbered. A page that lands anywhere else stops the run.
+renumbered only when Ken decides to (once so far, 30 Oct 2026). A renumbered video's page
+moves to its new number's address before it is updated (move_watch_pages), so the manual,
+the Next buttons and the videos page all agree again. A page that lands anywhere else
+stops the run.
 
 THE PAGES ARE MADE PUBLIC, unlike Conversant's first run, which made the list page a
 draft for Ken to publish: Ken asked for the pages to be made and every link checked
@@ -174,10 +177,37 @@ def build_watch(item, v, nxt, url_of, list_url):
             '<!-- /wp:html -->')
 
 
+def move_watch_pages(cfg, items, apply):
+    """Each renumbered video's page goes to its new number's address. A page whose new
+    address another is still leaving waits for it to go; pages swapping addresses in a ring
+    go through a spare address."""
+    slug = lambda url: url.rstrip('/').rsplit('/', 1)[1]
+    where = {i['id']: slug(cfg['videos'][i['id']]['page']['url']) for i in items if cfg['videos'][i['id']].get('page')}
+    pending = [i for i in items if i['id'] in where and where[i['id']] != watch_slug(i)]
+    while pending:
+        held = {where[i['id']] for i in pending}
+        ready = [i for i in pending if watch_slug(i) not in held]
+        moves = [(i, watch_slug(i)) for i in ready] or [(pending[0], watch_slug(pending[0]) + '-moving')]
+        for item, to in moves:
+            v = cfg['videos'][item['id']]
+            print(f'  WATCH PAGE {"MOVED" if apply else "would move"}: {item["num"]} {item["title"]}, '
+                  f'{where[item["id"]]} -> {to}')
+            if apply:
+                moved = call('POST', f'/wp/v2/pages/{v["page"]["id"]}', {'slug': to})
+                v['page'] = {'id': moved['id'], 'url': moved['link']}
+                save(cfg)
+                if slug(moved['link']) != to:
+                    raise SystemExit(f'The page for {item["num"]} landed at {moved["link"]}, not at {to}; '
+                                     'nothing more has been changed.')
+            where[item['id']] = to
+        pending = [i for i in pending if where[i['id']] != watch_slug(i)]
+
+
 def update_watch_pages(cfg, course, list_page, apply):
     items = [i for g in course['groups'] for i in g['items'] if i.get('id') in cfg['videos']]
     base = list_page['link'].rstrip('/') + '/'
     url_of = {i['id']: base + watch_slug(i) + '/' for i in items}
+    move_watch_pages(cfg, items, apply)
     for n, item in enumerate(items):
         v = cfg['videos'][item['id']]
         nxt = items[n + 1] if n + 1 < len(items) else None

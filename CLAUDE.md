@@ -321,8 +321,9 @@ Ken: *"the videos should be generated so they can be modified automatically just
 Conversant videos."* Every video is a script in `scripts/video/scripts/`, rendered by
 `render-video.mjs` from the running app, and kept current by **"sync videos"**. Never fix a
 video by editing its file: change the script (or the app) and re-make it. The course order
-and titles live in `scripts/video/course.json`; a video's number never changes once it's
-published. Outputs go in `Videos/`, which is git-ignored. The figures and the videos open
+and titles live in `scripts/video/course.json`; a video's number doesn't change once it's
+published unless Ken decides otherwise, because its watch page's address comes from it (see
+"Renumbering" below). Outputs go in `Videos/`, which is git-ignored. The figures and the videos open
 the app the same way, through `scripts/lib/sample-project.mjs`.
 
 **File boxes are drawn, not described (Ken, 30 Oct 2026):** the computer's folder, Save As
@@ -354,11 +355,20 @@ The scripts use Conversant's WordPress credentials file, not a copy.
 
 **More videos will be added (Ken, 27 Oct 2026).** To add one: write its script in
 `scripts/video/scripts/`; add it to `course.json` at the END of its group, with the next
-number in that group (a published number never changes, because the manual and any email
-link its address); give it a section in `add-manual-links.py`'s list. Then "sync videos"
+number in that group (published numbers stay put, because the manual and any email link
+their addresses); give it a section in `add-manual-links.py`'s list. Then "sync videos"
 makes and publishes it — its watch page, its row on the videos page, and the Next button
 on the video before it — and "sync docs" puts its link in the manual. A new group goes
 after the existing ones.
+
+**Renumbering is Ken's call, and has been done once (30 Oct 2026, Ken: "Renumber as 1.5"):**
+Saving Designs as Presets moved from 4.1 to 1.5, right after Your First Grid Keyguard, and
+five others moved with it (1.5→1.6, 1.6→1.7, 4.2→4.1, 4.3→4.2, 4.4→4.3). The reason it isn't
+routine: a link anyone saved to an old number then opens a different video. To do it: change
+the numbers in `course.json`, rename each script and its `id` to match (and its keys in
+`published.json` and `wordpress/videos.json`), point the manual's existing video links at
+the new addresses, then "sync videos": `publish-videos.py` moves each renumbered video's
+watch page to its new address before updating it.
 
 ---
 

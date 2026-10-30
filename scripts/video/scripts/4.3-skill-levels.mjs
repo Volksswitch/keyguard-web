@@ -1,8 +1,8 @@
-// How-to video 4.4: showing more settings, with the skill level.
+// How-to video 4.3: showing more settings, with the skill level.
 import { all, view, skill, closeSections, openSettings, closeSettings } from '../helpers.mjs';
 
 export default {
-  id: '4.4-skill-levels',
+  id: '4.3-skill-levels',
   project: { skill: 'beginner' },
   trouble: [
     "If a setting a video or the manual mentions isn't in the list, raise the skill level.",
