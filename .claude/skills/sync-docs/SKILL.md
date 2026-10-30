@@ -52,7 +52,10 @@ step backs a document up to `Documents/Doc Backups/` before changing it.
    (the **enable-media-replace** panel, not the Folders one) → attach `SECURITY.pdf` with
    the file-upload tool → **Just replace the file** → Upload. Then run step 5's command
    again: it downloads the live file, says **CONFIRMED**, and the documents page shows the
-   new date. Close the tab.
+   new date. Close the tab. (Considered and declined, 30 Oct 2026: a permanent security
+   page that links the current PDF, or the overview as a web page, either of which would
+   end the sign-in. Ken chose to keep the file at its address and sign in the few times a
+   year it changes. Don't re-propose it.)
 7. `python scripts/wordpress/check-links.py`.
 8. Tell Ken which documents went up, and list the old copies left in the media library
    (the script prints them) for him to delete.
