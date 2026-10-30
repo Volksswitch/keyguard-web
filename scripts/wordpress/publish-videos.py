@@ -32,6 +32,11 @@ pages are not added to the site's menus by themselves; checked that day).
 The site cannot stream video, so each watch page plays the uploaded file. The
 renderer's files are about 2 MB a minute.
 
+THE GUIDE BOOK (Ken, 30 Oct 2026): every published video's guide in one PDF, after a
+contents page, every page numbered, for a printout to keep by the computer
+(scripts/video/guide_book.py). It is made again from the published videos and uploaded
+whenever any of them, or the list, changes, and the videos page links it.
+
 OLD COPIES ARE NOT DELETED: deleting media is permanent. Replaced files are listed at
 the end so Ken can delete them in WordPress.
 
@@ -42,6 +47,9 @@ so the next sync reports only what changed since.
 import hashlib, html, json, os, subprocess, sys
 
 from wp import ROOT, call, media_folder, upload
+
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'video'))
+from guide_book import BOOK, make_book  # noqa: E402
 
 LIST = os.path.join(os.path.dirname(__file__), 'videos.json')
 VIDEOS = os.path.join(ROOT, 'Videos')
@@ -90,6 +98,11 @@ def build_page(cfg, course):
                    'then "Measuring", and watch those in order. After that, pick the ones you need. '
                    f'<a href="{e(cfg["courseMap"]["url"])}" target="_blank" rel="noopener">'
                    'The full list (PDF)</a>.</p>\n<!-- /wp:paragraph -->')
+    if cfg.get('guideBook'):
+        out.append('<!-- wp:paragraph -->\n<p>To keep by the computer you design keyguards on: '
+                   f'<a href="{e(cfg["guideBook"]["url"])}" target="_blank" rel="noopener">'
+                   'every guide in one PDF</a>, in the order to watch them, with a table of contents '
+                   'and numbered pages.</p>\n<!-- /wp:paragraph -->')
     for g in course['groups']:
         rows = []
         for item in g['items']:
@@ -110,6 +123,13 @@ def build_page(cfg, course):
                    f'<th>What you will learn</th><th>Guide</th></tr></thead><tbody>{"".join(rows)}</tbody></table>'
                    '</figure>\n<!-- /wp:table -->')
     return '\n\n'.join(out)
+
+
+def guide_book_signature(cfg, course):
+    """Changes when the list of published videos does, or any of them is published again."""
+    listed = [(i['num'], i['title'], cfg['videos'][i['id']]['signature']) for g in course['groups']
+              for i in g['items'] if i.get('id') in cfg['videos']]
+    return hashlib.sha256(json.dumps(listed).encode()).hexdigest()
 
 
 def course_map_signature(cfg, course):
@@ -249,6 +269,20 @@ def main():
                 replaced.append(cfg['courseMap'])
             cfg['courseMap'] = {'signature': sig, **up}
             save(cfg)
+
+    # The guide book, made from exactly the videos published.
+    sig = guide_book_signature(cfg, course)
+    if (cfg.get('guideBook') or {}).get('signature') != sig and cfg['videos']:
+        print(f'  The guide book ({BOOK}) will be made and uploaded.')
+        if apply:
+            book = make_book(ids=set(cfg['videos']))
+            up = upload(book, 'Keyguard-Designer-How-To-Guides.pdf', 'application/pdf',
+                        'Keyguard Designer: How-To Guides (every guide in one PDF)', cfg['mediaFolder'])
+            if cfg.get('guideBook'):
+                replaced.append(cfg['guideBook'])
+            cfg['guideBook'] = {'signature': sig, **up}
+            save(cfg)
+            print(f'  UPLOADED {up["url"]}')
 
     pages = call('GET', f'/wp/v2/pages?slug={cfg["page"]}&status=publish,draft,private&context=edit')
     if not pages:

@@ -133,6 +133,10 @@ if (RENDER) {
   }
   const browser = await launch();
   try { console.log(path.relative(PROJECT, await makeCourseMap(browser))); } finally { await browser.close(); }
+  // The guide book from every guide made, for a printout here; publishing makes it again
+  // from the videos actually published.
+  const book = spawnSync('python', [path.join(PROJECT, 'scripts', 'video', 'guide_book.py')], { encoding: 'utf8', cwd: PROJECT });
+  console.log((book.status === 0 ? book.stdout : `The guide book wasn't made: ${book.stderr}`).trim());
 }
 
 console.log('\nCompared with what was last published:');
