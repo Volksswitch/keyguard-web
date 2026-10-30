@@ -828,10 +828,12 @@
 
 <!-- ============ Help menu and the Custom Openings moves card ============ -->
 <ul id="help-menu" role="menu" aria-label="Help">
-  <li role="menuitem" tabindex="-1" data-help="moves">Custom Openings moves</li>
   <li role="menuitem" tabindex="-1" data-help="guide">Web app guide<span class="ext">↗</span></li>
-  <li role="menuitem" tabindex="-1" data-help="howto">Keyguard how-to pages<span class="ext">↗</span></li>
+  <li role="menuitem" tabindex="-1" data-help="howto">How-to pages<span class="ext">↗</span></li>
+  <li role="menuitem" tabindex="-1" data-help="videos">How-to videos<span class="ext">↗</span></li>
+  <li role="menuitem" tabindex="-1" data-help="docs">Documents<span class="ext">↗</span></li>
   <li role="menuitem" tabindex="-1" data-help="known">Known issues<span class="ext">↗</span></li>
+  <li role="menuitem" tabindex="-1" data-help="moves">Custom Openings moves</li>
   <li class="sep" role="separator"></li>
   <li role="menuitem" tabindex="-1" data-help="check">Check my setup…</li>
   <li role="menuitem" tabindex="-1" data-help="report">Report a problem…</li>
@@ -1735,6 +1737,9 @@ const RELEASE_NOTES = {
   "119": [
     "Changing the screen's unit of measure no longer moves your custom openings. Openings you placed with Custom Openings were converted to the new unit only if the Custom Openings panel happened to be open. With it closed, a 253-pixel opening became 253 mm and vanished off the screen. Now they are converted whenever you change between pixels and millimeters, so they stay exactly where they were, and one Undo takes back the unit and the conversion together. Screen openings typed into your openings-and-additions file are still yours to change.",
     "Undo and Redo in Custom Openings. The Undo button has moved to the bottom of the Custom Openings panel, and a Redo button now sits beside it. Both work on either tab and remember your changes when you switch between tabs. On the “pixels or millimeters” tab, every change can now be undone: a number you change, a shape or angle you pick, a highlight, and an opening you add or delete. You can also press Ctrl+Z to undo, and Ctrl+Y or Ctrl+Shift+Z to redo."
+  ],
+  "120": [
+    "The ? Help menu has two new links: How-to videos, which opens the list of how-to videos on volksswitch.org, and Documents, which opens the User Manual, the Quick Reference Card, the Keyguard Data Form and the other documents. \"Keyguard how-to pages\" is now called How-to pages, and Custom Openings moves has moved to the bottom of the menu's first section."
   ]
 };
 // @@RELEASE_NOTES_END@@
@@ -7365,6 +7370,8 @@ const CUSTOM_OPENINGS_URL = KEYGUARD_PAGES_URL + 'custom-openings/';
 const WEB_APP_GUIDE_URL   = KEYGUARD_PAGES_URL + 'keyguard-design-web-app/';
 // ⚠ This page must be live on volksswitch.org before a release carries the link.
 const KNOWN_ISSUES_URL    = 'https://volksswitch.org/index.php/keyguard-designer-known-issues/';
+const VIDEOS_URL          = 'https://volksswitch.org/index.php/keyguard-designer-videos/';
+const DOCUMENTS_URL       = 'https://volksswitch.org/index.php/keyguard-designer-documents/';
 const HELP_IS_MAC = /Mac|iPhone|iPad|iPod/.test(navigator.platform || '') ||
                     (navigator.userAgentData && navigator.userAgentData.platform === 'macOS');
 const HELP_MOD = HELP_IS_MAC ? '⌘' : 'Ctrl';
@@ -7409,6 +7416,8 @@ function runHelpItem(what) {
   if (what === 'moves')   openMoves();
   if (what === 'guide')   openSite(WEB_APP_GUIDE_URL);
   if (what === 'howto')   openSite(KEYGUARD_PAGES_URL);
+  if (what === 'videos')  openSite(VIDEOS_URL);
+  if (what === 'docs')    openSite(DOCUMENTS_URL);
   if (what === 'known')   openSite(KNOWN_ISSUES_URL);
   if (what === 'check')   { openSettings('trouble'); runSetupCheck(); }
   if (what === 'report')  {

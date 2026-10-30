@@ -13,6 +13,8 @@ notes, because nothing at this address could have been missed yet.
 
 ## Unreleased (next release)
 
+- The **?** Help menu has two new links: **How-to videos**, which opens the list of how-to videos on volksswitch.org, and **Documents**, which opens the User Manual, the Quick Reference Card, the Keyguard Data Form and the other documents. "Keyguard how-to pages" is now called **How-to pages**, and **Custom Openings moves** has moved to the bottom of the menu's first section.
+
 ## Release 119
 
 - **Changing the screen's unit of measure no longer moves your custom openings.** Openings you placed with Custom Openings were converted to the new unit only if the Custom Openings panel happened to be open. With it closed, a 253-pixel opening became 253 mm and vanished off the screen. Now they are converted whenever you change between pixels and millimeters, so they stay exactly where they were, and one Undo takes back the unit and the conversion together. Screen openings typed into your openings-and-additions file are still yours to change.

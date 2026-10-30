@@ -68,25 +68,14 @@ quietly waits forever.
 - **Why not now:** Ken, 2026-10-30: "Not now". It is an app change, so it goes out with the
   next app release rather than on its own.
 
-### Help menu: links to the videos page and the documents page
-- **Raised:** 2026-10-27, Ken: *"I want to ensure that links for both of these pages are
-  added to (or replace as appropriate) the entries in the Help (?) pop up."*
-- **What's wanted:** the ? menu opens the how-to videos page
-  (`/index.php/keyguard-designer-videos/`) and the documents page
-  (`/index.php/keyguard-designer-documents/`). Today it lists Custom Openings moves, Web app
-  guide, Keyguard how-to pages, Known issues, Check my setup, Report a problem and Contact
-  Volksswitch. Claude's lean, for Ken to confirm when it's built: add **How-to videos**, and
-  let **User Manual and documents** replace **Web app guide**, whose page overlaps the
-  manual and is out of date (the Phase 2 entry, item 2). Keep **Keyguard how-to pages**:
-  measuring, printing and mounting are covered only there.
-- **What it touches:** the app (an Unreleased changelog entry and "apply release notes");
-  CLAUDE.md's note listing the pages the Help menu links; `SECURITY.md`, which names the
-  pages it opens (and a rebuilt security document for Ken to upload); the manual's Help
-  menu section and its Figure 7, then "sync docs"; any video that shows the menu, then
-  "sync videos". The two links work only online, like the others; the menu itself stays
-  built in.
-- **Why not now:** it's an app change for the next release, recorded while Ken reviews the
-  videos and documents.
+### Help menu: the manual and videos still show the old menu
+- **Raised:** 2026-10-30. The app's ? menu now reads Web app guide, How-to pages, How-to
+  videos, Documents, Known issues, Custom Openings moves (Ken, 2026-10-30; in the app,
+  unreleased, for release 120). Done with it: changelog, CLAUDE.md, `SECURITY.md` (rebuilt
+  `SECURITY.docx` for Ken to convert and upload).
+- **What's left:** the User Manual's Help menu section and its Figure 7, then "sync docs";
+  any video that shows the menu, then "sync videos". Both only after release 120 is out,
+  since they picture the live app.
 
 ### Customizer setting descriptions, shown when pointing at a setting
 - **Raised:** 2026-10-26, Phase 4 of the support assets proposal ("What's this? and the

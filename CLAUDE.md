@@ -257,10 +257,10 @@ folder and no settings — expect to open the project again.
 - **Changing origin empties localStorage, IndexedDB and OPFS for every user**, and
   `FileSystemDirectoryHandle` cannot cross origins at all. This is what the whole
   migration hand-off exists to work around — never treat an origin change as routine.
-- **The Help menu (release 115) links to four volksswitch.org pages:** the Known Issues
+- **The Help menu (release 115) links to six volksswitch.org pages:** the Known Issues
   page (`/index.php/keyguard-designer-known-issues/`, WordPress page 24563, published
-  26 Oct 2026, the Conversant layout), the web app guide, the keyguard hub and the Custom
-  Openings page. Renaming, moving or deleting one breaks a link inside the app, which only
+  26 Oct 2026, the Conversant layout), the web app guide, the keyguard hub, the Custom
+  Openings page, and (release 120) the how-to videos page and the documents page. Renaming, moving or deleting one breaks a link inside the app, which only
   a release can fix. Problem reports and Contact go to `ken@volksswitch.org`
   (`SUPPORT_EMAIL` in `app.html`).
 
