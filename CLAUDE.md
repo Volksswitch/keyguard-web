@@ -250,14 +250,20 @@ folder and no settings — expect to open the project again.
 - **Single-threaded WASM:** the openscad-wasm build has no `SharedArrayBuffer` and
   no pthreads, so COOP/COEP response headers are **not required**. This is why plain
   GitHub Pages is a viable host.
-- **Storage keys** are `keyguard:settings` and `keyguard-db`. Older `keyguard-spike:*`
+- **Storage keys** are `keyguard:settings` and `keyguard-db` (plus small single-purpose
+  localStorage keys such as `keyguard:designer-history`). Older `keyguard-spike:*`
   names are read once as a fallback and migrated forward.
 - **Settings → About's Recent changes (release 121)** lists three months of app and
   keyguard changes. The app's come from `RELEASE_NOTES` + `RELEASE_DATES`, which "apply
   release notes" dates from the `Release N` commits; the keyguard's from the `history` in
   `latest_scad_version.json`, which `publish-designer-file.mjs` writes from the .scad
   CHANGELOG and its `Release Keyguard Designer version N` commits. Rename either commit
-  wording and the dates go missing.
+  wording and the dates go missing. **The About tab fetches nothing (Ken, 30 Oct 2026,
+  release 122):** "apply release notes" bundles that `history` into the app as
+  `DESIGNER_NOTES`, and every read of the version list by the update check keeps its
+  `history` in `keyguard:designer-history` (localStorage) to cover keyguard versions
+  released since. Do not give the tab a request of its own; that would be a new network
+  moment for `SECURITY.md` to declare.
 - **`__KG_DIMS__`** echo magic string in `keyguard.scad` ↔ parsed by `app.html` —
   a working contract; keep the two sides in lockstep.
 - **Changing origin empties localStorage, IndexedDB and OPFS for every user**, and

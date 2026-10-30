@@ -89,7 +89,9 @@ Nothing in this loop touches a network or a server.
 - **Local browser storage** is used only for convenience and stays on the device:
   - a reference to the **last-opened folder** (a browser "file handle") and its
     name, so the clinician can reopen it without re-browsing;
-  - **UI preferences** (e.g. theme).
+  - **UI preferences** (e.g. theme);
+  - the keyguard designer's **recent change notes**, as last received with the
+    update check, so Settings → About can list them offline.
   No design content and no personal data are stored in this way, and none of it
   is transmitted.
 - **Problem reports** (Settings → Troubleshooting) are put together in the browser
@@ -122,8 +124,8 @@ Everything the app fetches comes from there:
   it is revised over time. When a project is opened, the app requests one small JSON
   file, served from the same origin, stating the current designer version. The request
   sends no data — no identifiers, no design content, no usage information. The same
-  file also carries the last few months of designer change notes, and the app requests
-  it again when the clinician opens Settings → About, to list them there.
+  file also carries the last few months of designer change notes, which the app keeps
+  for Settings → About; opening that tab requests nothing.
 - **The designer file itself, only on acceptance.** If a newer version exists and the
   clinician explicitly accepts the offer, the app downloads the replacement from that
   same origin into the folder they chose. This never happens without a click, and it

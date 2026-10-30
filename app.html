@@ -597,7 +597,6 @@
   #settings-panel #about-changes .rc-date { font-weight: normal; color: #666; }
   #settings-panel #about-changes ul { margin: 0; padding-left: 18px; }
   #settings-panel #about-changes li { margin-bottom: 4px; }
-  #settings-panel #about-changes .rc-note { color: #666; margin-top: 10px; }
 </style>
 </head>
 <body>
@@ -1753,6 +1752,9 @@ const RELEASE_NOTES = {
   ],
   "121": [
     "You can look back at what's new whenever you like. Settings → About now has a Recent changes box listing every change to the app and to the keyguard designer file over the last three months, newest first, each with its release or version number and the day it came out. It scrolls, and its Copy button copies the whole list so you can paste it into a document or an email and print it. The app's own changes are there even offline; the keyguard designer file's need a connection."
+  ],
+  "122": [
+    "The Recent changes box in Settings → About now shows the keyguard designer file's changes even when you're offline. It no longer has to reach the internet when you open the About tab."
   ]
 };
 const RELEASE_DATES = {
@@ -1776,6 +1778,135 @@ const RELEASE_DATES = {
   "120": "2026-10-30",
   "121": "2026-10-30"
 };
+const DESIGNER_NOTES = [
+  {
+    "version": 97,
+    "date": "2026-10-29",
+    "notes": [
+      "**Ridges and other raised shapes no longer stick out underneath the keyguard.** Where the underside of the keyguard is cut away (under a sloped keyguard edge, at the case-to-slope step, or by a \"my case additions\" shape that thins the keyguard from below), a ridge, bump or other raised shape placed above that spot used to poke out below it. These cuts now trim raised shapes too, so the underside keeps the shape you designed and the keyguard still sits flat on the case. A ridge that crosses an opening still reaches down through it, as before."
+    ]
+  },
+  {
+    "version": 96,
+    "date": "2026-10-29",
+    "notes": [
+      "**Screen openings now follow the surface they sit on when your keyguard is thicker than its screen area.** An opening or addition placed past the edge of the screen area, over the thicker border around it, used to be cut and built from the height of the screen area. A ridge there ended up hidden inside the plastic and stuck out underneath the keyguard, and a hole lost the bevel on its top edge. Now the part of an opening that is over the border is cut from the keyguard's top surface, just as a case opening is, with its top edge beveled on both sides. A ridge, bump or other raised shape that reaches the border keeps one flat top: it stands its full height above the border, and wherever it passes over the screen area it is filled down to meet it. This applies to Custom Openings, the \"my screen openings\" setting and the screen openings in `openings_and_additions.txt`. Openings and additions that sit entirely on the screen area are unchanged, and so is any keyguard whose screen area is as thick as the keyguard. If you have a design with a ridge that crosses the edge of the screen area, it now comes out taller on the screen side, so that it stands its full height above the border too."
+    ]
+  },
+  {
+    "version": 95,
+    "date": "2026-10-29",
+    "notes": [
+      "**All of the case variables in the openings and additions notes now work in the \"my screen openings\", \"my case openings\", \"my case additions\" and \"my tablet openings\" settings.** Using case height (**c_h**), case width (**c_w**), case corner radius (**c_cr**), case to screen depth (**ctsd**) or sloped edge width (**sew**) in one of these settings used to stop the keyguard from rendering at all, with \"Unknown identifier\" in the console. They now work there just as they do in `openings_and_additions.txt`."
+    ]
+  },
+  {
+    "version": 94,
+    "date": "2026-10-27",
+    "notes": [
+      "**Raised tabs are now exactly as thick as your \"preferred raised tab thickness\".** A raised tab that is all ramp with no flat section on top — which is how the tabs come out with the designer's standard settings, and always the case with a ramp angle of 0 — used to come out 1 mm thicker than the setting. The designer would also quietly make a tab thinner than you asked if it would have stood more than 1 mm above the top of the keyguard. Now every tab is built at the thickness you enter, however thick that is. If you made a keyguard with ramped raised tabs before this version and want the same tab when you print it again, add 1 mm to its preferred raised tab thickness (from 2 to 3, for example). The ready-to-print designs have been changed to 3 mm, so they print exactly as before. A tab with embedded magnets is still made thick enough to hold them.",
+      "\"Show split line\" no longer tells you to set it to \"no\" before rendering your design. The split line only ever appears on screen while you design; it is never part of a rendered keyguard or a file you export, so you can leave it on."
+    ]
+  },
+  {
+    "version": 93,
+    "date": "2026-10-27",
+    "notes": [
+      "**Light-sensor openings are in the right place again on the iPad Pro 13-inch (M4 and M5), the iPad Air 11-inch (M2, M3 and M4) and the iPad Air 13-inch (M2, M3 and M4).** Since version 78, a mistake in the designer's list of light-sensor positions gave each of these tablets another model's openings: small holes in the border where there is no sensor, with the real sensors covered, which can upset the screen's automatic brightness. Each tablet now gets its own. If you made a keyguard for one of these iPads with \"expose ambient light sensors\" set to yes, open the design again and export it once you have this version.",
+      "**The Tobii-Dynavox I-16 now gets its light-sensor openings.** It wasn't getting any, even with \"expose ambient light sensors\" set to yes."
+    ]
+  },
+  {
+    "version": 92,
+    "date": "2026-10-03",
+    "notes": [
+      "**Cell inserts now fit circular cells.** With the cell shape set to circular, a cell insert used to come out as a disc the size of the cell width and height settings rather than the cell diameter, so it did not fit the hole it was made for. It is now sized from the cell diameter, with Braille, engraved text and the finger opening placed within it, and your tightness of fit applies just as it does to a rectangular insert.",
+      "**A cell insert's finger opening is now centered when the insert carries no Braille or engraved text.** It used to sit low, leaving room for Braille that was never there."
+    ]
+  },
+  {
+    "version": 91,
+    "date": "2026-09-28",
+    "notes": [
+      "The pink marker on a highlighted opening now stops at the keyguard's surfaces in the Keyguard Designer web app. It used to stand about 2 mm proud of the front and back, because the marker is drawn from the same shape that cuts the opening and that shape is deliberately longer than the keyguard so it cuts cleanly through — which meant the bar of pink hid the very chamfer or slope you highlighted the opening to look at. Nothing about any keyguard changes, and there is nothing different to see in OpenSCAD."
+    ]
+  },
+  {
+    "version": 90,
+    "date": "2026-09-24",
+    "notes": [
+      "Fixed: **laser-cut designs now honor the \"trim to rectangle\" settings.** Asking for the first layer for an SVG/DXF file gave you the whole keyguard, ignoring the lower-left and upper-right corners you entered, even though the same settings trimmed the keyguard shown in OpenSCAD. The SVG you export for laser cutting is now trimmed to the rectangle you asked for."
+    ]
+  },
+  {
+    "version": 89,
+    "date": "2026-09-18",
+    "notes": [
+      "New **Keyguard Inset Info** section, for apps that have been shrunk to sit inside a white border rather than filling the whole screen. Turn on \"keyguard inset mode\" and enter the size of the border down the left side and the border across the bottom — in pixels measured off your screenshot, or in millimeters, whichever is easier. The right border is taken to match the left and the top to match the bottom, so those two numbers are all it needs. The designer then lays the grid, the bars, and any millimeter measurements in your openings and additions file out against the app instead of against the screen. The camera and home button cutouts, the fit of the keyguard in its case, and your imported screenshot all continue to use the real screen, so nothing about how the keyguard sits on the tablet changes. Measurements you give in pixels still start at the corner of the screenshot, since that is where a graphics program measures from.",
+      "`openings_and_additions.txt` gains four variables for the app's own edges — **aw** (app width), **ah** (app height), **at** (app top) and **ab** (app bottom) — which work exactly like the grid's **gw**, **gh**, **gt** and **gb**, in millimeters or pixels to match your unit of measure for the screen. **at** and **ab** are measured from whichever corner your \"starting corner for screen measurements\" names, so they swap over when you change it: from the upper-left corner **at** is the near edge and **ab** the far one, and from the lower-left corner it is the other way round — the same way **gt** and **gb** already behave. Without keyguard inset mode the app fills the screen, so all four are simply the screen's width, height and edges; with it on they follow the app.",
+      "New **hide app region** setting in the Keyguard Inset Info section, which works the way **hide the grid region** and **hide the screen region** already do: it removes the whole of the app's area from your design, leaving everything outside it. In keyguard inset mode that means the border around the app stays behind. Without keyguard inset mode the app fills the screen, so it removes the same thing hiding the screen region would. It applies to the keyguard frame as well as the keyguard, so both halves of a framed design agree about what is hidden.",
+      "Fixed: **laser-cut designs now honor \"hide the screen region\", \"hide the grid region\" and \"hide app region\".** On a laser-cut keyguard those settings could not remove anything — asking to hide the screen region gave you a solid panel with only the grid missing, instead of the opening you get on a 3D-printed keyguard. All three now cut the same area they cut in 3D. This applies to the SVG you export for laser cutting, from OpenSCAD or from the web app.",
+      "The designer now also reports the app's size to the Keyguard Designer web app, so that its **by eye** opening editor can place openings against the app when your screen measurements are in millimeters, and agree with the openings you type on the other tab. Nothing about the keyguard changes, and there is nothing different to see in OpenSCAD."
+    ]
+  },
+  {
+    "version": 88,
+    "date": "2026-09-16",
+    "notes": [
+      "Edge compensation for tight cases now works on designs that use a keyguard frame. It used to be ignored whenever a frame was turned on, so the openings ran the full width of the screen and cut right through the sides of both the keyguard and the frame."
+    ]
+  },
+  {
+    "version": 87,
+    "date": "2026-08-24",
+    "notes": [
+      "Adds the information the Keyguard Designer web app’s new **by eye** opening editor needs in order to work when your screen measurements are in pixels. Nothing about the keyguard changes, and there is nothing different to see in OpenSCAD."
+    ]
+  },
+  {
+    "version": 86,
+    "date": "2026-08-10",
+    "notes": [
+      "\"Move screenshot horizontally\" and \"move screenshot vertically\" now move the screenshot by the number of millimeters you enter. They were moving it only a tenth of that, so any small adjustment looked like it did nothing at all. The instructions printed in the Console now keep a tenth of a millimeter as well, instead of rounding the suggested border to the nearest whole millimeter."
+    ]
+  },
+  {
+    "version": 85,
+    "date": "2026-08-09",
+    "notes": [
+      "\"First two layers only\" now applies to the keyguard **frame** as well as the keyguard, so you can print a quick two-layer test of a frame to check its fit before committing to the full print. It carries through to the two halves of a split frame as well.",
+      "Fixed: with the number of rows or columns set to 0 there is no grid, so \"hide the grid region\" now leaves your design alone. It used to cut out the area the grid *would* have occupied.",
+      "\"Hide the grid region\" and \"hide the screen region\" now apply to the keyguard **frame** as well as the keyguard. Previously the frame kept that material even though the keyguard had it removed."
+    ]
+  },
+  {
+    "version": 84,
+    "date": "2026-08-05",
+    "notes": [
+      "Removed `tab1-4` from the list of case addition shapes in `openings_and_additions.txt`. The designer has never supported a shape by that name, so asking for one simply produced nothing.",
+      "If you use a case addition shape name the designer doesn't recognise, it now tells you so instead of quietly leaving that item out of your design."
+    ]
+  },
+  {
+    "version": 83,
+    "date": "2026-07-14",
+    "notes": [
+      "Openings and additions marked for highlighting (`\"#\"`) are now highlighted when you generate a keyguard **frame**, not just a keyguard. Previously a highlighted item simply didn't show up while the frame was being displayed. This covers everything the frame itself carries: openings placed in the screen area or the case area, plastic added to or subtracted from the frame edge, and tablet openings.",
+      "Fixed: a tablet opening now cuts all the way through a keyguard frame. It was only being cut to the *keyguard's* thickness, so on a frame thicker than the keyguard it left a blind pocket with a floor in it instead of an opening.",
+      "Fixed: when your design has a frame, tablet openings and case additions are now applied only to the frame — the part that actually carries them. The keyguard was also being cut for the same tablet openings (leaving a second, shallower hole with its own chamfer) and slotted for clip-on strap pedestals it never receives."
+    ]
+  },
+  {
+    "version": 82,
+    "date": "2026-07-03",
+    "notes": [
+      "The controls to slide the keyguard within its frame now take a distance in millimeters (entered in a number box, in 0.5 mm steps) instead of a percentage of the frame — so you can position the keyguard by the exact amount you want.",
+      "Frame posts now attach the keyguard to its frame correctly when the keyguard is slid within a widened frame: the frame's post slots and relief openings track the keyguard's position, the relief is squared to clear the posts, and cells/bars extend through the frame where they overlap it.",
+      "Fixed a bug where a frame post (and its matching slot) could float above the top edge of the keyguard instead of meeting it.",
+      "The top and bottom edges of the frame's post-relief opening are now chamfered."
+    ]
+  }
+];
 // @@RELEASE_NOTES_END@@
 
 // Two-line version banner: the running app release plus the loaded designer
@@ -2914,6 +3045,7 @@ async function checkForDesignerUpdate() {
     const resp = await fetch(DESIGNER_MANIFEST_URL + '?t=' + Date.now(), { cache: 'no-store' });
     if (!resp.ok) throw new Error('HTTP ' + resp.status);
     manifest = await resp.json();
+    keepDesignerHistory(manifest);
   } catch (e) {
     logLine(`Keyguard file: couldn't check for a newer version (${e.message}) — `
           + `you may be offline. Your keyguard file is unaffected.`);
@@ -3188,6 +3320,7 @@ async function offerStarterSetup(dirHandle, files) {
     const resp = await fetch(DESIGNER_MANIFEST_URL + '?t=' + Date.now(), { cache: 'no-store' });
     if (!resp.ok) throw new Error('HTTP ' + resp.status);
     manifest = await resp.json();
+    keepDesignerHistory(manifest);
   } catch (e) {
     logLine(`  This folder has no keyguard designer file, and the current one couldn't be `
           + `downloaded (${e.message}) — you may be offline. Nothing was changed.`);
@@ -6952,14 +7085,32 @@ function colorLabel(list, hex) {
 }
 // ---- Settings → About: Recent changes ----
 // The What's new notice shows once and is easy to close unread; this lists the
-// last three months of changes to keep. The app's own come bundled
-// (RELEASE_NOTES / RELEASE_DATES), so they show offline. The keyguard file's
-// change without an app release, so they come from the version list beside the
-// app (its `history`, written by publish-designer-file.mjs) — the same file and
-// address the update check already reads. Fetched when the tab is opened.
-let designerHistory = null;          // [{ version, date, notes }], 'failed', or null until fetched
-let designerHistoryAt = 0;
-let designerHistoryLoading = false;
+// last three months of changes to keep. Nothing here goes to the network. The
+// app's own changes are bundled (RELEASE_NOTES / RELEASE_DATES). So are the
+// keyguard file's as of this release (DESIGNER_NOTES); since those change without
+// an app release, every time the update check reads the version list beside the
+// app — at project open, and in Check my setup — its `history` is kept in the
+// browser, so a keyguard version released after this app still shows, offline too.
+const LS_DESIGNER_HISTORY = 'keyguard:designer-history';
+function validHistory(list) {
+  return Array.isArray(list) ? list.filter(e => e && Number.isFinite(Number(e.version))
+    && Array.isArray(e.notes) && e.notes.length && typeof e.date === 'string') : [];
+}
+function keepDesignerHistory(manifest) {
+  const h = validHistory(manifest && manifest.history);
+  if (!h.length) return;
+  try { localStorage.setItem(LS_DESIGNER_HISTORY, JSON.stringify(h)); } catch {}
+}
+// Bundled and kept, merged by version; the kept copy wins, being the newer.
+function designerHistory() {
+  const byVersion = new Map();
+  for (const e of validHistory(DESIGNER_NOTES)) byVersion.set(Number(e.version), e);
+  try {
+    for (const e of validHistory(JSON.parse(localStorage.getItem(LS_DESIGNER_HISTORY) || '[]')))
+      byVersion.set(Number(e.version), e);
+  } catch {}
+  return [...byVersion.values()];
+}
 
 function rcCutoff() {
   const d = new Date(); d.setMonth(d.getMonth() - 3);
@@ -6973,12 +7124,11 @@ function recentChanges() {
   const since = rcCutoff();
   const apps = Object.keys(RELEASE_NOTES).map(Number)
     .filter(n => Number.isFinite(n) && n <= APP_RELEASE && (RELEASE_NOTES[n] || []).length)
-    .map(n => ({ title: 'Web app release ' + n, date: RELEASE_DATES[n] || null, n, dev: !RELEASE_DATES[n],
+    .map(n => ({ title: 'Web app release ' + n, date: RELEASE_DATES[n] || null, n,
                  notes: RELEASE_NOTES[n].filter(Boolean) }));
-  const scads = Array.isArray(designerHistory) ? designerHistory
-    .filter(e => e && Number.isFinite(Number(e.version)) && Array.isArray(e.notes) && e.notes.length)
-    .map(e => ({ title: 'Keyguard designer version ' + e.version, date: e.date || null, n: Number(e.version),
-                 notes: e.notes.filter(Boolean).map(String) })) : [];
+  const scads = designerHistory()
+    .map(e => ({ title: 'Keyguard designer version ' + e.version, date: e.date, n: Number(e.version),
+                 notes: e.notes.filter(Boolean).map(String) }));
   // Three months back; a quiet spell still shows the newest of each, so the box
   // is never empty. An app entry with no date is the dev build's unreleased notes.
   const pick = list => {
@@ -6993,7 +7143,7 @@ function recentChanges() {
     (b.date || '9999') .localeCompare(a.date || '9999') || b.n - a.n);
 }
 function rcWhen(e) {
-  return e.date ? rcLongDate(e.date) : e.dev ? 'not released yet' : 'the newest';
+  return e.date ? rcLongDate(e.date) : 'not released yet';
 }
 function rcNoteHTML(s) {
   return tsEsc(s).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/`([^`]+)`/g, '<code>$1</code>');
@@ -7005,11 +7155,6 @@ function recentChangesHTML() {
           + `${rcWhen(e)}</span></div><ul>`
           + e.notes.map(t => `<li>${rcNoteHTML(t)}</li>`).join('') + '</ul>';
   }
-  if (designerHistory == null)
-    html += '<div class="rc-note">Fetching the keyguard designer file’s changes…</div>';
-  else if (designerHistory === 'failed')
-    html += '<div class="rc-note">The keyguard designer file’s changes couldn’t be fetched, so only the '
-          + 'app’s are shown. You may be offline; open this tab again once you’re connected.</div>';
   return html;
 }
 // Plain text for Copy, to paste into a document or an email and print.
@@ -7025,25 +7170,6 @@ function recentChangesText() {
 function wireRecentChanges(root) {
   const box = root.querySelector('#about-changes');
   if (!box) return;
-  const refresh = () => {
-    const b = settingsPanel.querySelector('#about-changes');
-    if (b) { const top = b.scrollTop; b.innerHTML = recentChangesHTML(); b.scrollTop = top; }
-  };
-  // Fetched again after ten minutes, or after a failure, so a list published
-  // while the app stays open still arrives.
-  const stale = designerHistory === 'failed' || Date.now() - designerHistoryAt > 10 * 60 * 1000;
-  if (stale && !designerHistoryLoading) {
-    designerHistoryLoading = true;
-    fetchOwn(DESIGNER_MANIFEST_URL).then(m => {
-      if (Array.isArray(m && m.history)) designerHistory = m.history;
-      // A list from before the history was added: just its newest version, undated.
-      else if (m && Array.isArray(m.notes)) designerHistory = [{ version: m.version, date: null, notes: m.notes }];
-      else designerHistory = 'failed';
-      designerHistoryAt = Date.now();
-    }).catch(() => {
-      if (!Array.isArray(designerHistory)) designerHistory = 'failed';
-    }).finally(() => { designerHistoryLoading = false; refresh(); });
-  }
   const copy = root.querySelector('#about-changes-copy');
   const msg  = root.querySelector('#about-changes-msg');
   copy.addEventListener('click', async () => {
@@ -7735,6 +7861,7 @@ async function runSetupCheck() {
       `ask your IT department to allow ${host}. Until then the app works, but can’t offer updates.`);
   }
   if (scadMan.status === 'fulfilled') {
+    keepDesignerHistory(scadMan.value);
     const latest = Number(scadMan.value && scadMan.value.version);
     const mine = project ? parseDesignerVersion(project.scadText) : null;
     if (!Number.isFinite(latest)) add('warn', 'The list of keyguard file versions couldn’t be read.');

@@ -112,9 +112,28 @@ for (const k of Object.keys(notes)) {
   else if (released.has(Number(k))) releaseDates[k] = today;
 }
 
+// ---- the keyguard file's recent changes -----------------------------------------
+// Settings → About lists these too. Bundled here, from the `history` in the version
+// list beside app.html (written by publish-designer-file.mjs), so the box needs no
+// network request of its own; each project open tops it up with anything newer
+// from the same list, which the update check fetches anyway.
+let designerNotes = [];
+try {
+  const h = JSON.parse(readFileSync(join(root, 'latest_scad_version.json'), 'utf8')).history;
+  if (Array.isArray(h)) designerNotes = h;
+} catch (e) {
+  console.error(`ERROR: could not read latest_scad_version.json: ${e.message}`);
+  process.exit(1);
+}
+if (!designerNotes.length) {
+  console.error('ERROR: latest_scad_version.json has no history. Run "publish the designer file" first.');
+  process.exit(1);
+}
+
 // ---- inject -------------------------------------------------------------------
 const body = `const RELEASE_NOTES = ${JSON.stringify(notes, null, 2)};\n`
-  + `const RELEASE_DATES = ${JSON.stringify(releaseDates, null, 2)};`;
+  + `const RELEASE_DATES = ${JSON.stringify(releaseDates, null, 2)};\n`
+  + `const DESIGNER_NOTES = ${JSON.stringify(designerNotes, null, 2)};`;
 const block = `${START}\n${body}\n${END}`;
 const re = new RegExp(`${START.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}[\\s\\S]*?${END.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`);
 writeFileSync(appPath, app.replace(re, block));

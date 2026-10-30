@@ -13,6 +13,8 @@ notes, because nothing at this address could have been missed yet.
 
 ## Unreleased (next release)
 
+- The **Recent changes** box in Settings → About now shows the keyguard designer file's changes even when you're offline. It no longer has to reach the internet when you open the About tab.
+
 ## Release 121
 
 - **You can look back at what's new whenever you like.** Settings → About now has a **Recent changes** box listing every change to the app and to the keyguard designer file over the last three months, newest first, each with its release or version number and the day it came out. It scrolls, and its **Copy** button copies the whole list so you can paste it into a document or an email and print it. The app's own changes are there even offline; the keyguard designer file's need a connection.
