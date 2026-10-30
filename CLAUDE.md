@@ -252,6 +252,12 @@ folder and no settings — expect to open the project again.
   GitHub Pages is a viable host.
 - **Storage keys** are `keyguard:settings` and `keyguard-db`. Older `keyguard-spike:*`
   names are read once as a fallback and migrated forward.
+- **Settings → About's Recent changes (release 121)** lists three months of app and
+  keyguard changes. The app's come from `RELEASE_NOTES` + `RELEASE_DATES`, which "apply
+  release notes" dates from the `Release N` commits; the keyguard's from the `history` in
+  `latest_scad_version.json`, which `publish-designer-file.mjs` writes from the .scad
+  CHANGELOG and its `Release Keyguard Designer version N` commits. Rename either commit
+  wording and the dates go missing.
 - **`__KG_DIMS__`** echo magic string in `keyguard.scad` ↔ parsed by `app.html` —
   a working contract; keep the two sides in lockstep.
 - **Changing origin empties localStorage, IndexedDB and OPFS for every user**, and

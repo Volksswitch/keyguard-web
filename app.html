@@ -588,6 +588,16 @@
   #settings-panel .ts-problems code { display: block; font: 11px/1.35 Consolas, monospace; color: #8a1020;
                                       white-space: pre-wrap; word-break: break-word; }
   #settings-panel .ts-problems .why { display: block; color: #555; margin-top: 2px; }
+
+  /* ---------- Settings → About: Recent changes ---------- */
+  #settings-panel #about-changes { height: 220px; overflow-y: auto; resize: vertical; padding: 6px 10px;
+                                   border: 1px solid #ccc; background: #fff; color: #333; line-height: 1.4; }
+  #settings-panel #about-changes .rc-head { font-weight: bold; margin: 10px 0 2px; }
+  #settings-panel #about-changes .rc-head:first-child { margin-top: 0; }
+  #settings-panel #about-changes .rc-date { font-weight: normal; color: #666; }
+  #settings-panel #about-changes ul { margin: 0; padding-left: 18px; }
+  #settings-panel #about-changes li { margin-bottom: 4px; }
+  #settings-panel #about-changes .rc-note { color: #666; margin-top: 10px; }
 </style>
 </head>
 <body>
@@ -1740,7 +1750,30 @@ const RELEASE_NOTES = {
   ],
   "120": [
     "The ? Help menu has two new links: How-to videos, which opens the list of how-to videos on volksswitch.org, and Documents, which opens the User Manual, the Quick Reference Card, the Keyguard Data Form and the other documents. \"Keyguard how-to pages\" is now called How-to pages, and Custom Openings moves has moved to the bottom of the menu's first section."
+  ],
+  "121": [
+    "You can look back at what's new whenever you like. Settings → About now has a Recent changes box listing every change to the app and to the keyguard designer file over the last three months, newest first, each with its release or version number and the day it came out. It scrolls, and its Copy button copies the whole list so you can paste it into a document or an email and print it. The app's own changes are there even offline; the keyguard designer file's need a connection."
   ]
+};
+const RELEASE_DATES = {
+  "101": "2026-08-24",
+  "102": "2026-09-01",
+  "104": "2026-09-18",
+  "106": "2026-09-18",
+  "107": "2026-09-26",
+  "108": "2026-09-28",
+  "109": "2026-09-30",
+  "110": "2026-09-30",
+  "111": "2026-10-03",
+  "112": "2026-10-15",
+  "113": "2026-10-16",
+  "114": "2026-10-16",
+  "115": "2026-10-26",
+  "116": "2026-10-26",
+  "117": "2026-10-27",
+  "118": "2026-10-29",
+  "119": "2026-10-29",
+  "120": "2026-10-30"
 };
 // @@RELEASE_NOTES_END@@
 
@@ -6916,6 +6949,114 @@ function colorLabel(list, hex) {
   const m = list.find(c => c.hex.toUpperCase() === h);
   return m ? m.name : 'Custom';
 }
+// ---- Settings → About: Recent changes ----
+// The What's new notice shows once and is easy to close unread; this lists the
+// last three months of changes to keep. The app's own come bundled
+// (RELEASE_NOTES / RELEASE_DATES), so they show offline. The keyguard file's
+// change without an app release, so they come from the version list beside the
+// app (its `history`, written by publish-designer-file.mjs) — the same file and
+// address the update check already reads. Fetched when the tab is opened.
+let designerHistory = null;          // [{ version, date, notes }], 'failed', or null until fetched
+let designerHistoryAt = 0;
+let designerHistoryLoading = false;
+
+function rcCutoff() {
+  const d = new Date(); d.setMonth(d.getMonth() - 3);
+  return d.toLocaleDateString('en-CA');                    // YYYY-MM-DD, local
+}
+function rcLongDate(iso) {
+  const [y, m, d] = iso.split('-').map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+}
+function recentChanges() {
+  const since = rcCutoff();
+  const apps = Object.keys(RELEASE_NOTES).map(Number)
+    .filter(n => Number.isFinite(n) && n <= APP_RELEASE && (RELEASE_NOTES[n] || []).length)
+    .map(n => ({ title: 'Web app release ' + n, date: RELEASE_DATES[n] || null, n, dev: !RELEASE_DATES[n],
+                 notes: RELEASE_NOTES[n].filter(Boolean) }));
+  const scads = Array.isArray(designerHistory) ? designerHistory
+    .filter(e => e && Number.isFinite(Number(e.version)) && Array.isArray(e.notes) && e.notes.length)
+    .map(e => ({ title: 'Keyguard designer version ' + e.version, date: e.date || null, n: Number(e.version),
+                 notes: e.notes.filter(Boolean).map(String) })) : [];
+  // Three months back; a quiet spell still shows the newest of each, so the box
+  // is never empty. An app entry with no date is the dev build's unreleased notes.
+  const pick = list => {
+    const inside = list.filter(e => !e.date || e.date >= since);
+    if (!inside.some(e => e.date)) {
+      const newest = list.filter(e => e.date).sort((a, b) => b.n - a.n)[0];
+      if (newest) inside.push(newest);
+    }
+    return inside;
+  };
+  return [...pick(apps), ...pick(scads)].sort((a, b) =>
+    (b.date || '9999') .localeCompare(a.date || '9999') || b.n - a.n);
+}
+function rcWhen(e) {
+  return e.date ? rcLongDate(e.date) : e.dev ? 'not released yet' : 'the newest';
+}
+function rcNoteHTML(s) {
+  return tsEsc(s).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/`([^`]+)`/g, '<code>$1</code>');
+}
+function recentChangesHTML() {
+  let html = '';
+  for (const e of recentChanges()) {
+    html += `<div class="rc-head">${tsEsc(e.title)} <span class="rc-date">· `
+          + `${rcWhen(e)}</span></div><ul>`
+          + e.notes.map(t => `<li>${rcNoteHTML(t)}</li>`).join('') + '</ul>';
+  }
+  if (designerHistory == null)
+    html += '<div class="rc-note">Fetching the keyguard designer file’s changes…</div>';
+  else if (designerHistory === 'failed')
+    html += '<div class="rc-note">The keyguard designer file’s changes couldn’t be fetched, so only the '
+          + 'app’s are shown. You may be offline; open this tab again once you’re connected.</div>';
+  return html;
+}
+// Plain text for Copy, to paste into a document or an email and print.
+function recentChangesText() {
+  const out = ['Keyguard Designer — recent changes, as of ' + rcLongDate(new Date().toLocaleDateString('en-CA')), ''];
+  for (const e of recentChanges()) {
+    out.push(`${e.title} — ${rcWhen(e)}`);
+    for (const t of e.notes) out.push('• ' + t.replace(/\*\*(.+?)\*\*/g, '$1').replace(/`([^`]+)`/g, '$1'));
+    out.push('');
+  }
+  return out.join('\n').trim() + '\n';
+}
+function wireRecentChanges(root) {
+  const box = root.querySelector('#about-changes');
+  if (!box) return;
+  const refresh = () => {
+    const b = settingsPanel.querySelector('#about-changes');
+    if (b) { const top = b.scrollTop; b.innerHTML = recentChangesHTML(); b.scrollTop = top; }
+  };
+  // Fetched again after ten minutes, or after a failure, so a list published
+  // while the app stays open still arrives.
+  const stale = designerHistory === 'failed' || Date.now() - designerHistoryAt > 10 * 60 * 1000;
+  if (stale && !designerHistoryLoading) {
+    designerHistoryLoading = true;
+    fetchOwn(DESIGNER_MANIFEST_URL).then(m => {
+      if (Array.isArray(m && m.history)) designerHistory = m.history;
+      // A list from before the history was added: just its newest version, undated.
+      else if (m && Array.isArray(m.notes)) designerHistory = [{ version: m.version, date: null, notes: m.notes }];
+      else designerHistory = 'failed';
+      designerHistoryAt = Date.now();
+    }).catch(() => {
+      if (!Array.isArray(designerHistory)) designerHistory = 'failed';
+    }).finally(() => { designerHistoryLoading = false; refresh(); });
+  }
+  const copy = root.querySelector('#about-changes-copy');
+  const msg  = root.querySelector('#about-changes-msg');
+  copy.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(recentChangesText());
+      msg.textContent = 'Copied. Paste it into a document or an email to print it.';
+    } catch {
+      const r = document.createRange(); r.selectNodeContents(box);
+      const s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+      msg.textContent = 'Press ' + HELP_MOD + '+C to copy the selected changes.';
+    }
+  });
+}
+
 // The About tab's designer line: which keyguard.scad the open project is
 // running on, and its version. Same number logVersionBanner puts in the
 // console at project open — repeated here so a clinician reporting a problem
@@ -7163,6 +7304,15 @@ const SETTINGS_PANELS = {
       <div style="margin-bottom:10px;">Release ${APP_RELEASE}</div>
       <label>Keyguard designer file</label>
       <div style="margin-bottom:10px;">${aboutDesignerLine()}</div>
+      <label>Recent changes</label>
+      <div style="margin-bottom:6px;">
+        What changed in the app and in the keyguard designer file over the last three months, newest first.
+      </div>
+      <div id="about-changes" tabindex="0" aria-label="Recent changes">${recentChangesHTML()}</div>
+      <div style="display:flex; gap:8px; align-items:center; margin:6px 0 14px;">
+        <button id="about-changes-copy" type="button">Copy</button>
+        <span id="about-changes-msg" style="color:#666;"></span>
+      </div>
       <label>License</label>
       <div style="margin-bottom:10px;">
         CC0 1.0 Universal — dedicated to the public domain. You are free to
@@ -7204,6 +7354,7 @@ function renderSettingsPanel(cat) {
   // The panel's markup is replaced on every render, so its controls are wired
   // each time rather than once at startup.
   wireAboutSettings(settingsPanel);
+  wireRecentChanges(settingsPanel);
   wireTroubleshooting(settingsPanel);
   const reloadBtn = settingsPanel.querySelector('#about-reload-btn');
   if (reloadBtn) reloadBtn.addEventListener('click', () => {

@@ -13,6 +13,8 @@ notes, because nothing at this address could have been missed yet.
 
 ## Unreleased (next release)
 
+- **You can look back at what's new whenever you like.** Settings → About now has a **Recent changes** box listing every change to the app and to the keyguard designer file over the last three months, newest first, each with its release or version number and the day it came out. It scrolls, and its **Copy** button copies the whole list so you can paste it into a document or an email and print it. The app's own changes are there even offline; the keyguard designer file's need a connection.
+
 ## Release 120
 
 - The **?** Help menu has two new links: **How-to videos**, which opens the list of how-to videos on volksswitch.org, and **Documents**, which opens the User Manual, the Quick Reference Card, the Keyguard Data Form and the other documents. "Keyguard how-to pages" is now called **How-to pages**, and **Custom Openings moves** has moved to the bottom of the menu's first section.

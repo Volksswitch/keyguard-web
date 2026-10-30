@@ -121,7 +121,9 @@ Everything the app fetches comes from there:
   (`keyguard.scad`) is a document the clinician keeps in their own project folder, and
   it is revised over time. When a project is opened, the app requests one small JSON
   file, served from the same origin, stating the current designer version. The request
-  sends no data — no identifiers, no design content, no usage information.
+  sends no data — no identifiers, no design content, no usage information. The same
+  file also carries the last few months of designer change notes, and the app requests
+  it again when the clinician opens Settings → About, to list them there.
 - **The designer file itself, only on acceptance.** If a newer version exists and the
   clinician explicitly accepts the offer, the app downloads the replacement from that
   same origin into the folder they chose. This never happens without a click, and it

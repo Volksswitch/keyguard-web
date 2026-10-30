@@ -43,6 +43,8 @@
 // is "bump keyguard designer", which runs this and then pushes.
 
 import { readFile, writeFile, readdir, unlink } from 'node:fs/promises';
+import { readFileSync } from 'node:fs';
+import { execSync } from 'node:child_process';
 import { join, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -62,6 +64,47 @@ const OA_FILENAME = 'openings_and_additions.txt';
 function die(msg) {
   console.error(`publish-designer-file: ${msg}`);
   process.exit(1);
+}
+
+// Settings → About lists the last three months of changes to the app and to the
+// keyguard file. The app's own are bundled in it; the keyguard file's change
+// without an app release, so they travel here, in the version list, as
+// [{ version, date, notes }] newest first. Notes come from the .scad project's
+// CHANGELOG.md ("## Version N" bullets, markdown kept: the app renders ** and `),
+// dates from its "Release Keyguard Designer version N" commits. Four months are
+// kept so the app's three-month window is always full; it does the cutting.
+function designerHistory() {
+  const dates = {};
+  const log = execSync('git log --reverse --date=short --format=%ad%x09%s', { cwd: SCAD_ROOT, encoding: 'utf8' });
+  for (const line of log.split('\n')) {
+    // "Release Keyguard Designer version 97"; before September 2026, "Release v85 — …".
+    const m = line.match(/^(\d{4}-\d{2}-\d{2})\tRelease (?:Keyguard Designer version |v)(\d+)(?:$|[ :])/);
+    if (m && !dates[m[2]]) dates[m[2]] = m[1];
+  }
+  const out = [];
+  let cur = null;
+  for (const raw of readFileSync(join(SCAD_ROOT, 'CHANGELOG.md'), 'utf8').split('\n')) {
+    const line = raw.replace(/\s+$/, '');
+    const h = line.match(/^##\s+(.*)$/);
+    if (h) {
+      const v = h[1].match(/^Version\s+(\d+)$/);
+      cur = v && Number(v[1]) <= version ? { version: Number(v[1]), date: dates[v[1]] || null, notes: [] } : null;
+      if (cur) out.push(cur);
+      continue;
+    }
+    if (!cur) continue;
+    const b = line.match(/^\s*-\s+(.*)$/);
+    if (b) cur.notes.push(b[1]);
+    else if (line.trim() && cur.notes.length && !/^#/.test(line)) cur.notes[cur.notes.length - 1] += ' ' + line.trim();
+  }
+  // A version with no release commit is old history, except the one being
+  // published, whose commit is dated today.
+  const today = new Date().toLocaleDateString('en-CA');
+  for (const e of out) if (!e.date && e.version === version) e.date = today;
+  const cutoff = new Date(); cutoff.setMonth(cutoff.getMonth() - 4);
+  const since = cutoff.toLocaleDateString('en-CA');
+  return out.filter(e => e.notes.length && e.date && e.date >= since)
+            .sort((a, b) => b.version - a.version);
 }
 
 function parseDesignerVersion(text) {
@@ -147,6 +190,7 @@ const outManifest = {
   oa_filename: OA_FILENAME,
   oa_url: `./${OA_FILENAME}`,
   notes,
+  history: designerHistory(),
 };
 await writeFile(
   join(WEB_ROOT, 'latest_scad_version.json'),
