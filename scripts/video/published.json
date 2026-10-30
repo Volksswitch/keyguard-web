@@ -13,15 +13,15 @@
       "published": "2026-10-27"
     },
     "1.4-first-grid": {
-      "signature": "064c920f5c354967d4df82a292aea9352d324b25d4d6bbe4ae6bae796c22c16e",
+      "signature": "9043269c16ba29c274daf86cc1660bba4a392b0fc0d0bb251a85a803f65c9f2c",
       "published": "2026-10-30"
     },
     "1.6-check-screenshot": {
-      "signature": "2203ac3946bddc7ef37b897e184e5ff393697cab4ff90b4d234d409c64eb5dbf",
+      "signature": "c47e8364abd9e5687e56b22445ade3a3a09a92af3cba4b86ab0d663c60d4acd3",
       "published": "2026-10-30"
     },
     "1.7-exporting": {
-      "signature": "8e25a21df050e408d1f4ecf883c96af9d0b01b9d244f065429518e3e51424718",
+      "signature": "4e4f9efcd274fe45551045bca3715e2ee0b3cf1afe21aaf47d437d40f34e961a",
       "published": "2026-10-30"
     },
     "2.1-tablet-and-case": {
@@ -69,24 +69,24 @@
       "published": "2026-10-27"
     },
     "3.8-text-braille": {
-      "signature": "1d00685b5ad751e7160e182ad8794373847a971402c9da15f8d563a51fbec423",
+      "signature": "95c24d9ba22546ccb4d6d2bb51e1ab10ecc1b4622e0e77dec78b24c7121737e5",
       "published": "2026-10-30"
     },
     "1.5-presets": {
-      "signature": "24b4e954d9875936fa81448762839444e1699d6976c8ca5073817f5e2bcab817",
-      "published": "2026-10-27"
+      "signature": "dca309773fd6f389288e6d0fe776739733e3e39c89c4f40f6aadfe384ed1fbaa",
+      "published": "2026-10-30"
     },
     "4.1-sharing": {
-      "signature": "46b70f277ab12f23604b08772f16a5db528f90f62ca06a6f3f9e362980bf9855",
+      "signature": "b106fdff6d66ede5a8fa6908d8885036158d1059debabf1b980c415ed0ed411d",
       "published": "2026-10-30"
     },
     "4.2-update-offered": {
-      "signature": "3f64a042ba1ee6eb7ab8db18a4e4a0dfc96c7d310d4006e42577b193657ed79e",
+      "signature": "8fe91ceedb49066fc706a92618f43538c5545ad2e8092b6accbcffe8b0514e85",
       "published": "2026-10-30"
     },
     "4.3-skill-levels": {
-      "signature": "a44ab27ce55c69a88bb11d57729c5631f070864ab37f4a2262df088b494b79a0",
-      "published": "2026-10-27"
+      "signature": "93df803d9d16fa6afe4a057d4742c2c103762abdbd3d4e6745304a172fdcde0b",
+      "published": "2026-10-30"
     },
     "5.1-printing": {
       "signature": "7c8679d320c598eb8e63c028204db2d2a7bfab7bd37aff070cf9a51eebfa6f81",

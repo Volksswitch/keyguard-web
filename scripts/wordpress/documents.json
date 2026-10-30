@@ -15,8 +15,8 @@
       "file": "Keyguard Designer User Manual.docx",
       "title": "User Manual",
       "date": "2026-10-30",
-      "mediaId": 24759,
-      "url": "https://volksswitch.org/wp-content/uploads/2026/10/Keyguard-Designer-User-Manual-1.pdf"
+      "mediaId": 24802,
+      "url": "https://volksswitch.org/wp-content/uploads/2026/10/Keyguard-Designer-User-Manual-2.pdf"
     },
     {
       "file": "Keyguard Designer Quick Reference Card.docx",
@@ -39,11 +39,13 @@
     {
       "file": "Keyguard Designer IT Request Letter.docx",
       "title": "Request to Allow the Keyguard Designer (for IT)",
-      "date": "2026-10-26",
-      "mediaId": 24654,
-      "url": "https://volksswitch.org/wp-content/uploads/2026/10/Keyguard-Designer-IT-Request-Letter.pdf",
+      "date": "2026-10-30",
+      "mediaId": 24800,
+      "url": "https://volksswitch.org/wp-content/uploads/2026/10/Keyguard-Designer-IT-Request-Letter-1.pdf",
       "fillable": true,
-      "word": true
+      "word": true,
+      "wordMediaId": 24799,
+      "wordUrl": "https://volksswitch.org/wp-content/uploads/2026/10/Keyguard-Designer-IT-Request-Letter.docx"
     },
     {
       "external": true,

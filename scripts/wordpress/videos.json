@@ -53,15 +53,15 @@
       }
     },
     "1.4-first-grid": {
-      "signature": "064c920f5c354967d4df82a292aea9352d324b25d4d6bbe4ae6bae796c22c16e",
-      "seconds": 75,
+      "signature": "9043269c16ba29c274daf86cc1660bba4a392b0fc0d0bb251a85a803f65c9f2c",
+      "seconds": 73,
       "video": {
-        "id": 24723,
-        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Keyguard-Designer-1-4-Your-First-Grid-Keyguard-1.mp4"
+        "id": 24767,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Keyguard-Designer-1-4-Your-First-Grid-Keyguard-2.mp4"
       },
       "guide": {
-        "id": 24724,
-        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Keyguard-Designer-1-4-Your-First-Grid-Keyguard-Guide-1.pdf"
+        "id": 24768,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Keyguard-Designer-1-4-Your-First-Grid-Keyguard-Guide-2.pdf"
       },
       "page": {
         "id": 24626,
@@ -69,35 +69,35 @@
       }
     },
     "1.6-check-screenshot": {
-      "signature": "2203ac3946bddc7ef37b897e184e5ff393697cab4ff90b4d234d409c64eb5dbf",
+      "signature": "c47e8364abd9e5687e56b22445ade3a3a09a92af3cba4b86ab0d663c60d4acd3",
       "seconds": 50,
       "video": {
-        "id": 24690,
-        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Keyguard-Designer-1-5-Checking-It-Against-a-Screenshot-1.mp4"
+        "id": 24771,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Keyguard-Designer-1-6-Checking-It-Against-a-Screenshot.mp4"
       },
       "guide": {
-        "id": 24691,
-        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Keyguard-Designer-1-5-Checking-It-Against-a-Screenshot-Guide-1.pdf"
+        "id": 24772,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Keyguard-Designer-1-6-Checking-It-Against-a-Screenshot-Guide.pdf"
       },
       "page": {
         "id": 24627,
-        "url": "https://volksswitch.org/index.php/keyguard-designer-videos/video-1-5/"
+        "url": "https://volksswitch.org/index.php/keyguard-designer-videos/video-1-6/"
       }
     },
     "1.7-exporting": {
-      "signature": "8e25a21df050e408d1f4ecf883c96af9d0b01b9d244f065429518e3e51424718",
+      "signature": "4e4f9efcd274fe45551045bca3715e2ee0b3cf1afe21aaf47d437d40f34e961a",
       "seconds": 67,
       "video": {
-        "id": 24725,
-        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Keyguard-Designer-1-6-Exporting-for-Printing-or-Cutting-1.mp4"
+        "id": 24773,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Keyguard-Designer-1-7-Exporting-for-Printing-or-Cutting.mp4"
       },
       "guide": {
-        "id": 24726,
-        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Keyguard-Designer-1-6-Exporting-for-Printing-or-Cutting-Guide-1.pdf"
+        "id": 24774,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Keyguard-Designer-1-7-Exporting-for-Printing-or-Cutting-Guide.pdf"
       },
       "page": {
         "id": 24628,
-        "url": "https://volksswitch.org/index.php/keyguard-designer-videos/video-1-6/"
+        "url": "https://volksswitch.org/index.php/keyguard-designer-videos/video-1-7/"
       }
     },
     "2.1-tablet-and-case": {
@@ -277,15 +277,15 @@
       }
     },
     "3.8-text-braille": {
-      "signature": "1d00685b5ad751e7160e182ad8794373847a971402c9da15f8d563a51fbec423",
-      "seconds": 43,
+      "signature": "95c24d9ba22546ccb4d6d2bb51e1ab10ecc1b4622e0e77dec78b24c7121737e5",
+      "seconds": 42,
       "video": {
-        "id": 24739,
-        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Keyguard-Designer-3-8-Engraved-Text-and-Braille-1.mp4"
+        "id": 24775,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Keyguard-Designer-3-8-Engraved-Text-and-Braille-2.mp4"
       },
       "guide": {
-        "id": 24740,
-        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Keyguard-Designer-3-8-Engraved-Text-and-Braille-Guide-1.pdf"
+        "id": 24776,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Keyguard-Designer-3-8-Engraved-Text-and-Braille-Guide-2.pdf"
       },
       "page": {
         "id": 24640,
@@ -293,67 +293,67 @@
       }
     },
     "1.5-presets": {
-      "signature": "24b4e954d9875936fa81448762839444e1699d6976c8ca5073817f5e2bcab817",
+      "signature": "dca309773fd6f389288e6d0fe776739733e3e39c89c4f40f6aadfe384ed1fbaa",
       "seconds": 51,
       "video": {
-        "id": 24603,
-        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Keyguard-Designer-4-1-Saving-Designs-as-Presets.mp4"
+        "id": 24769,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Keyguard-Designer-1-5-Saving-Designs-as-Presets.mp4"
       },
       "guide": {
-        "id": 24604,
-        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Keyguard-Designer-4-1-Saving-Designs-as-Presets-Guide.pdf"
+        "id": 24770,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Keyguard-Designer-1-5-Saving-Designs-as-Presets-Guide.pdf"
       },
       "page": {
         "id": 24641,
-        "url": "https://volksswitch.org/index.php/keyguard-designer-videos/video-4-1/"
+        "url": "https://volksswitch.org/index.php/keyguard-designer-videos/video-1-5/"
       }
     },
     "4.1-sharing": {
-      "signature": "46b70f277ab12f23604b08772f16a5db528f90f62ca06a6f3f9e362980bf9855",
+      "signature": "b106fdff6d66ede5a8fa6908d8885036158d1059debabf1b980c415ed0ed411d",
       "seconds": 57,
       "video": {
-        "id": 24741,
-        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Keyguard-Designer-4-2-Sharing-a-Design-1.mp4"
+        "id": 24777,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Keyguard-Designer-4-1-Sharing-a-Design.mp4"
       },
       "guide": {
-        "id": 24742,
-        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Keyguard-Designer-4-2-Sharing-a-Design-Guide-1.pdf"
+        "id": 24778,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Keyguard-Designer-4-1-Sharing-a-Design-Guide.pdf"
       },
       "page": {
         "id": 24642,
-        "url": "https://volksswitch.org/index.php/keyguard-designer-videos/video-4-2/"
+        "url": "https://volksswitch.org/index.php/keyguard-designer-videos/video-4-1/"
       }
     },
     "4.2-update-offered": {
-      "signature": "3f64a042ba1ee6eb7ab8db18a4e4a0dfc96c7d310d4006e42577b193657ed79e",
+      "signature": "8fe91ceedb49066fc706a92618f43538c5545ad2e8092b6accbcffe8b0514e85",
       "seconds": 33,
       "video": {
-        "id": 24700,
-        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Keyguard-Designer-4-3-When-a-Keyguard-Update-Is-Offered-1.mp4"
+        "id": 24779,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Keyguard-Designer-4-2-When-a-Keyguard-Update-Is-Offered.mp4"
       },
       "guide": {
-        "id": 24701,
-        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Keyguard-Designer-4-3-When-a-Keyguard-Update-Is-Offered-Guide-1.pdf"
+        "id": 24780,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Keyguard-Designer-4-2-When-a-Keyguard-Update-Is-Offered-Guide.pdf"
       },
       "page": {
         "id": 24643,
-        "url": "https://volksswitch.org/index.php/keyguard-designer-videos/video-4-3/"
+        "url": "https://volksswitch.org/index.php/keyguard-designer-videos/video-4-2/"
       }
     },
     "4.3-skill-levels": {
-      "signature": "a44ab27ce55c69a88bb11d57729c5631f070864ab37f4a2262df088b494b79a0",
+      "signature": "93df803d9d16fa6afe4a057d4742c2c103762abdbd3d4e6745304a172fdcde0b",
       "seconds": 35,
       "video": {
-        "id": 24609,
-        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Keyguard-Designer-4-4-Showing-More-Settings.mp4"
+        "id": 24781,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Keyguard-Designer-4-3-Showing-More-Settings.mp4"
       },
       "guide": {
-        "id": 24610,
-        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Keyguard-Designer-4-4-Showing-More-Settings-Guide.pdf"
+        "id": 24782,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Keyguard-Designer-4-3-Showing-More-Settings-Guide.pdf"
       },
       "page": {
         "id": 24644,
-        "url": "https://volksswitch.org/index.php/keyguard-designer-videos/video-4-4/"
+        "url": "https://volksswitch.org/index.php/keyguard-designer-videos/video-4-3/"
       }
     },
     "5.1-printing": {
@@ -392,12 +392,12 @@
       "signature": "4b6ef5becb0dce3d4ce1442fe0f114d7e7881d9722bf3e915ea330b3797ccca7",
       "seconds": 48,
       "video": {
-        "id": 24743,
-        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Keyguard-Designer-6-1-When-the-App-Looks-Wrong-1.mp4"
+        "id": 24783,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Keyguard-Designer-6-1-When-the-App-Looks-Wrong-2.mp4"
       },
       "guide": {
-        "id": 24744,
-        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Keyguard-Designer-6-1-When-the-App-Looks-Wrong-Guide-1.pdf"
+        "id": 24784,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Keyguard-Designer-6-1-When-the-App-Looks-Wrong-Guide-2.pdf"
       },
       "page": {
         "id": 24647,
@@ -454,13 +454,13 @@
     }
   },
   "courseMap": {
-    "signature": "7820911c42c133993a34119adc11c0dc24d7626a31f1792f604db8631a2fbd48",
-    "id": 24745,
-    "url": "https://volksswitch.org/wp-content/uploads/2026/10/Learning-the-Keyguard-Designer-1.pdf"
+    "signature": "1a328e0c240449b982f37cbb1ce627e8b2ddae3b708e25ea76661c32635138a1",
+    "id": 24785,
+    "url": "https://volksswitch.org/wp-content/uploads/2026/10/Learning-the-Keyguard-Designer-2.pdf"
   },
   "guideBook": {
-    "signature": "d897d3d51bb7082445546dbd738ee37528260c8b844c981fd2c4c372053c7b81",
-    "id": 24764,
-    "url": "https://volksswitch.org/wp-content/uploads/2026/10/Keyguard-Designer-How-To-Guides.pdf"
+    "signature": "cf0d4e3a0be2e68a86cb22f0c0dcc29c936ded3378af1fd6405e98e717715cf4",
+    "id": 24786,
+    "url": "https://volksswitch.org/wp-content/uploads/2026/10/Keyguard-Designer-How-To-Guides-1.pdf"
   }
 }
