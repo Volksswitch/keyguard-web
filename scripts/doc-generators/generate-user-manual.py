@@ -20,7 +20,7 @@ from kg_docstyle import DOCUMENTS, HERE, KgDoc, GREY  # noqa: E402
 OUT = sys.argv[1] if len(sys.argv) > 1 else os.path.join(
     DOCUMENTS, 'Keyguard Designer User Manual.docx')
 FIG = os.path.join(HERE, 'figures')
-UPDATED = 'October 27, 2026'
+UPDATED = 'October 30, 2026'
 
 
 def fig(name, caption, width=6.0):
@@ -145,7 +145,7 @@ d.h2('4.1  Start from the design default values')
 d.p("When a project opens, the preset box at the top of the Customizer shows **design default "
     "values**: a 3 by 4 grid keyguard for an iPad 9th generation. Every setting starts here.")
 d.p("Set the **Skill level** below the preset box to **Intermediate**. Beginner shows fewer "
-    "settings, but it hides the screenshot and the unit of measure, which this walkthrough uses.")
+    "settings, but it hides the screenshot and the pixel measurements, which this walkthrough uses.")
 d.h2('4.2  Choose the tablet and the case')
 d.p("Click a section's name to open it. In **Tablet**, choose the tablet model and the "
     "orientation the student uses, portrait or landscape.")
@@ -155,22 +155,24 @@ d.h2("4.3  Describe the app's layout")
 d.p("An AAC app usually has bars across the top of the screen: a status bar, a message bar that "
     "shows what has been said, and a command bar of controls. The keyguard needs to know how "
     "tall each one is, so the grid starts below them.")
-d.n("Choose the unit you measured in. **unit of measure for screen**, in Free-form and Hybrid "
-    "Keyguard Openings, is *px* for pixels read from the screenshot or *mm* for millimeters "
-    "measured on the screen.")
-d.n("In **App Layout in px** or **App Layout in mm**, enter the height of each bar.")
+d.n("In **App Layout in px** or **App Layout in mm**, enter the height of each bar. Fill in one "
+    "and leave the other at 0: if any number in App Layout in px is above 0, the millimeter "
+    "numbers are ignored.")
 d.n("In **Bar Info**, choose which bars get an opening. A message bar usually does, so the "
     "student can tap it to speak the message.")
-d.n("In **Grid Info**, enter the number of rows and columns.")
+d.n("In **Grid Info**, enter the number of rows and columns. If you give the openings' size in "
+    "pixels, set their size in millimeters to 0, or the millimeter size is used instead.")
 d.p("The 3D view redraws after each change.")
+d.p("None of this depends on the unit of measure for the screen. That setting is only for "
+    "openings placed by number (Section 7.2).")
 d.h2('4.4  Check it against the screenshot')
 d.p("In Special Actions and Settings, set **include screenshot** to *yes*. The screenshot "
     "appears beneath the keyguard, so you "
     "can see whether each opening sits over its button. Click the **Top** view button in the "
     "toolbar to look straight down at it.")
 fig('um-underlay.png', 'Figure 2. The keyguard over the screenshot, seen from the top.', 5.5)
-d.p("If the openings drift away from the buttons across the screen, check the bar heights and "
-    "the unit of measure. If the whole grid is shifted, check the case opening. If you have "
+d.p("If the openings drift away from the buttons across the screen, check the bar heights, and "
+    "that only one of App Layout in px and App Layout in mm is filled in. If the whole grid is shifted, check the case opening. If you have "
     "more than one screenshot in the folder, a picker in the 3D view lets you choose.")
 d.h2('4.5  Save the design')
 d.p("A red asterisk beside the preset box means you have changes that aren't saved. To keep the "
@@ -211,8 +213,8 @@ d.table(['Section', 'What it covers'], [
     ['Sloped Keyguard Edge Info', 'A sloped outer edge'],
     ['Engraved/Embossed Text', 'Text and braille on the keyguard'],
     ['Cell Inserts', 'Inserts that fit into cell openings'],
-    ['Free-form and Hybrid Keyguard Openings', 'The unit of measure for the screen, and the '
-     'corner measurements start from'],
+    ['Free-form and Hybrid Keyguard Openings', 'The unit of measure and starting corner for '
+     'openings placed by number'],
     ['Special Actions and Settings', 'The screenshot, edge chamfers, sizes for tablets not on '
      'the list, test prints of the first two layers, and the Custom Openings'],
 ], [2.2, 4.3], size=10)
@@ -224,7 +226,7 @@ d.b("**Intermediate:** adds pixel measurements, more grid settings, mounting and
     "keyguards.")
 d.b("**Advanced:** every setting, including frames, cell inserts and engraved text.")
 d.p("A lower level hides settings without changing them, so a design made at Advanced keeps all "
-    "its values when you switch to Beginner. At Beginner the screenshot, the unit of measure and "
+    "its values when you switch to Beginner. At Beginner the screenshot and "
     "the pixel measurements are hidden, which is why Section 4 uses Intermediate.")
 d.h2('5.3  Undo and redo')
 d.p("The curved arrows near the right end of the toolbar undo and redo changes to the settings. "
@@ -302,8 +304,11 @@ d.h2('7.2  The pixels or millimeters tab')
 d.p("This tab lists the same openings as numbers. Use it to type an exact position, or to check "
     "one you placed by eye.")
 fig('um-table.png', 'Figure 5. Custom Openings, pixels or millimeters tab.', 6.0)
-d.b("**Screen openings** are measured on the screen, in the unit the design uses. The heading "
-    "says which corner the measurements start from.")
+d.b("**Screen openings** are measured in the unit of measure for the screen, pixels or "
+    "millimeters, from its starting corner. Both are set in Free-form and Hybrid Keyguard "
+    "Openings, and the heading says which. Set them before you type: changing the unit later "
+    "converts these openings so they stay put, but not the ones in the openings and additions "
+    "file.")
 d.b("**Case openings** are measured in millimeters from the lower-left corner of the case "
     "opening. They're for openings outside the screen, and they live only on this tab.")
 d.b("Each opening is positioned by its center. For a circle, the height is the diameter.")
@@ -474,9 +479,11 @@ d.table(['What you see', 'What to do'], [
      'Troubleshooting or About tab, then open the project again. Your design is safe.'],
     ['The keyguard looks wrong', 'Read the Console. It usually names a setting that is out of '
      'range, or a line in the openings-and-additions file the designer couldn\'t read.'],
-    ['The openings don\'t line up with the screenshot', 'Check the unit of measure, the bar '
-     'heights and the case opening. A screenshot from a different tablet or orientation won\'t '
-     'line up.'],
+    ['The openings don\'t line up with the screenshot', 'Check the bar heights, that only one of '
+     'App Layout in px and App Layout in mm is filled in, and the case opening. A screenshot from '
+     'a different tablet or orientation won\'t line up.'],
+    ['An opening\'s size in pixels makes no difference', 'Set its size in millimeters, in Grid '
+     'Info, to 0. The millimeter size is used whenever it isn\'t 0.'],
     ['The by eye tab won\'t place openings in pixels', 'Accept the keyguard designer update when '
      'it\'s offered, or switch the unit of measure to mm.'],
     ['Your slicer reports problems with the STL', 'Export with STL* instead.'],
