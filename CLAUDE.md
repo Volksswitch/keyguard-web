@@ -43,19 +43,6 @@ plain `python -m http.server`.
 
 ---
 
-## How the app works (clinician's view)
-
-1. Opens `keyguard.volksswitch.org` (or serves it locally) in Chrome or Edge.
-2. Clicks **Open Project…**, picks a folder holding a `keyguard*.scad` (plus
-   optionally a `.json` preset file, `openings_and_additions.txt`, `default.svg`).
-3. A Customizer pane generates from the `.scad`'s declarations; presets come from
-   the `.json`. Changes auto-render (~0.5 s via Manifold).
-4. **Export** writes STL, SVG, or PNG to Downloads.
-
-The app does not bundle a project folder — clinicians assemble their own.
-
----
-
 ## ⚠ The two update paths, and the rule that binds them
 
 Both updates are automatic *for the clinician*. Neither reaches her without a push.
@@ -188,9 +175,6 @@ HERE in the same change. When Ken says the phrase, Claude runs it — in the
 background if long-running — and reports the result. Never hand Ken raw commands to
 type.
 
-Scripts must run unchanged on **either of two machines** sharing one OneDrive copy:
-derive paths from `$env:OneDrive`, never hardcode `C:\Users\<name>`.
-
 | Ken says | Claude runs | What it does |
 |---|---|---|
 | **"bump keyguard designer"** | `node scripts/release-designer.mjs` | **RELEASES THE KEYGUARD DESIGNER TO CLINICIANS, end to end, with TWO pushes — and NO app release.** Phase 1 (.scad repo): finalize its changelog to `## Version N`, regenerate its manifest, commit, push, pre-bump to N+1. Phase 2 (here): wait for GitHub to serve vN, publish the file beside `app.html`, commit just `keyguard_v*.scad` + `latest_scad_version.json`, push THAT COMMIT ALONE (rebuilt on top of what is live, so the app's unreleased `APP_RELEASE` pre-bump stays local — until 3 Oct 2026 it rode out with every keyguard version and made the live app claim the next release), then confirm the live address really reports vN. `APP_RELEASE`, `CACHE_NAME`, this changelog and `latest_app_version.json` are NOT touched. Refuses if the app has unreleased work of its own or unpushed commits beyond its pre-bump and notes and tools (`CLAUDE.md`, `TODO.md`, `scripts/`, which it holds back), if vN has no clinician notes, if either repo is off `main`, if release files are uncommitted, or if the keyguard would break the RETIRED app (see below) — all checked BEFORE the first push. `--dry-run` prints the plan and changes nothing. |
@@ -202,8 +186,8 @@ derive paths from `$env:OneDrive`, never hardcode `C:\Users\<name>`.
 | **"apply release notes"** | `node scripts/apply-release-notes.mjs` | Regenerates the bundled `RELEASE_NOTES` block in `app.html` from `CHANGELOG.md`. Run after EVERY changelog edit. <1 s. |
 | **"apply skill config"** | `node scripts/apply-skill-config.mjs` | Regenerates the `SKILL_LEVEL_DESCS` and `SKILL_CONFIG` blocks in `app.html` from `skill-config.txt`, which decides which Customizer settings each skill level sees. Edit the .txt, never the generated blocks. Moved here from the sibling 17 Sep 2026 (it had stayed behind and could only write the RETIRED app). <1 s. |
 | **"make video &lt;number&gt;"** | `node scripts/video/render-video.mjs scripts/video/scripts/<id>.mjs` | Makes one how-to video from its script: the real app with the sample project open, a ring on what the narration names, the narrator's voice from Azure (Conversant's Andrew, using Conversant's `.azure-key`), and a one-page guide from the same pictures. Writes `Videos/<id>.mp4`, `.srt`, `.pdf` and `.json`. **Stops if a ring points at nothing on screen**, so a moved or renamed button can't slip into a video. Takes a few minutes; run in the background. |
-| **"sync videos"** | `node scripts/video/sync-videos.mjs --publish` | **RE-MAKES EVERY VIDEO AND PUBLISHES WHAT CHANGED, in one phrase (Ken, 27 Oct 2026: "keep things simple").** Re-makes each video from its script and reports which changed since it was published (words, voice, or a clearly changed picture) and which couldn't be made, with the control each was looking for; speech is cached, so only changed wording costs anything. Then uploads exactly those changed or new videos and their guides to volksswitch.org (`scripts/wordpress/publish-videos.py`), gives a new video its watch page and its row on the videos page, updates the Next button on the video before it, and records each as published. It also re-makes the guide book (`scripts/video/guide_book.py`, Ken 30 Oct 2026): every guide in one PDF in viewing order, after a contents page, every page numbered, for a printout by the computer; linked on the videos page and uploaded again whenever a video or the list changes. A video that couldn't be made keeps its published copy. Then checks every link on the pages and in the published PDFs as a visitor (`check-links.py`), and names any video the User Manual doesn't link yet, for "sync docs". Takes a while: run it in the background and report all of it. **Run it after any app release that changes what the videos show.** Old copies of replaced files are listed for Ken, never deleted. `--only 1.` limits it to a group; without `--publish` it only re-makes and reports. |
-| **"sync docs"** | the seven steps in this row, in order | **BRINGS THE DOCUMENTS IN LINE WITH THE APP AND PUBLISHES WHAT CHANGED (Ken, 27 Oct 2026).** The documents are the five in `scripts/wordpress/documents.json`: Product Overview, User Manual, Quick Reference Card, IT Request Letter, Keyguard Data Form (added 30 Oct 2026, published as a PDF you can type into, made by `fillable_form.py`, with its Word file linked beside it; video 2.4 is made from its pictures, so after changing it run `python scripts/doc-generators/data-form-pictures.py`, and "sync videos" re-makes 2.4). ⚠ **Never regenerate a document from `scripts/doc-generators/`:** Ken edits the Word files, and the manual's contents are filled in by Word. Every change is a surgical edit to the .docx (Conversant's `docx_safe`), mirrored in its generator so the two don't drift. **1. Text:** read `CHANGELOG.md` since each document's "Last updated" date and correct what the app now does differently. **2. The manual's pictures:** `node scripts/doc-generators/capture-manual-figures.mjs http://localhost:8077`, the same with `https://keyguard.volksswitch.org --only um-check.png`, `python scripts/doc-generators/label-manual-figures.py`, `python scripts/doc-generators/update-manual-figures.py --apply` (each picture found by its caption). **3. Video links:** `python scripts/video/add-manual-links.py --apply` (a new video needs its section in that script's list first). **4.** Put today's date in the "Last updated" line of each document that changed, then `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/doc-generators/update-toc.ps1 <each changed .docx>`. **5.** `python scripts/wordpress/publish-documents.py --apply` (PDFs through Word, only documents whose date changed; `--force` for a second change the same day). **6.** `python scripts/wordpress/check-links.py`. **7.** If `SECURITY.docx` is newer than the security overview on the site, tell Ken: that PDF is his to replace in place, and nothing here uploads it. Every step backs a document up to `Documents/Doc Backups/` before changing it. |
+| **"sync videos"** | `node scripts/video/sync-videos.mjs --publish` | **RE-MAKES EVERY VIDEO AND PUBLISHES WHAT CHANGED** (and the guide book), then checks every link. Takes a while: run it in the background and report all of it. **Run it after any app release that changes what the videos show.** Step by step, in `scripts/video/CLAUDE.md`. |
+| **"sync docs"** | the **sync-docs** skill (`.claude/skills/sync-docs/SKILL.md`): seven steps, in order | **BRINGS THE FIVE PUBLISHED DOCUMENTS IN LINE WITH THE APP AND PUBLISHES WHAT CHANGED (Ken, 27 Oct 2026)**, then checks every link. ⚠ **Never regenerate a document from `scripts/doc-generators/`:** Ken edits the Word files; every change is a surgical edit to the .docx, backed up first and mirrored in its generator. |
 | **"publish app version"** | `node scripts/publish-app-version.mjs` | Rewrites `latest_app_version.json` from `APP_RELEASE`. **RELEASE-TIME ONLY** — part of the release merge, never day-to-day. |
 
 Because `CLAUDE.md` is auto-loaded per project, a new phrase only works after
@@ -296,17 +280,9 @@ Per-job logs may coexist, but their progress must flow into `progress.log` LIVE.
 
 ## Machine-name suffixed files are ALWAYS suspect
 
-Work happens on two machines sharing one OneDrive copy, and OneDrive resolves an
-edit collision by keeping both versions and renaming one after the losing machine —
-`app-Helix2.html`, `CLAUDE-Helix2.md`, `sw-Helix2.js`. **Any `-<MachineName>` suffix
-is sync-conflict debris, never authoritative.**
-
-**The test is whether the same name WITHOUT the suffix exists.** If it does, the
-suffixed file is a stale duplicate: **never read it as instructions or as the
-current state of the code** (a stale `CLAUDE-<machine>.md` will confidently state
-retired conventions), and **never edit it** — editing it looks like it worked and
-changes nothing Ken runs. If no unsuffixed twin exists, it may be the only copy of
-something: do not rename, adopt, or delete it on a guess — tell Ken.
+The rule is in the global CLAUDE.md: a `-<MachineName>` file beside its unsuffixed twin is
+stale sync-conflict debris (never read it as instructions, never edit it); with no twin,
+tell Ken. What this project adds:
 
 Before deleting, verify nothing lives only there — they are untracked, so git cannot
 restore them. A code file is safe when `git hash-object <copy>` matches a historical
@@ -317,58 +293,12 @@ Report what you verified.
 
 ## How-to videos are made, never edited (Ken, 26 Oct 2026)
 
-Ken: *"the videos should be generated so they can be modified automatically just like the
-Conversant videos."* Every video is a script in `scripts/video/scripts/`, rendered by
-`render-video.mjs` from the running app, and kept current by **"sync videos"**. Never fix a
-video by editing its file: change the script (or the app) and re-make it. The course order
-and titles live in `scripts/video/course.json`; a video's number doesn't change once it's
-published unless Ken decides otherwise, because its watch page's address comes from it (see
-"Renumbering" below). Outputs go in `Videos/`, which is git-ignored. The figures and the videos open
-the app the same way, through `scripts/lib/sample-project.mjs`.
-
-**File boxes are drawn, not described (Ken, 30 Oct 2026):** the computer's folder, Save As
-and Open boxes, and the browser's "edit files?" question, can't be captured, so a step shows
-a generic stand-in with `dialog:` (`scripts/video/file-dialog.mjs`) and rings its buttons.
-**The unit of measure for the screen is not a normal step:** it matters only for openings
-typed as numbers (Custom Openings, the openings and additions file), so videos mention it
-only there; video 2.5 explains which numbers count when pixels and millimeters are both filled in.
-
-**The User Manual links the videos section by section (Ken, 27 Oct 2026),** the same layout
-as Conversant's manuals: a "Video:" line at the end of each section a video covers, and the
-whole list in the Introduction. `scripts/video/add-manual-links.py` holds which section gets
-which video ("sync docs" runs it); never edit those links by hand. Each links its video's
-watch page at `volksswitch.org/index.php/keyguard-designer-videos/video-<n>-<n>/`, which
-`publish-videos.py` makes at exactly that address and refuses to make anywhere else.
-
-**On volksswitch.org (27 Oct 2026, Ken: "follow the template of the AI-driven AAC
-project")** the videos page `/index.php/keyguard-designer-videos/` (27 watch pages
-beneath it) and the documents page `/index.php/keyguard-designer-documents/` are public.
-**Ken's two phrases keep them current, and there are no others (27 Oct 2026: "I'd like to
-keep things simple"):** "sync videos" re-makes and publishes the videos, "sync docs"
-updates and publishes the documents, and each ends by checking every link. The scripts
-those phrases run (`scripts/wordpress/`, `add-manual-links.py`, `update-manual-figures.py`,
-`update-toc.ps1`) can be run alone only to repair a half-finished sync. Their media is in
-Customizable, 3D Printable Keyguard > Web App > Videos and Documents. **Nothing on the
-site linked to either page when they were made** — the site's menus don't add new pages
-by themselves; Ken links them where he wants them (the app's Help menu is in TODO.md).
-The scripts use Conversant's WordPress credentials file, not a copy.
-
-**More videos will be added (Ken, 27 Oct 2026).** To add one: write its script in
-`scripts/video/scripts/`; add it to `course.json` at the END of its group, with the next
-number in that group (published numbers stay put, because the manual and any email link
-their addresses); give it a section in `add-manual-links.py`'s list. Then "sync videos"
-makes and publishes it — its watch page, its row on the videos page, and the Next button
-on the video before it — and "sync docs" puts its link in the manual. A new group goes
-after the existing ones.
-
-**Renumbering is Ken's call, and has been done once (30 Oct 2026, Ken: "Renumber as 1.5"):**
-Saving Designs as Presets moved from 4.1 to 1.5, right after Your First Grid Keyguard, and
-five others moved with it (1.5→1.6, 1.6→1.7, 4.2→4.1, 4.3→4.2, 4.4→4.3). The reason it isn't
-routine: a link anyone saved to an old number then opens a different video. To do it: change
-the numbers in `course.json`, rename each script and its `id` to match (and its keys in
-`published.json` and `wordpress/videos.json`), point the manual's existing video links at
-the new addresses, then "sync videos": `publish-videos.py` moves each renumbered video's
-watch page to its new address before updating it.
+Every video is a script in `scripts/video/scripts/`, re-made by "sync videos"; never fix a
+video by editing its file. The rules for adding, renumbering and publishing videos, the file
+boxes, and the manual's video links are in `scripts/video/CLAUDE.md`, which loads when
+working there. **Ken's two phrases keep the website's videos and documents pages current,
+and there are no others (27 Oct 2026: "I'd like to keep things simple"):** "sync videos"
+and "sync docs".
 
 ---
 
