@@ -13,6 +13,8 @@ notes, because nothing at this address could have been missed yet.
 
 ## Unreleased (next release)
 
+## Release 120
+
 - The **?** Help menu has two new links: **How-to videos**, which opens the list of how-to videos on volksswitch.org, and **Documents**, which opens the User Manual, the Quick Reference Card, the Keyguard Data Form and the other documents. "Keyguard how-to pages" is now called **How-to pages**, and **Custom Openings moves** has moved to the bottom of the menu's first section.
 
 ## Release 119
