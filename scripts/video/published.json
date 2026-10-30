@@ -2,7 +2,7 @@
   "videos": {
     "1.1-what-for": {
       "signature": "346982144a118139cf8acf7bca9b8bdd0c605f91500b1d56c5a3c2adbdd31ac5",
-      "published": "2026-10-27"
+      "published": "2026-10-30"
     },
     "1.2-open-and-start": {
       "signature": "93fe2ecb176c8b6dd656ed314d6fef603a45c6ddfb5bdb5436d01e1305b71ca8",
@@ -18,7 +18,7 @@
     },
     "1.5-check-screenshot": {
       "signature": "2203ac3946bddc7ef37b897e184e5ff393697cab4ff90b4d234d409c64eb5dbf",
-      "published": "2026-10-27"
+      "published": "2026-10-30"
     },
     "1.6-exporting": {
       "signature": "b3abffef909799eba8261566a779ae34a8681b8e2a18ec7cde2c550ed821f6cf",
@@ -46,15 +46,15 @@
     },
     "3.2-by-eye": {
       "signature": "db952470bdacd4f05de5720159adc16048931109d667f464afd60faba999907a",
-      "published": "2026-10-27"
+      "published": "2026-10-30"
     },
     "3.3-typing-openings": {
       "signature": "4d9363e344b208a674b01952b8b0cc6602364ec69a3bbc21d4857c5eab156682",
-      "published": "2026-10-27"
+      "published": "2026-10-30"
     },
     "3.4-ridges-corners": {
       "signature": "75d3c7881df7d5a660419bb7eb2c5ed9d1cdf66cc6ba305b963d7e93e7a46ba0",
-      "published": "2026-10-27"
+      "published": "2026-10-30"
     },
     "3.5-slopes-bars": {
       "signature": "45b7711570e0ae34c3f50fbb6a89fb19bf776e589440decbfdd58dd2a76907b9",
@@ -62,7 +62,7 @@
     },
     "3.6-free-form": {
       "signature": "efe04a59b4b2237db30e5036578568850a6ec170588c7bfe831b0e5335eac406",
-      "published": "2026-10-27"
+      "published": "2026-10-30"
     },
     "3.7-splitting": {
       "signature": "b4265614677f14dc12e20f8029591f74713f9664a1918c86f2fc21b542252eef",
@@ -82,7 +82,7 @@
     },
     "4.3-update-offered": {
       "signature": "3f64a042ba1ee6eb7ab8db18a4e4a0dfc96c7d310d4006e42577b193657ed79e",
-      "published": "2026-10-27"
+      "published": "2026-10-30"
     },
     "4.4-skill-levels": {
       "signature": "a44ab27ce55c69a88bb11d57729c5631f070864ab37f4a2262df088b494b79a0",
@@ -90,11 +90,11 @@
     },
     "5.1-printing": {
       "signature": "7c8679d320c598eb8e63c028204db2d2a7bfab7bd37aff070cf9a51eebfa6f81",
-      "published": "2026-10-27"
+      "published": "2026-10-30"
     },
     "5.2-testing-fit": {
       "signature": "8dedb9f363b8ff43c505a44959a234b8e81a071efb1d6f3cdd8c2ed42b3ea81b",
-      "published": "2026-10-27"
+      "published": "2026-10-30"
     },
     "6.1-looks-wrong": {
       "signature": "4b6ef5becb0dce3d4ce1442fe0f114d7e7881d9722bf3e915ea330b3797ccca7",
@@ -106,7 +106,7 @@
     },
     "6.3-it-on-board": {
       "signature": "020c3c3db23bc9409787d538ca8546ba4a39668fb2a4c8942842f4a2c8a75ea4",
-      "published": "2026-10-27"
+      "published": "2026-10-30"
     }
   }
 }
