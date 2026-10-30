@@ -3,8 +3,9 @@
     python scripts/wordpress/publish-documents.py            # show what would change
     python scripts/wordpress/publish-documents.py --apply    # do it
     python scripts/wordpress/publish-documents.py --apply --force   # ignore the dates
-    python scripts/wordpress/publish-documents.py --apply --force --only "User Manual"
-                                    # only documents whose file name contains the text
+    python scripts/wordpress/publish-documents.py --apply --force --only "User Manual" --only card
+                                    # only these documents: each --only is matched against
+                                    # file names and titles, any case; a comma also separates
 
 Adapted from Conversant AAC's publish-documents.py (Ken, October 27 2026). For every
 document in documents.json whose "Last updated" date differs from the one already
@@ -19,10 +20,17 @@ document, so re-uploading everything each time would only leave a new copy of ev
 in the media library and change every link. ⚠ The date cannot see a second change on
 the same day: use --force for that.
 
-THE SECURITY OVERVIEW IS KEN'S. He converts SECURITY.docx to PDF and replaces the file in
-WordPress in place, because a new upload would get a new address and break the links to
-it (CLAUDE.md). It is listed with 'external': its date is read from the live PDF, and
-nothing here uploads it.
+THE SECURITY OVERVIEW KEEPS ITS ADDRESS (Ken, 30 Oct 2026: a standard step of "sync
+docs"). The IT letter, the documents page and every IT department that saved the link
+point at wp-content/uploads/2026/08/SECURITY.pdf, and a new upload would get a new
+address. So it is listed with 'replaceInPlace': when SECURITY.md's "Last updated" date
+differs from the live PDF's, this builds SECURITY.docx from the markdown
+(build-security-docx.py), exports SECURITY.pdf through Word, and stops there, saying
+REPLACE IN PLACE. Nothing reachable by a script can replace a file at its address: the
+site's Enable Media Replace plugin has no REST route (checked 30 Oct 2026). Claude does it
+in that plugin's screen ("Just replace the file") in Ken's Chrome while he is signed in,
+then runs this again, which downloads the live file, confirms it is the one just made,
+and records its date.
 
 A FORM IS FILLED IN ON THE COMPUTER (Ken, 30 Oct 2026: "Fillable PDF and Word"). A
 document listed with "fillable": true has typing boxes and checkboxes added to its PDF
@@ -35,10 +43,13 @@ the end so Ken can delete them in WordPress.
 
 ORDER: every upload first, the page once at the end, the local list after each upload.
 """
-import datetime, html, io, json, os, re, subprocess, sys, time, urllib.request
+import datetime, html, io, json, os, re, shutil, subprocess, sys, time, urllib.request
 
 import docx
 import fitz
+
+# The console on Windows is not UTF-8, and the messages carry ⚠ and →.
+sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 from wp import ROOT, UA, call, media_folder, upload
 
@@ -69,11 +80,43 @@ def byline_date(path):
     return date_in('\n'.join(p.text for p in docx.Document(path).paragraphs[:12]))
 
 
-def live_pdf_date(url):
-    req = urllib.request.Request(url, headers={'User-Agent': UA})
+def live_pdf(url):
+    """The live file's bytes and its "Last updated" date. The query string gets past any
+    cached copy, so a file just replaced in place is what is read."""
+    req = urllib.request.Request(f'{url}?t={int(time.time())}', headers={'User-Agent': UA})
     with urllib.request.urlopen(req, timeout=60) as r:
-        pdf = fitz.open(stream=io.BytesIO(r.read()), filetype='pdf')
-    return date_in(pdf[0].get_text())
+        data = r.read()
+    return data, date_in(fitz.open(stream=io.BytesIO(data), filetype='pdf')[0].get_text())
+
+
+def md_date(path):
+    with open(path, encoding='utf-8') as f:
+        return date_in(f.read(2000))
+
+
+def build_from_markdown(d):
+    """SECURITY.md -> SECURITY.docx -> SECURITY.pdf, both left at the project root.
+
+    ⚠ Built and exported in the temp folder, then copied in: Word opening a .docx that
+    OneDrive is still uploading hangs out of sight (the sync-docs skill), and this .docx
+    would be seconds old. It did exactly that on October 30 2026."""
+    src = os.path.join(ROOT, d['source'])
+    stem = os.path.splitext(os.path.basename(src))[0]
+    work = os.path.join(os.environ.get('TEMP', '/tmp'), 'keyguard-docs')
+    os.makedirs(work, exist_ok=True)
+    tmp_docx = os.path.join(work, stem + '.docx')
+    subprocess.run([sys.executable, os.path.join(ROOT, 'scripts', 'build-security-docx.py'), src, tmp_docx],
+                   check=True, capture_output=True)
+    tmp_pdf = export_pdf(tmp_docx)
+    shutil.copy2(tmp_docx, os.path.join(ROOT, stem + '.docx'))
+    pdf = os.path.join(ROOT, d['file'])
+    shutil.copy2(tmp_pdf, pdf)
+    return pdf
+
+
+def wanted(d, only):
+    names = (d.get('file', ''), d['title'])
+    return not only or any(o in n.lower() for o in only for n in names)
 
 
 def long_date(d):
@@ -145,21 +188,33 @@ def save(cfg):
 def main():
     apply = '--apply' in sys.argv
     force = '--force' in sys.argv
-    only = sys.argv[sys.argv.index('--only') + 1] if '--only' in sys.argv else None
+    only = [o.strip().lower() for i, a in enumerate(sys.argv) if a == '--only' and i + 1 < len(sys.argv)
+            for o in sys.argv[i + 1].split(',') if o.strip()]
     cfg = json.load(open(LIST, encoding='utf-8'))
     docs = cfg['documents']
-    replaced, plan = [], []
+    replaced, plan, in_place = [], [], []
 
     for d in docs:
-        if d.get('external'):
-            said = live_pdf_date(d['url'])
-            if said is None:
+        if d.get('replaceInPlace'):
+            live, live_date = live_pdf(d['url'])
+            if live_date is None:
                 raise SystemExit(f'No "Last updated" date found in {d["url"]}.')
-            if d.get('date') != said.isoformat():
-                print(f'  LISTED  {d["title"]}: {said} (Ken uploads this one himself)')
-                d['date'] = said.isoformat()
+            said = md_date(os.path.join(ROOT, d['source']))
+            if said is None:
+                raise SystemExit(f'No "Last updated" date found in {d["source"]} - fix the byline first.')
+            local = os.path.join(ROOT, d['file'])
+            if live_date == said and not (force and wanted(d, only)):
+                # Replaced since the last run: confirm it is the copy made here.
+                if os.path.exists(local) and open(local, 'rb').read() != live and d.get('date') != said.isoformat():
+                    print(f'  ⚠ {d["title"]}: the live file carries {said} but is not the {d["file"]} made here.')
+                if d.get('date') != said.isoformat():
+                    print(f'  CONFIRMED  {d["title"]}: the live copy is dated {said}')
+                    d['date'] = said.isoformat()
+                continue
+            if wanted(d, only):
+                in_place.append((d, said, live_date))
             continue
-        if only and only.lower() not in d['file'].lower():
+        if not wanted(d, only):
             continue
         path = os.path.join(DOCS, d['file'])
         said = byline_date(path)
@@ -173,8 +228,16 @@ def main():
         extra = ', '.join(w for w, on in (('fillable PDF', d.get('fillable')), ('and Word', d.get('word'))) if on)
         print(f'  {"NEW" if not d.get("mediaId") else "UPDATE"}  {d["title"]}: {d.get("date")} -> {said}'
               + (f'  ({extra})' if extra else ''))
+    for d, said, live_date in in_place:
+        print(f'  REPLACE IN PLACE  {d["title"]}: live {live_date} -> {said} (built from {d["source"]})')
 
     if apply:
+        for d, said, _ in in_place:
+            pdf = build_from_markdown(d)
+            print(f'  EXPORTED {pdf}')
+            print(f'  ⚠ NOW REPLACE IT IN PLACE: WordPress media item {d["mediaId"]}, Replace Media, '
+                  f'"Just replace the file", in Ken\'s Chrome with him signed in. Then run this again '
+                  f'to confirm the live copy. Its address stays {d["url"]}.')
         if plan and not cfg.get('mediaFolder'):
             cfg['mediaFolder'] = media_folder('Documents', WEB_APP_FOLDER)
             print(f'  MEDIA FOLDER Customizable, 3D Printable Keyguard > Web App > Documents (id {cfg["mediaFolder"]})')
@@ -229,7 +292,7 @@ def main():
         save(cfg)
     for title, mid, url in replaced:
         print(f'  OLD COPY LEFT IN MEDIA LIBRARY: {title} (id {mid}) {url}')
-    if not plan:
+    if not plan and not in_place:
         print('No documents changed.')
 
 

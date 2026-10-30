@@ -10,9 +10,9 @@ IT departments are handed it from the FAQ page. Nothing in the app links to the
 markdown, and a school's IT team does not go to a git repository. So the published
 file - not the markdown - is the deliverable.
 
-Ken converts the .docx to PDF himself and uploads it, so this script stops at the
-.docx. That is deliberate: he keeps editorial control of the final document, and an
-earlier version of this tool that produced the PDF directly took that away.
+The PDF and its upload are part of "sync docs" since 30 Oct 2026 (Ken):
+scripts/wordpress/publish-documents.py runs this, exports the PDF through Word, and the
+file is then replaced in place on the site. Run on its own, this still stops at the .docx.
 
 THE DOCX IS AN OUTPUT, and is gitignored. Never hand-edit it - edit SECURITY.md and
 rebuild, or the next rebuild silently discards the change. It is not tracked because
@@ -28,8 +28,9 @@ fails the test it invites the reader to run costs more trust than having none.
 
 WordPress renames a re-uploaded file (SECURITY-1.pdf, or a new month folder), which
 would break any link pointing at it and leave the stale copy live at the old
-address. Ken replaces the file IN PLACE via the Media Library so the existing link
-keeps working - which is also why the app deliberately contains no link to it.
+address. So the file is replaced IN PLACE through the Media Library (the sync-docs
+skill, step 6) and the existing link keeps working - which is also why the app
+deliberately contains no link to it.
 
     python scripts/build-security-docx.py                 -> ./SECURITY.docx
     python scripts/build-security-docx.py in.md           -> ./in.docx
@@ -298,5 +299,4 @@ counts = build()
 print(f"Wrote {OUT}")
 print("  " + ", ".join(f"{v} {k}{'s' if v != 1 else ''}" for k, v in counts.items()))
 if SRC.name == "SECURITY.md":
-    print("\nConvert to PDF yourself and replace the file IN PLACE in the WordPress Media")
-    print("Library, so the existing link keeps working.")
+    print('\nTo publish it, say "sync docs": it makes the PDF and replaces the file in place.')

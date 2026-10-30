@@ -205,7 +205,7 @@ quietly waits forever.
 - **Published 2026-10-27 at Ken's request** ("publish documents"), on the documents page
   `volksswitch.org/index.php/keyguard-designer-documents/`: Product Overview, User Manual,
   Quick Reference Card and the IT Request Letter, as PDFs Claude exported through Word.
-  The page also lists the security overview, which stays Ken's to upload.
+  The page also lists the security overview, which "sync docs" now publishes too (30 Oct).
 - **Linking the new pages from the website: Ken's call.** When they were made, nothing on
   the site linked the videos page or the documents page. Candidates: the keyguard hub page,
   the Keyguard Designer Web App page, the site menu and the home page below. The app's Help

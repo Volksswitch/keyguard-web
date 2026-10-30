@@ -1,5 +1,5 @@
 {
-  "_about": "The documents published on https://volksswitch.org/index.php/keyguard-designer-documents/ - in the order they appear there. Maintained by scripts/wordpress/publish-documents.py; add or remove an entry to change what is published. 'date', 'mediaId' and 'url' record what is live now and are written by the script; do not edit those by hand. An entry with 'external': true is a PDF Ken uploads himself (the security overview, replaced in place so its links keep working); the script only reads its date from the live file and lists it.",
+  "_about": "The documents published on https://volksswitch.org/index.php/keyguard-designer-documents/ - in the order they appear there. Maintained by scripts/wordpress/publish-documents.py; add or remove an entry to change what is published. 'date', 'mediaId' and 'url' record what is live now and are written by the script; do not edit those by hand. An entry with 'replaceInPlace': true (the security overview) is built from its 'source' markdown and must keep its address, so the script makes the PDF and Claude replaces the file in WordPress's own Replace Media screen, in Ken's Chrome while he is signed in; a re-run of the script then confirms the live copy and records its date.",
   "page": "keyguard-designer-documents",
   "pageTitle": "Keyguard Designer Documents",
   "mediaFolder": 109,
@@ -41,10 +41,13 @@
       "wordUrl": "https://volksswitch.org/wp-content/uploads/2026/10/Keyguard-Designer-IT-Request-Letter.docx"
     },
     {
-      "external": true,
       "title": "Security Overview (for IT)",
       "url": "https://volksswitch.org/wp-content/uploads/2026/08/SECURITY.pdf",
-      "date": "2026-10-30"
+      "date": "2026-10-30",
+      "source": "SECURITY.md",
+      "replaceInPlace": true,
+      "mediaId": 23435,
+      "file": "SECURITY.pdf"
     }
   ]
 }

@@ -181,13 +181,13 @@ type.
 | **(preflight, runs itself)** | `node scripts/check-old-app-compat.mjs` | Verifies a keyguard file still satisfies `old-app-contract.json` — what release 21 of the retired app reaches for by name: nine `-D` parameters, the `__KG_DIMS__` echo and its nine fields, and the option values it hardcodes. Stragglers on the old address are still offered every keyguard version and that address is never released again, so a version they cannot drive is a fault with no route to a fix. Release 21 is frozen, so the contract is fixed and never needs regenerating. Runs standalone against any file: pass a path. |
 | **"finish the keyguard delivery"** | `node scripts/release-designer.mjs --deliver` | **Phase 2 of "bump keyguard designer" on its own, for a version Phase 1 already pushed** — publish the file beside `app.html`, commit it, push THAT COMMIT ALONE (the same held-back safeguards), confirm the live address. Takes the version from the .scad repo's manifest. Use when a release stopped between the two pushes. ⚠ **Never finish one with a plain push of this repo** — it would carry the held-back pre-bump out. (Added 29 Oct 2026, when GitHub's five-minute cache stopped v97 halfway; the wait is now seven minutes.) |
 | **"publish the designer file"** | `node scripts/publish-designer-file.mjs` | The Phase 2 half on its own — fetches the PUBLISHED `keyguard.scad`, verifies the version, writes `keyguard_v<N>.scad` + `latest_scad_version.json`, removes the superseded copy. Writes no app file and does not commit or push. Idempotent. To finish a half-finished release use "finish the keyguard delivery", which also commits and pushes safely; the normal path is "bump keyguard designer". |
-| **"build the security document"** | `python scripts/build-security-docx.py` | Renders `SECURITY.md` to `SECURITY.docx`. **Ken converts the .docx to PDF himself and uploads it** — the script deliberately stops at the .docx so he keeps editorial control. The .docx is an OUTPUT and is **gitignored** — a .docx is a zip, so no two builds are byte-identical and tracking it churned the repo on every build; it lives on disk and syncs via OneDrive. Never hand-edit it. Requires python-docx. Takes an optional input path, so it renders any of this project's markdown as Word. |
+| **"build the security document"** | `python scripts/build-security-docx.py` | Renders `SECURITY.md` to `SECURITY.docx`, to read. **Publishing it is part of "sync docs" (Ken, 30 Oct 2026)**, which also makes the PDF and replaces the file on the site in place. The .docx is an OUTPUT and is **gitignored** — a .docx is a zip, so no two builds are byte-identical and tracking it churned the repo on every build; it lives on disk and syncs via OneDrive. Never hand-edit it. Requires python-docx. Takes an optional input path, so it renders any of this project's markdown as Word. |
 | **"bump keyguard web app"** | the ritual in `RELEASING.md` (sibling folder) | **RELEASES THIS APP TO CLINICIANS, through the push, with no second confirmation.** For the app's OWN work. Bumps `CACHE_NAME`, finalizes the changelog, regenerates notes, writes `latest_app_version.json`, commits, pushes, then pre-bumps `APP_RELEASE`. Ken issues it only after reading `CHANGELOG.md`. The retiring sibling has its own deliberately different phrase, "patch the retiring keyguard address" — confirm which folder you are in first. |
 | **"apply release notes"** | `node scripts/apply-release-notes.mjs` | Regenerates the bundled `RELEASE_NOTES` block in `app.html` from `CHANGELOG.md`. Run after EVERY changelog edit. <1 s. |
 | **"apply skill config"** | `node scripts/apply-skill-config.mjs` | Regenerates the `SKILL_LEVEL_DESCS` and `SKILL_CONFIG` blocks in `app.html` from `skill-config.txt`, which decides which Customizer settings each skill level sees. Edit the .txt, never the generated blocks. Moved here from the sibling 17 Sep 2026 (it had stayed behind and could only write the RETIRED app). <1 s. |
 | **"make video &lt;number&gt;"** | `node scripts/video/render-video.mjs scripts/video/scripts/<id>.mjs` | Makes one how-to video from its script: the real app with the sample project open, a ring on what the narration names, the narrator's voice from Azure (Conversant's Andrew, using Conversant's `.azure-key`), and a one-page guide from the same pictures. Writes `Videos/<id>.mp4`, `.srt`, `.pdf` and `.json`. **Stops if a ring points at nothing on screen**, so a moved or renamed button can't slip into a video. Takes a few minutes; run in the background. |
 | **"sync videos"** | `node scripts/video/sync-videos.mjs --publish` | **RE-MAKES EVERY VIDEO AND PUBLISHES WHAT CHANGED** (and the guide book), then checks every link. Takes a while: run it in the background and report all of it. **Run it after any app release that changes what the videos show.** Step by step, in `scripts/video/CLAUDE.md`. |
-| **"sync docs"** | the **sync-docs** skill (`.claude/skills/sync-docs/SKILL.md`): seven steps, in order | **BRINGS THE FIVE PUBLISHED DOCUMENTS IN LINE WITH THE APP AND PUBLISHES WHAT CHANGED (Ken, 27 Oct 2026)**, then checks every link. ⚠ **Never regenerate a document from `scripts/doc-generators/`:** Ken edits the Word files; every change is a surgical edit to the .docx, backed up first and mirrored in its generator. |
+| **"sync docs"** | the **sync-docs** skill (`.claude/skills/sync-docs/SKILL.md`): eight steps, in order | **BRINGS THE FIVE PUBLISHED DOCUMENTS IN LINE WITH THE APP AND PUBLISHES WHAT CHANGED (Ken, 27 Oct 2026)**, then checks every link. ⚠ **Never regenerate a document from `scripts/doc-generators/`:** Ken edits the Word files; every change is a surgical edit to the .docx, backed up first and mirrored in its generator. |
 | **"publish app version"** | `node scripts/publish-app-version.mjs` | Rewrites `latest_app_version.json` from `APP_RELEASE`. **RELEASE-TIME ONLY** — part of the release merge, never day-to-day. |
 
 Because `CLAUDE.md` is auto-loaded per project, a new phrase only works after
@@ -329,17 +329,18 @@ and "sync docs".
   change made here is currently covered only by a manual syntax check of the inline
   module. Moving or re-pointing the harness is unresolved.
 - **The security document is settled (1 Sep 2026)** and now lives here. `SECURITY.md`
-  is the source; "build the security document" renders `SECURITY.docx`; **Ken does the
-  .docx → PDF conversion and the upload himself.** The old PDF generator is gone.
+  is the source; "build the security document" renders `SECURITY.docx`; **"sync docs"
+  makes the PDF and replaces the published file in place** (Ken, 30 Oct 2026; until then
+  he did both himself). That one step needs Ken signed in to WordPress in Chrome.
   ⚠ **Whenever `app.html` changes what the app does on the network, in browser
   storage, or with the clinician's files, update `SECURITY.md` and rebuild in the same
   change** — the same lockstep rule as changelog-as-you-go, and for the same reason.
   Between May and August 2026 the published copy fell three months behind the app,
   still promising IT teams the app contacted no third party after the designer update
   check had shipped. A security document that fails the test it invites the reader to
-  run costs more trust than having none. **It is only correct once Ken has uploaded
-  it** — and he replaces the file in place in WordPress, because a re-upload would be
-  renamed and break the FAQ link.
+  run costs more trust than having none. **It is only correct once it is uploaded** —
+  replaced in place in WordPress, because a re-upload would be renamed and break the FAQ
+  link and the IT letter's.
 - **WASM OOM on heavy / no-recess designs** — intermittent `memory access out of
   bounds` from wasm32 address-space fragmentation. Workaround for clinicians:
   `Ctrl-Shift-R`. Real fix needs an openscad-wasm rebuild with `-sIMPORTED_MEMORY`
