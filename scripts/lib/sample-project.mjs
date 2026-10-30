@@ -108,7 +108,12 @@ export async function rememberFolder(page, opts = {}) {
 // timed out). It is turned down with Skip, which keeps the file, so the pictures stay
 // those of the sample. Video 4.3, which is about this very question, opens its folder
 // itself and never comes through here.
-async function skipUpdateOffer(page, ms = 5000) {
+//
+// On a busy computer the question can come later than 5 seconds (30 Oct 2026, while "sync
+// videos" was rendering: the figures stopped at the first click). So the wait is longer,
+// and the question is looked for again just before the first click, in case it came later
+// still.
+async function skipUpdateOffer(page, ms = 12000) {
   const end = Date.now() + ms;
   while (Date.now() < end) {
     if (await page.locator('#update-overlay.open').count()) {
@@ -130,6 +135,7 @@ export async function projectReady(page, { preset = 'WordPower 42', skill = 'int
   await skipUpdateOffer(page);
   await page.waitForFunction(opened, null, { timeout: 60000 });
   await settled(page, 2500);
+  await skipUpdateOffer(page, 1000);
   if (preset) {
     await page.click('#preset-dropdown-btn');
     await page.locator('#preset-list li', { hasText: preset }).first().click();

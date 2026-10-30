@@ -18,7 +18,7 @@ from kg_docstyle import DOCUMENTS, KgDoc, NAVY, GREY  # noqa: E402
 
 OUT = sys.argv[1] if len(sys.argv) > 1 else os.path.join(
     DOCUMENTS, 'Keyguard Designer Quick Reference Card.docx')
-UPDATED = 'October 26, 2026'
+UPDATED = 'October 30, 2026'
 W = [1.6, 5.7]          # two-column tables across the 7.3-inch measure
 
 d = KgDoc(footer='Keyguard Designer Quick Reference', body_pt=10, margin=0.6)
@@ -89,8 +89,9 @@ d.table(['Move', 'What it does'], [
     ['Shift + drag', 'Keep to a straight line.'],
     ['Ctrl + drag', 'Leave a copy behind and drag the copy.'],
     ['Arrow keys', 'Nudge 1 mm. Hold Shift for 10 mm.'],
-    ['Handles, yellow dot', "Resize; round a rectangle's corners or change a rounded corner."],
-    ['Delete, Ctrl+Z', 'Remove the selection; take back the last change.'],
+    ['Handles, yellow dot', "Resize (Shift keeps the shape, Ctrl the center; a circle's side "
+     'handle makes a hot dog); round corners.'],
+    ['Delete, Ctrl+Z', 'Remove the selection; take back the last change; Ctrl+Y puts it back.'],
     ['Esc', 'Let go of the selection, or close Custom Openings.'],
     ['Save, then Save preset', 'Save puts the openings in the design. Save preset keeps the '
      'design.'],
@@ -112,8 +113,8 @@ d.table(['If', 'Then'], [
     ['The keyguard stops updating', 'Settings, Troubleshooting, **Reload the app**, then open '
      'the project again. Your design is safe.'],
     ['It looks wrong', 'Read the Console below the 3D view. It usually names the setting.'],
-    ["The openings don't line up", 'Check the unit of measure, the bar heights and the case '
-     'opening.'],
+    ["The openings don't line up", 'Check the bar heights, that only one App Layout section is '
+     'filled in, and the case opening.'],
     ['Something is blocked', 'Click **?**, then **Check my setup**. It says what to ask IT for.'],
     ["It isn't a known issue", 'Click **?**, then **Report a problem**. You read the report '
      'before you send it.'],

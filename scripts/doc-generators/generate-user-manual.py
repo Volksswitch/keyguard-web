@@ -289,11 +289,16 @@ d.table(['Move', 'What it does'], [
     ['Ctrl + drag', 'Leaves a copy behind and drags the copy.'],
     ['Arrow keys', 'Nudge the selection 1 mm. Hold Shift for 10 mm.'],
     ['Handles', "Drag one to resize an opening, or drag a ridge's end to lengthen, shorten or "
-     'swing it.'],
+     "swing it. Hold Shift on a corner handle to keep a rectangle's proportions, and Ctrl to "
+     "grow or shrink it around its center; Ctrl on a ridge's end moves both ends. Drag a "
+     "circle's side handle to stretch it into a hot dog, a long opening with fully rounded "
+     'ends.'],
     ['Yellow dot', "Drag it to round a rectangle's corners, or to change a rounded corner."],
     ['Delete', 'Removes the selection.'],
     ['Ctrl+Z or Undo', 'Takes back the last change: a whole drag, or a whole run of arrow-key '
      'nudges.'],
+    ['Ctrl+Y or Redo', 'Puts back a change you took back. Undo and Redo are at the bottom of the '
+     'panel, and work on both tabs.'],
 ], [1.6, 4.9], size=10)
 d.p("On a Mac, use the Command key where this manual says Ctrl. To look at the keyguard square "
     "on again after turning it, click the **Top** view button in the toolbar.")
@@ -311,7 +316,8 @@ d.b("**Screen openings** are measured in the unit of measure for the screen, pix
     "file.")
 d.b("**Case openings** are measured in millimeters from the lower-left corner of the case "
     "opening. They're for openings outside the screen, and they live only on this tab.")
-d.b("Each opening is positioned by its center. For a circle, the height is the diameter.")
+d.b("Each opening is positioned by its center. For a circle, the height is the diameter. A hot "
+    "dog takes only a height and a width. Every change on this tab can be undone.")
 d.b("A tinted box holds a number you've changed but not applied. Press Enter, or click another "
     "box, to update the keyguard.")
 d.b("**+ Add opening** adds a row. Ridges are listed here too, with their angle; a ridge's x and "
