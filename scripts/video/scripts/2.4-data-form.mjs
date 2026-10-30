@@ -40,9 +40,10 @@ export default {
   ],
   steps: [
     { ...show('title'),
-      page: "The keyguard data form collects everything a keyguard needs. It's on volksswitch.org.",
+      page: "The keyguard data form collects everything a keyguard needs. It's on volksswitch.org, as a PDF or a Word file.",
       say: "The keyguard data form collects everything a keyguard needs, in one place. It's on " +
-           "volksswitch.org, on the Keyguard Designer documents page." },
+           "volksswitch.org, on the Keyguard Designer documents page. You can type into it on the " +
+           "computer, as a PDF or in Word, or print it." },
     { ...show('intro'),
       page: "Fill in what you know. Measure in millimeters. A screenshot of the app is the most useful thing to send.",
       say: "Fill in what you know, and leave the rest blank. Measure in millimeters. The most useful " +

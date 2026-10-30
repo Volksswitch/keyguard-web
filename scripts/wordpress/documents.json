@@ -27,7 +27,9 @@
     },
     {
       "file": "Keyguard Data Form.docx",
-      "title": "Keyguard Data Form"
+      "title": "Keyguard Data Form",
+      "fillable": true,
+      "word": true
     },
     {
       "file": "Keyguard Designer IT Request Letter.docx",

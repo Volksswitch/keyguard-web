@@ -24,6 +24,12 @@ WordPress in place, because a new upload would get a new address and break the l
 it (CLAUDE.md). It is listed with 'external': its date is read from the live PDF, and
 nothing here uploads it.
 
+A FORM IS FILLED IN ON THE COMPUTER (Ken, 30 Oct 2026: "Fillable PDF and Word"). A
+document listed with "fillable": true has typing boxes and checkboxes added to its PDF
+(doc-generators/fillable_form.py) before it is uploaded, and one with "word": true has its
+.docx uploaded too, linked as "Word" beside the PDF; its address is kept as wordMediaId and
+wordUrl. The Keyguard Data Form is both.
+
 WHY OLD PDFS ARE NOT DELETED. Deleting media is permanent. Replaced files are listed at
 the end so Ken can delete them in WordPress.
 
@@ -35,6 +41,11 @@ import docx
 import fitz
 
 from wp import ROOT, UA, call, media_folder, upload
+
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'doc-generators'))
+from fillable_form import make_fillable  # noqa: E402
+
+DOCX_MIME = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
 
 LIST = os.path.join(os.path.dirname(__file__), 'documents.json')
 DOCS = os.path.join(ROOT, 'Documents')
@@ -110,11 +121,17 @@ def export_pdf(path):
 
 
 def build_table(docs):
+    word = lambda d: (f' &nbsp;(<a href="{html.escape(d["wordUrl"])}">Word</a>)' if d.get('wordUrl') else '')
     rows = ''.join(
-        f'<tr><td><a href="{html.escape(d["url"])}">{html.escape(d["title"])}</a></td>'
+        f'<tr><td><a href="{html.escape(d["url"])}">{html.escape(d["title"])}</a>{word(d)}</td>'
         f'<td>{long_date(datetime.date.fromisoformat(d["date"]))}</td></tr>'
         for d in docs if d.get('url'))
-    return ('<!-- wp:paragraph -->\n<p>These Keyguard Designer documents are available as downloadable PDF files:</p>\n<!-- /wp:paragraph -->\n\n'
+    # Said only once a form is published, so the page reads as it did until then.
+    forms = [d['title'] for d in docs if d.get('url') and d.get('wordUrl')]
+    intro = 'These Keyguard Designer documents are available as downloadable PDF files'
+    intro += (f'. The {" and the ".join(forms)} can be typed into on the computer, in the PDF or in '
+              f'Word, or printed:' if forms else ':')
+    return (f'<!-- wp:paragraph -->\n<p>{intro}</p>\n<!-- /wp:paragraph -->\n\n'
             '<!-- wp:table -->\n<figure class="wp-block-table"><table><thead><tr><th>Document</th><th>Last updated</th></tr></thead>'
             f'<tbody>{rows}</tbody></table></figure>\n<!-- /wp:table -->')
 
@@ -153,7 +170,9 @@ def main():
         plan.append((d, said, path))
 
     for d, said, _ in plan:
-        print(f'  {"NEW" if not d.get("mediaId") else "UPDATE"}  {d["title"]}: {d.get("date")} -> {said}')
+        extra = ', '.join(w for w, on in (('fillable PDF', d.get('fillable')), ('and Word', d.get('word'))) if on)
+        print(f'  {"NEW" if not d.get("mediaId") else "UPDATE"}  {d["title"]}: {d.get("date")} -> {said}'
+              + (f'  ({extra})' if extra else ''))
 
     if apply:
         if plan and not cfg.get('mediaFolder'):
@@ -162,6 +181,20 @@ def main():
         for d, said, path in plan:
             pdf = export_pdf(path)
             print(f'  EXPORTED {os.path.basename(pdf)}')
+            if d.get('fillable'):
+                boxes, checks = make_fillable(pdf)
+                print(f'  FILLABLE {boxes} typing boxes, {checks} checkboxes')
+            if d.get('word'):
+                # The Word copy first: the date that marks the document done is written
+                # with the PDF below, so if that fails both are tried again next time, and
+                # this copy, already recorded, is listed then as one to delete.
+                wmedia = upload(path, pdf_name(d['file'])[:-4] + '.docx', DOCX_MIME,
+                                'Keyguard Designer ' + d['title'] + ' (Word)', cfg['mediaFolder'])
+                if d.get('wordMediaId'):
+                    replaced.append((d['title'] + ' (Word)', d['wordMediaId'], d['wordUrl']))
+                d.update(wordMediaId=wmedia['id'], wordUrl=wmedia['url'])
+                save(cfg)
+                print(f'  UPLOADED {wmedia["url"]}')
             media = upload(pdf, pdf_name(d['file']), 'application/pdf',
                            'Keyguard Designer ' + d['title'], cfg['mediaFolder'])
             if d.get('mediaId'):

@@ -14,6 +14,13 @@ Rows shaded yellow are measurements of the app taken with a ruler, which a scree
 unnecessary: the same convention as the older form, which also shaded the rows and columns
 (they're easy to count, and are asked for plainly here).
 
+It is filled in on the computer or on paper (Ken, 30 Oct 2026: "Fillable PDF and Word"):
+each box is a Word checkbox that ticks when it's clicked, and "sync docs" publishes this
+.docx beside a PDF whose answer spaces and boxes can be typed into and clicked
+(fillable_form.py adds them to the PDF Word makes). So every place to write is either an
+empty answer cell, a blank line (______), or a label ending in a colon with the rest of its
+line free: that is how the PDF's typing boxes are found.
+
 Video 2.4 is made from this form's pictures (scripts/video/scripts/2.4-data-form.mjs).
 
 ⚠ A generator rewrites the whole document. Once Ken has edited the .docx by hand, the
@@ -40,10 +47,46 @@ WIDTHS = [3.45, 3.65]
 HEAD_FILL, SHADE = 'D9E2F3', 'FFF2CC'
 
 d = KgDoc(footer='Volksswitch.org  |  Keyguard Data Form', body_pt=SIZE, margin=0.7)
+# The .docx itself is downloaded, so it carries its own name rather than the library's.
+props = d.doc.core_properties
+props.title, props.author, props.last_modified_by = 'Keyguard Data Form', 'Volksswitch', 'Volksswitch'
+props.comments = ''
 
 
 def boxes(*options):
     return '    '.join(f'{BOX} {o}' for o in options)
+
+
+def checkbox(p, size):
+    """A box Word ticks when it's clicked (a checkbox content control, in Word's own MS
+    Gothic like the ones its Developer tab makes). A PDF of the form prints it as an empty
+    box, which fillable_form.py finds and makes clickable there too."""
+    sdt, pr, cb = OxmlElement('w:sdt'), OxmlElement('w:sdtPr'), OxmlElement('w14:checkbox')
+    for tag, attrs in (('w14:checked', {'w14:val': '0'}),
+                       ('w14:checkedState', {'w14:val': '2612', 'w14:font': 'MS Gothic'}),
+                       ('w14:uncheckedState', {'w14:val': '2610', 'w14:font': 'MS Gothic'})):
+        el = OxmlElement(tag)
+        for k, v in attrs.items():
+            el.set(qn(k), v)
+        cb.append(el)
+    pr.append(cb)
+    sdt.append(pr)
+    content, r, rpr = OxmlElement('w:sdtContent'), OxmlElement('w:r'), OxmlElement('w:rPr')
+    fonts = OxmlElement('w:rFonts')
+    for a in ('w:ascii', 'w:hAnsi', 'w:eastAsia'):
+        fonts.set(qn(a), 'MS Gothic')
+    fonts.set(qn('w:hint'), 'eastAsia')
+    sz = OxmlElement('w:sz')
+    sz.set(qn('w:val'), str(round(size * 2)))
+    rpr.append(fonts)
+    rpr.append(sz)
+    t = OxmlElement('w:t')
+    t.text = BOX
+    r.append(rpr)
+    r.append(t)
+    content.append(r)
+    sdt.append(content)
+    p._p.append(sdt)
 
 
 def cant_split(row):
@@ -57,11 +100,22 @@ def fill_cell(cell, text, hint=None, bold=False, italic=False, size=SIZE, color=
     p.text = ''
     pf = p.paragraph_format
     pf.space_after, pf.space_before, pf.line_spacing = Pt(0), Pt(0), 1.0
-    d.runs(p, text, size=size, bold_all=bold, italic_all=italic, color=color)
+    for i, part in enumerate(text.split(BOX)):
+        if i:
+            checkbox(p, size)
+        if part:
+            d.runs(p, part, size=size, bold_all=bold, italic_all=italic, color=color)
     if hint:
         h = cell.add_paragraph()
         h.paragraph_format.space_after, h.paragraph_format.space_before = Pt(0), Pt(1)
         d.runs(h, hint, size=HINT, color=GREY, italic_all=True)
+
+
+def new_page():
+    """Start the next part on a new page. The little paragraph after the last table takes
+    "page break before" rather than a page break of its own: a full page pushed a break
+    onto the next page by itself, and left that page blank."""
+    d.doc.paragraphs[-1].paragraph_format.page_break_before = True
 
 
 def section(title, customizer, rows):
@@ -101,7 +155,8 @@ def section(title, customizer, rows):
 d.centered('Keyguard Data Form', 22, NAVY, bold=True, after=1)
 d.centered(f'For a custom keyguard from the Keyguard Designer  |  Volksswitch.org  |  Last updated {UPDATED}',
            9, GREY, after=6)
-d.p("Fill in what you know, and leave the rest blank. Whoever designs the keyguard enters these in the "
+d.p("Fill in what you know, and leave the rest blank. Type into it on the computer, in the PDF or in "
+    "Word, or print it and write. Whoever designs the keyguard enters these in the "
     "Keyguard Designer. Measure in millimeters. The most useful thing you can send is a **screenshot** of "
     "the app, taken on the tablet: with one, the rows shaded yellow can be skipped.")
 
@@ -134,7 +189,7 @@ section('The case', 'Tablet Case', [
      'height ______   width ______\nthickness ______   corners ______'),
 ])
 
-d.page_break()
+new_page()
 section('The AAC app', 'App Layout, Bar Info, Grid Info, Grid Special Settings', [
     ('The app, and the vocabulary or page set', None, ''),
     ('A screenshot of each page that needs a keyguard, taken on the tablet held the way the student '
@@ -168,7 +223,7 @@ section('How the student uses it', 'Keyguard Basics, Grid Special Settings', [
      'presses hard', 'keyguard thickness, cell edge slope', '\n\n'),
 ])
 
-d.page_break()
+new_page()
 section('Making and attaching it', 'Keyguard Basics, Mounting Method', [
     ('Made by', 'type of keyguard',
      f'{BOX} 3D printer (plastic)    {BOX} Laser cutter (acrylic)\n{BOX} No preference'),
@@ -182,7 +237,7 @@ section('Making and attaching it', 'Keyguard Basics, Mounting Method', [
 
 section('Words and braille', 'Engraved/Embossed Text, Cell Inserts', [
     ('Words to engrave, such as the student\'s name, and where', 'text, keyguard location',
-     f'\n{BOX} On the top    {BOX} On the back'),
+     f'words:\n{BOX} On the top    {BOX} On the back'),
     ('Braille labels: which buttons, and the words', 'Braille text', '\n'),
 ])
 
