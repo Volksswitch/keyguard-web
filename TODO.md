@@ -57,6 +57,17 @@ quietly waits forever.
 - **Why not now:** the pictures should show what clinicians are given, so they are made
   from the released app, after Ken releases 116.
 
+### Help menu: the Custom Openings moves card is missing releases 118 and 119
+- **Raised:** 2026-10-30, found during "sync docs", which brought the User Manual and the
+  Quick Reference Card up to date on the same moves.
+- **What's wanted:** the **?** → Custom Openings moves card (built into the app, so it works
+  offline) to say what the manual now says: Shift on a corner handle keeps a rectangle's
+  proportions, Ctrl grows or shrinks it around its center (and on a ridge's end moves both
+  ends), a circle's side handle stretches it into a hot dog, and Ctrl+Y (or Ctrl+Shift+Z)
+  and the Redo button put back what Undo took back, on either tab. A What's new note with it.
+- **Why not now:** Ken, 2026-10-30: "Not now". It is an app change, so it goes out with the
+  next app release rather than on its own.
+
 ### Help menu: links to the videos page and the documents page
 - **Raised:** 2026-10-27, Ken: *"I want to ensure that links for both of these pages are
   added to (or replace as appropriate) the entries in the Help (?) pop up."*
