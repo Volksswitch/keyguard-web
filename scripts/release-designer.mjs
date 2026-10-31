@@ -26,7 +26,8 @@
 // 24 Sep 2026 this script also shipped a token app release on the belief that it
 // had to; Ken's call to separate them. "bump keyguard web app" releases the app.
 //
-// Both rituals are transcribed from their own RELEASING.md files. Read those
+// Both rituals are transcribed from their own RELEASING.md files (the .scad repo's,
+// and this repo's, which moved here from keyguard-designer-web 30 Oct 2026). Read those
 // before changing anything here; this script must not invent process.
 //
 // ⚠ TWO PUSHES. Each reaches real clinicians. The trigger phrase is the single
@@ -36,7 +37,8 @@
 // ⚠ IT MUST NEVER CARRY THE APP'S OWN WORK. Pushing keyguard-web's main deploys
 // whatever is committed there, so this refuses to run when the app has unreleased
 // clinician-facing changes, or unpushed commits touching anything but notes and tools
-// (CLAUDE.md, TODO.md, HANDBOOK.md, README.md, scripts/) and the APP_RELEASE pre-bump,
+// (CLAUDE.md, TODO.md, HANDBOOK.md, README.md, RELEASING.md, scripts/) and the
+// APP_RELEASE pre-bump,
 // which it holds back.
 // The app's work deserves its own considered release (Ken, 1 Sep 2026).
 //
@@ -180,9 +182,9 @@ if (!DELIVER) {
 // allowed to wait there: the app's standing pre-bump (the APP_RELEASE line alone), and
 // NOTES AND TOOLS — CLAUDE.md, TODO.md and scripts/, which clinicians never run (Ken,
 // 27 Oct 2026: they were blocking an urgent keyguard fix while the app had nothing new
-// to release). HANDBOOK.md and README.md joined them 30 Oct 2026: successor notes.
+// to release). HANDBOOK.md, README.md and RELEASING.md joined them 30 Oct 2026.
 // Anything else is the app's own work and goes out as its own release.
-const NOTES = ['CLAUDE.md', 'TODO.md', 'HANDBOOK.md', 'README.md'];
+const NOTES = ['CLAUDE.md', 'TODO.md', 'HANDBOOK.md', 'README.md', 'RELEASING.md'];
 const HELD_BACK_OK = f => NOTES.includes(f) || f.startsWith('scripts/');
 const unpushed = git(WEB_ROOT, 'log', '--format=%h %s', 'origin/main..main')
   .split(NL).filter(Boolean);

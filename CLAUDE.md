@@ -18,11 +18,11 @@ appearing to serve this one). **Check `APP_RELEASE` in `app.html` before believi
 you are in the right place.**
 
 Things that still live ONLY in the old folder, and are still authoritative there:
-`RELEASING.md`, the Playwright test harness under `tests/`, and
-`KEYGUARD-MIGRATION-PLAN.docx`. Read them there; do not copy them here without
-deciding they should move. (`SECURITY.md` moved HERE on 1 Sep 2026 — it describes
-this app, and the frozen folder is the wrong home for a document that must change
-in lockstep with `app.html`.)
+the Playwright test harness under `tests/` and `KEYGUARD-MIGRATION-PLAN.docx`. Read
+them there; do not copy them here without deciding they should move. (`SECURITY.md`
+moved HERE on 1 Sep 2026, and `RELEASING.md` on 30 Oct 2026 — both describe this app,
+and the frozen folder is the wrong home for documents that must change with it. The
+old folder keeps its own `RELEASING.md` for its own phrase only.)
 
 ---
 
@@ -90,7 +90,7 @@ app refresh was required to deliver the file. It is not.)
 `release-designer.mjs` enforces the separation, because pushing this repo deploys
 whatever is committed on its `main`: it **refuses to run** when the app has unreleased
 clinician-facing work, or unpushed commits touching anything but notes and tools
-(`CLAUDE.md`, `TODO.md`, `HANDBOOK.md`, `README.md`, `scripts/`) and the `APP_RELEASE` pre-bump, and names what it
+(`CLAUDE.md`, `TODO.md`, `HANDBOOK.md`, `README.md`, `RELEASING.md`, `scripts/`) and the `APP_RELEASE` pre-bump, and names what it
 found. That work deserves its own release, not a free ride on a keyguard delivery.
 Release it first, then publish the keyguard. **Notes-and-tools commits are held back
 like the pre-bump (Ken, 27 Oct 2026):** the push carries the designer files alone and
@@ -122,8 +122,7 @@ OneDrive). **GitHub is release** — Pages serves `main`, so **pushing `main` =
 releasing to clinicians.** Between releases nothing is pushed, not even docs.
 
 Releasing is a deliberate, infrequent act, never an automatic consequence of a
-push. The full ritual is `RELEASING.md` **in the sibling `keyguard-designer-web`
-folder** — follow it exactly.
+push. The full ritual is [`RELEASING.md`](RELEASING.md) — follow it exactly.
 
 **Version numbering — the dev copy leads public by one.**
 - `APP_RELEASE` (in `app.html`) is pre-incremented at the END of each release, so a
@@ -177,12 +176,12 @@ type.
 
 | Ken says | Claude runs | What it does |
 |---|---|---|
-| **"bump keyguard designer"** | `node scripts/release-designer.mjs` | **RELEASES THE KEYGUARD DESIGNER TO CLINICIANS, end to end, with TWO pushes — and NO app release.** Phase 1 (.scad repo): finalize its changelog to `## Version N`, regenerate its manifest, commit, push, pre-bump to N+1. Phase 2 (here): wait for GitHub to serve vN, publish the file beside `app.html`, commit just `keyguard_v*.scad` + `latest_scad_version.json`, push THAT COMMIT ALONE (rebuilt on top of what is live, so the app's unreleased `APP_RELEASE` pre-bump stays local — until 3 Oct 2026 it rode out with every keyguard version and made the live app claim the next release), then confirm the live address really reports vN. `APP_RELEASE`, `CACHE_NAME`, this changelog and `latest_app_version.json` are NOT touched. Refuses if the app has unreleased work of its own or unpushed commits beyond its pre-bump and notes and tools (`CLAUDE.md`, `TODO.md`, `HANDBOOK.md`, `README.md`, `scripts/`, which it holds back), if vN has no clinician notes, if either repo is off `main`, if release files are uncommitted, or if the keyguard would break the RETIRED app (see below) — all checked BEFORE the first push. `--dry-run` prints the plan and changes nothing. |
+| **"bump keyguard designer"** | `node scripts/release-designer.mjs` | **RELEASES THE KEYGUARD DESIGNER TO CLINICIANS, end to end, with TWO pushes — and NO app release.** Phase 1 (.scad repo): finalize its changelog to `## Version N`, regenerate its manifest, commit, push, pre-bump to N+1. Phase 2 (here): wait for GitHub to serve vN, publish the file beside `app.html`, commit just `keyguard_v*.scad` + `latest_scad_version.json`, push THAT COMMIT ALONE (rebuilt on top of what is live, so the app's unreleased `APP_RELEASE` pre-bump stays local — until 3 Oct 2026 it rode out with every keyguard version and made the live app claim the next release), then confirm the live address really reports vN. `APP_RELEASE`, `CACHE_NAME`, this changelog and `latest_app_version.json` are NOT touched. Refuses if the app has unreleased work of its own or unpushed commits beyond its pre-bump and notes and tools (`CLAUDE.md`, `TODO.md`, `HANDBOOK.md`, `README.md`, `RELEASING.md`, `scripts/`, which it holds back), if vN has no clinician notes, if either repo is off `main`, if release files are uncommitted, or if the keyguard would break the RETIRED app (see below) — all checked BEFORE the first push. `--dry-run` prints the plan and changes nothing. |
 | **(preflight, runs itself)** | `node scripts/check-old-app-compat.mjs` | Verifies a keyguard file still satisfies `old-app-contract.json` — what release 21 of the retired app reaches for by name: nine `-D` parameters, the `__KG_DIMS__` echo and its nine fields, and the option values it hardcodes. Stragglers on the old address are still offered every keyguard version and that address is never released again, so a version they cannot drive is a fault with no route to a fix. Release 21 is frozen, so the contract is fixed and never needs regenerating. Runs standalone against any file: pass a path. |
 | **"finish the keyguard delivery"** | `node scripts/release-designer.mjs --deliver` | **Phase 2 of "bump keyguard designer" on its own, for a version Phase 1 already pushed** — publish the file beside `app.html`, commit it, push THAT COMMIT ALONE (the same held-back safeguards), confirm the live address. Takes the version from the .scad repo's manifest. Use when a release stopped between the two pushes. ⚠ **Never finish one with a plain push of this repo** — it would carry the held-back pre-bump out. (Added 29 Oct 2026, when GitHub's five-minute cache stopped v97 halfway; the wait is now seven minutes.) |
 | **"publish the designer file"** | `node scripts/publish-designer-file.mjs` | The Phase 2 half on its own — fetches the PUBLISHED `keyguard.scad`, verifies the version, writes `keyguard_v<N>.scad` + `latest_scad_version.json`, removes the superseded copy. Writes no app file and does not commit or push. Idempotent. To finish a half-finished release use "finish the keyguard delivery", which also commits and pushes safely; the normal path is "bump keyguard designer". |
 | **"build the security document"** | `python scripts/build-security-docx.py` | Renders `SECURITY.md` to `SECURITY.docx`, to read. **Publishing it is part of "sync docs" (Ken, 30 Oct 2026)**, which also makes the PDF and replaces the file on the site in place. The .docx is an OUTPUT and is **gitignored** — a .docx is a zip, so no two builds are byte-identical and tracking it churned the repo on every build; it lives on disk and syncs via OneDrive. Never hand-edit it. Requires python-docx. Takes an optional input path, so it renders any of this project's markdown as Word. |
-| **"bump keyguard web app"** | the ritual in `RELEASING.md` (sibling folder) | **RELEASES THIS APP TO CLINICIANS, through the push, with no second confirmation.** For the app's OWN work. Bumps `CACHE_NAME`, finalizes the changelog, regenerates notes, writes `latest_app_version.json`, commits, pushes, then pre-bumps `APP_RELEASE`. Ken issues it only after reading `CHANGELOG.md`. The retiring sibling has its own deliberately different phrase, "patch the retiring keyguard address" — confirm which folder you are in first. |
+| **"bump keyguard web app"** | the ritual in `RELEASING.md` | **RELEASES THIS APP TO CLINICIANS, through the push, with no second confirmation.** For the app's OWN work. Bumps `CACHE_NAME`, finalizes the changelog, regenerates notes, writes `latest_app_version.json`, commits, pushes, then pre-bumps `APP_RELEASE`. Ken issues it only after reading `CHANGELOG.md`. The retiring sibling has its own deliberately different phrase, "patch the retiring keyguard address" — confirm which folder you are in first. |
 | **"apply release notes"** | `node scripts/apply-release-notes.mjs` | Regenerates the bundled `RELEASE_NOTES` block in `app.html` from `CHANGELOG.md`. Run after EVERY changelog edit. <1 s. |
 | **"apply skill config"** | `node scripts/apply-skill-config.mjs` | Regenerates the `SKILL_LEVEL_DESCS` and `SKILL_CONFIG` blocks in `app.html` from `skill-config.txt`, which decides which Customizer settings each skill level sees. Edit the .txt, never the generated blocks. Moved here from the sibling 17 Sep 2026 (it had stayed behind and could only write the RETIRED app). <1 s. |
 | **"make video &lt;number&gt;"** | `node scripts/video/render-video.mjs scripts/video/scripts/<id>.mjs` | Makes one how-to video from its script: the real app with the sample project open, a ring on what the narration names, the narrator's voice from Azure (Conversant's Andrew, using Conversant's `.azure-key`), and a one-page guide from the same pictures. Writes `Videos/<id>.mp4`, `.srt`, `.pdf` and `.json`. **Stops if a ring points at nothing on screen**, so a moved or renamed button can't slip into a video. Takes a few minutes; run in the background. |

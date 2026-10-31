@@ -97,14 +97,10 @@ yourself.
   alone, and confirms the live site reports the new version. It refuses to run if
   anything would ship by accident, and checks the retired app can still use the new
   designer file. `--dry-run` shows the plan and changes nothing.
-- **"bump keyguard web app"** → the ritual in `RELEASING.md`. For changes to the app
+- **"bump keyguard web app"** → the ritual in [`RELEASING.md`](RELEASING.md). For changes to the app
   itself: moves `CACHE_NAME` in `sw.js`, renames the changelog's Unreleased section,
   regenerates the in-app "What's new" notes, writes `latest_app_version.json`, commits,
   pushes, then advances `APP_RELEASE` by one for the next cycle.
-
-⚠ **`RELEASING.md` lives in the retired repository (`keyguard-designer-web`), not here**,
-and the copy on GitHub is older than Ken's working copy. If it is missing or out of date,
-the shape above plus `CLAUDE.md`'s trigger-phrase table is enough to reconstruct it.
 
 The full list of commands, with what each refuses to do, is the table in
 [`CLAUDE.md`](CLAUDE.md). That file is written for Claude Code but reads fine for a human,
