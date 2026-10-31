@@ -8,6 +8,9 @@ anything: it runs `keyguard.scad` entirely inside Chrome or Edge. Public domain
 
 ## Why this repository exists
 
+**Picking this project up? Start with [`HANDBOOK.md`](HANDBOOK.md)** — what the parts
+are, how releases work, what must be paid for, and what was learned the hard way.
+
 The app used to be served from `volksswitch.github.io/keyguard-designer-web/`, an
 address shared with every other Volksswitch app ever published there — and one
 that many school and enterprise networks block outright, so the clinicians who

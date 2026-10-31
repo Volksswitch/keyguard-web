@@ -36,7 +36,8 @@
 // ⚠ IT MUST NEVER CARRY THE APP'S OWN WORK. Pushing keyguard-web's main deploys
 // whatever is committed there, so this refuses to run when the app has unreleased
 // clinician-facing changes, or unpushed commits touching anything but notes and tools
-// (CLAUDE.md, TODO.md, scripts/) and the APP_RELEASE pre-bump, which it holds back.
+// (CLAUDE.md, TODO.md, HANDBOOK.md, README.md, scripts/) and the APP_RELEASE pre-bump,
+// which it holds back.
 // The app's work deserves its own considered release (Ken, 1 Sep 2026).
 //
 //   node scripts/release-designer.mjs            -> the real thing, two pushes
@@ -179,8 +180,10 @@ if (!DELIVER) {
 // allowed to wait there: the app's standing pre-bump (the APP_RELEASE line alone), and
 // NOTES AND TOOLS — CLAUDE.md, TODO.md and scripts/, which clinicians never run (Ken,
 // 27 Oct 2026: they were blocking an urgent keyguard fix while the app had nothing new
-// to release). Anything else is the app's own work and goes out as its own release.
-const HELD_BACK_OK = f => f === 'CLAUDE.md' || f === 'TODO.md' || f.startsWith('scripts/');
+// to release). HANDBOOK.md and README.md joined them 30 Oct 2026: successor notes.
+// Anything else is the app's own work and goes out as its own release.
+const NOTES = ['CLAUDE.md', 'TODO.md', 'HANDBOOK.md', 'README.md'];
+const HELD_BACK_OK = f => NOTES.includes(f) || f.startsWith('scripts/');
 const unpushed = git(WEB_ROOT, 'log', '--format=%h %s', 'origin/main..main')
   .split(NL).filter(Boolean);
 if (unpushed.length) {
