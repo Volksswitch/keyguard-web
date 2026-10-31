@@ -139,6 +139,9 @@ and it is the most complete description of how this repository works.
   "Andrew" voice (`en-US-Andrew:DragonHDLatestNeural`, recorded in
   `scripts/video/voices.json`). "sync videos" re-makes them all and publishes what
   changed. Rules: `scripts/video/CLAUDE.md`.
+- **The sample projects** the videos and the manual's pictures are made from are in
+  `Documents/manual-sample/`, `Documents/video-samples/` and `Documents/video-pictures/`.
+  The Word and PDF files beside them are deliberately not in the repository.
 - **The security overview must always tell the truth.** Whenever the app changes what it
   does on the network, in browser storage, or with the clinician's files, update
   `SECURITY.md` in the same change and republish it **in place** in WordPress (a

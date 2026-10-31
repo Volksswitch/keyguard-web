@@ -18,6 +18,14 @@ SECURITY.pdf
 scripts/doc-generators/figures/
 __pycache__/
 
+# The published documents' Word and PDF files, and their backups. Ken edits the Word
+# files, and the generators in scripts/doc-generators/ are kept in step with them, so a
+# lost copy is regenerated from those (Ken, 30 Oct 2026). The sample projects and
+# pictures beside them ARE tracked: the videos and the manual's figures are made from them.
+Documents/*.docx
+Documents/*.pdf
+Documents/Doc Backups/
+
 # How-to videos and their speech cache: rendered by scripts/video/render-video.mjs.
 # Outputs, published to volksswitch.org, never served from here.
 Videos/

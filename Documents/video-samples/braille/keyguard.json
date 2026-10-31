@@ -1,0 +1,28 @@
+{
+    "parameterSets": {
+        "VocoChat": {
+            "height_of_opening_in_case": "163",
+            "width_of_opening_in_case": "239",
+            "unit_of_measure_for_screen": "px",
+            "starting_corner_for_screen_measurements": "upper-left",
+            "bottom_of_upper_command_bar": "98",
+            "top_of_lower_message_bar": "1620",
+            "top_of_lower_command_bar": "1620",
+            "expose_upper_command_bar": "yes",
+            "number_of_rows": "4",
+            "number_of_columns": "4",
+            "cell_height_in_px": "322",
+            "cell_width_in_px": "405",
+            "cell_height_in_mm": "0",
+            "cell_width_in_mm": "0",
+            "merge_cells_horizontally_starting_at": "14,15",
+            "top_padding": "1",
+            "bottom_padding": "1",
+            "left_padding": "2",
+            "right_padding": "31",
+            "include_screenshot": "yes",
+            "my_screen_openings": "[1,\"r\",344,270,30,1991,672,0,\"c\",\"\",0,0,[],[]],[2,\"r\",344,270,30,1991,1045,0,\"c\",\"\",0,0,[],[]],[3,\"r\",344,270,30,1991,1417,0,\"c\",\"\",0,0,[],[]],"
+        }
+    },
+    "fileFormatVersion": "1"
+}

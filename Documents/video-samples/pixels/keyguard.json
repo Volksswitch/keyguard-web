@@ -1,0 +1,26 @@
+{
+    "parameterSets": {
+        "WordPower 42 in pixels": {
+            "height_of_opening_in_case": "163",
+            "width_of_opening_in_case": "239",
+            "unit_of_measure_for_screen": "px",
+            "starting_corner_for_screen_measurements": "upper-left",
+            "bottom_of_status_bar": "33",
+            "bottom_of_upper_message_bar": "98",
+            "bottom_of_upper_command_bar": "186",
+            "top_of_lower_message_bar": "1620",
+            "top_of_lower_command_bar": "1620",
+            "expose_upper_message_bar": "yes",
+            "bar_edge_slope": "30",
+            "number_of_rows": "6",
+            "number_of_columns": "7",
+            "cell_height_in_px": "187",
+            "cell_width_in_px": "260",
+            "cell_height_in_mm": "0",
+            "cell_width_in_mm": "0",
+            "cell_corner_radius": "2",
+            "include_screenshot": "yes"
+        }
+    },
+    "fileFormatVersion": "1"
+}

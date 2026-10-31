@@ -1,0 +1,20 @@
+{
+    "parameterSets": {
+        "WordPower 42": {
+            "height_of_opening_in_case": "163",
+            "width_of_opening_in_case": "239",
+            "unit_of_measure_for_screen": "mm",
+            "status_bar_height": "3",
+            "upper_message_bar_height": "6",
+            "upper_command_bar_height": "9",
+            "expose_upper_message_bar": "yes",
+            "bar_edge_slope": "30",
+            "number_of_rows": "6",
+            "number_of_columns": "7",
+            "cell_height_in_mm": "18",
+            "cell_corner_radius": "2",
+            "include_screenshot": "yes"
+        }
+    },
+    "fileFormatVersion": "1"
+}
