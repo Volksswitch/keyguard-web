@@ -318,7 +318,10 @@ and "sync docs".
 [HANDBOOK.md](HANDBOOK.md) is for whoever carries this on if Ken cannot: the parts, how
 releases work, the accounts, what must be paid for, and the hard-won lessons, rewritten
 for a newcomer. **Keep it current when any of those change** (a new account or service,
-a release command, a new lesson worth a newcomer knowing). It is public: **never put a
+a release command, a new lesson worth a newcomer knowing). **Ken reads it as Word:
+after every edit, rebuild `HANDBOOK.docx`** with
+`python scripts/build-security-docx.py HANDBOOK.md HANDBOOK.docx` (gitignored, an
+output; never hand-edit it). It is public: **never put a
 password, key or account number in it.** Those belong in Ken's private list,
 `Keyguard Designer - Private Accounts List.docx` in the `Keyguard` folder (outside every
 repository), which only says where each secret is kept. Ken's scope: unreleased work,

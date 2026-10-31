@@ -12,6 +12,8 @@ progress.log
 # "sync docs" is an output too, for the same reason.
 SECURITY.docx
 SECURITY.pdf
+# The handbook's Word copy, for Ken to read; rebuilt from HANDBOOK.md, same reason.
+HANDBOOK.docx
 
 # Manual figures: screenshots regenerated from the running app by
 # scripts/doc-generators/capture-manual-figures.mjs, so they are outputs, not sources.
