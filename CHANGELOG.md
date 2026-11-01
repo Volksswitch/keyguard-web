@@ -13,6 +13,8 @@ notes, because nothing at this address could have been missed yet.
 
 ## Unreleased (next release)
 
+- **A project or presets file with saved designs now opens on a saved design.** It shows the first design in the preset list, in your chosen sort order, so a file someone sends you opens on their design instead of the design default values. **design default values** is still first in the list whenever you want it, and it's what you see when nothing has been saved yet. Before you change settings and click **+** to make a new design, check that the preset box shows the design you want to begin from.
+
 ## Release 122
 
 - The **Recent changes** box in Settings → About now shows the keyguard designer file's changes even when you're offline. It no longer has to reach the internet when you open the About tab.

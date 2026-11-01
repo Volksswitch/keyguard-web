@@ -1755,6 +1755,9 @@ const RELEASE_NOTES = {
   ],
   "122": [
     "The Recent changes box in Settings → About now shows the keyguard designer file's changes even when you're offline. It no longer has to reach the internet when you open the About tab."
+  ],
+  "123": [
+    "A project or presets file with saved designs now opens on a saved design. It shows the first design in the preset list, in your chosen sort order, so a file someone sends you opens on their design instead of the design default values. design default values is still first in the list whenever you want it, and it's what you see when nothing has been saved yet. Before you change settings and click + to make a new design, check that the preset box shows the design you want to begin from."
   ]
 };
 const RELEASE_DATES = {
@@ -2451,6 +2454,13 @@ function orderedPresetNames(rawNames) {
   )];
 }
 
+// The design shown when presets are opened: the first saved one in list order,
+// so a file holding a design opens on that design. 'design default values' only
+// when nothing is saved; it is still first in the list, to choose (Ken, 1 Nov 2026).
+function openingPreset(presetNames) {
+  return presetNames[1] || presetNames[0];
+}
+
 // Rebuild the editable preset combobox: set the input to the current preset
 // and rebuild the dropdown list, marking the active item. The list items use
 // mousedown (not click) so selection runs before the input's blur-revert.
@@ -2955,7 +2965,7 @@ async function openProject(presetHandle = null) {
 
   const jsonFileHandle = jsonName ? (fileHandles[jsonName] || null) : null;
   project = { dirHandle, scadName, scadText, jsonName, jsonText, jsonFault, jsonFileHandle, oaText, oaMtime, oaHash, files,
-              rawPresetNames, presetNames, currentPreset: presetNames[0], customizer, baselineParams: {},
+              rawPresetNames, presetNames, currentPreset: openingPreset(presetNames), customizer, baselineParams: {},
               screenshotName: null, screenshotBytes: null, screenshotTexture: null,
               imageNames: [], selectedScreenshot: null, imgListSig: null,
               dims: null, warnedNoScreenshot: false };
@@ -6832,7 +6842,7 @@ document.getElementById('open-json-btn').addEventListener('click', async () => {
     project.jsonFileHandle = handle || null;
     project.rawPresetNames = rawPresetNames;
     project.presetNames = presetNames;
-    project.currentPreset = presetNames[0];
+    project.currentPreset = openingPreset(presetNames);
     rebuildPresetDropdown();
     populateFormFromPreset(project.currentPreset);
     resetHistory();   // new preset file → wipe the stack

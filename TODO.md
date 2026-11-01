@@ -22,6 +22,17 @@ quietly waits forever.
 
 ## Open
 
+### User Manual: what a project opens on (release 123)
+- **Raised:** 2026-11-01 - projects and presets files with saved designs now open on the
+  first saved design (Ken).
+- **What's wanted:** section 4.1 says that when a project opens, the preset box shows design
+  default values, and that "every setting starts here." That is now true only of a project
+  with no saved designs. Reword it for a new project, and say that design default values is
+  a set of defaults to choose from the list, not a blank slate (Ken: they "aren't really
+  'from scratch'"). A surgical edit to the Word file, mirrored in its generator, in "sync docs".
+- **Why it is not being done now:** the published manual should describe the released app, and
+  this change is not released yet. Do it at the first "sync docs" after release 123.
+
 ### After release 116: pictures that still show versioned file names
 - **Raised:** 2026-10-26 - the plain file names change (`keyguard.scad`, `keyguard.json`),
   unreleased at the time of writing.
