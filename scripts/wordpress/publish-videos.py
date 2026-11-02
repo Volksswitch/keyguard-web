@@ -129,8 +129,13 @@ def build_page(cfg, course):
 
 
 def guide_book_signature(cfg, course):
-    """Changes when the list of published videos does, or any of them is published again."""
-    listed = [(i['num'], i['title'], cfg['videos'][i['id']]['signature']) for g in course['groups']
+    """Changes when the list of published videos does, or any of them is published again.
+
+    A video's own signature sees only words and voice, so a re-publish for a changed picture
+    leaves it alone. Its guide's media id is new on every upload, so that counts it too.
+    """
+    listed = [(i['num'], i['title'], cfg['videos'][i['id']]['signature'],
+               cfg['videos'][i['id']]['guide']['id']) for g in course['groups']
               for i in g['items'] if i.get('id') in cfg['videos']]
     return hashlib.sha256(json.dumps(listed).encode()).hexdigest()
 
