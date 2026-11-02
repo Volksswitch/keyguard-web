@@ -30,11 +30,11 @@
     },
     "2.2-layout-from-screenshot": {
       "signature": "c0d89ae22c13d81b6012a9158b8dd6c187f584487e172401c56593340210562a",
-      "published": "2026-10-30"
+      "published": "2026-11-02"
     },
     "2.3-millimeters": {
       "signature": "3a6f02b5e611a5af9eb2ab9949a397c36425e3ed1f0a8033ac8887c6ce9779b5",
-      "published": "2026-10-30"
+      "published": "2026-11-02"
     },
     "2.4-data-form": {
       "signature": "0bd7cebcc5818be42b9713e90c5fa805e004de91875e76d14ddf1c4576b30a73",
@@ -66,7 +66,7 @@
     },
     "3.7-splitting": {
       "signature": "b4265614677f14dc12e20f8029591f74713f9664a1918c86f2fc21b542252eef",
-      "published": "2026-10-27"
+      "published": "2026-11-02"
     },
     "3.8-text-braille": {
       "signature": "95c24d9ba22546ccb4d6d2bb51e1ab10ecc1b4622e0e77dec78b24c7121737e5",
@@ -82,7 +82,7 @@
     },
     "4.2-update-offered": {
       "signature": "8fe91ceedb49066fc706a92618f43538c5545ad2e8092b6accbcffe8b0514e85",
-      "published": "2026-10-30"
+      "published": "2026-11-02"
     },
     "4.3-skill-levels": {
       "signature": "93df803d9d16fa6afe4a057d4742c2c103762abdbd3d4e6745304a172fdcde0b",
@@ -102,11 +102,11 @@
     },
     "6.2-report-problem": {
       "signature": "a6abec8212380da75a008cdf57fff3d11c4acb3425f9fbe99a2f0e8bbd7fdeb5",
-      "published": "2026-10-30"
+      "published": "2026-11-02"
     },
     "6.3-it-on-board": {
       "signature": "020c3c3db23bc9409787d538ca8546ba4a39668fb2a4c8942842f4a2c8a75ea4",
-      "published": "2026-10-30"
+      "published": "2026-11-02"
     },
     "2.5-pixels-or-millimeters": {
       "signature": "ae6a9e9254ce30d94df93476169ed6107b922c13cd56136e10e80b404a17b848",
