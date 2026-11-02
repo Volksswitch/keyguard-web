@@ -20,7 +20,7 @@ from kg_docstyle import DOCUMENTS, HERE, KgDoc, GREY  # noqa: E402
 OUT = sys.argv[1] if len(sys.argv) > 1 else os.path.join(
     DOCUMENTS, 'Keyguard Designer User Manual.docx')
 FIG = os.path.join(HERE, 'figures')
-UPDATED = 'October 30, 2026'
+UPDATED = 'November 1, 2026'
 O_A_PAGE = ('https://volksswitch.org/index.php/volks-devices/customizable-3d-printable-keyguard-for-'
             'grid-based-free-form-and-hybrid-aac-apps-on-tablets/specifying-a-keyguard-for-a-free-form-'
             'or-hybrid-aac-app/putting-instructions-in-the-o_a-file/')
@@ -147,8 +147,10 @@ d.p("This section builds a keyguard for a grid app from start to finish. It uses
     "case, with a 6-row, 7-column page of an AAC app. Your numbers will differ; the steps are "
     "the same.")
 d.h2('4.1  Start from the design default values')
-d.p("When a project opens, the preset box at the top of the Customizer shows **design default "
-    "values**: a 3 by 4 grid keyguard for an iPad 9th generation. Every setting starts here.")
+d.p("When a new project opens, the preset box at the top of the Customizer shows **design default "
+    "values**: a 3 by 4 grid keyguard for an iPad 9th generation. These are just a set of defaults, "
+    "not a blank slate. A project with saved designs opens on the first saved design instead; "
+    "choose design default values from the preset list to start from them.")
 d.p("Set the **Skill level** below the preset box to **Intermediate**. *Beginner shows fewer "
     "settings, but it also hides the screenshot and the pixel measurements, which this walkthrough uses.*")
 d.h2('4.2  Choose the tablet and the case')
@@ -249,15 +251,17 @@ fig('um-presets.png', 'Figure 3. The top of the Customizer: the project, the pre
 d.table(['Control', 'What it does'], [
     ['Preset box and ▾', 'Shows the current preset. Click ▾ for the list, or use the Up and Down '
      'arrow keys to step through it. The first entry, called "design default values", is the keyguard '
-     "designer's own starting point."],
+     "designer's own starting point. A project opens on the first saved design in the list, or on "
+     "this entry if none is saved."],
     ['Renaming', 'Edit the name in the box and press Enter.'],
     ['+', 'Saves the current settings as a new preset. Type its name and press Enter.'],
     ['−', 'Deletes the current preset.'],
     ['Save preset', 'Saves your changes to the current preset.'],
     ['Reset', 'Throws away unsaved changes and goes back to the preset as it was last saved.'],
-    ['📂', 'Opens a different preset file, such as one a colleague sent. Saving updates that '
-     'file.'],
-    ['📂+', 'Adds the presets from another file to this project\'s preset file.'],
+    ['📂', 'Opens a different preset file, such as one a colleague sent, and shows its first design. '
+     'Saving updates that file.'],
+    ['📂+', 'Adds the presets from another file to this project\'s preset file. The design you\'re '
+     'on stays on screen.'],
     ['📥', 'Saves the current preset as a file of its own, to share or keep as a backup.'],
 ], [1.6, 4.9], size=10)
 d.p("A red asterisk to the right of the preset box means the settings differ from the saved preset. If "
