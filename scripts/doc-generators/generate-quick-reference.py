@@ -18,7 +18,7 @@ from kg_docstyle import DOCUMENTS, KgDoc, NAVY, GREY  # noqa: E402
 
 OUT = sys.argv[1] if len(sys.argv) > 1 else os.path.join(
     DOCUMENTS, 'Keyguard Designer Quick Reference Card.docx')
-UPDATED = 'October 30, 2026'
+UPDATED = 'November 1, 2026'
 W = [1.6, 5.7]          # two-column tables across the 7.3-inch measure
 
 d = KgDoc(footer='Keyguard Designer Quick Reference', body_pt=10, margin=0.6)
@@ -58,7 +58,7 @@ d.table(['Do this', 'To'], [
     ['View All, cube buttons', 'Fit it in the view; look from the top, bottom, front, back, left '
      'or right.'],
     ['Show Axes, Show grid', "Show the x, y and z directions; show your printer's build plate "
-     '(set its size in Settings, Grid).'],
+     '(set its size in Settings > Grid).'],
     ['Undo, Redo', 'Take back or redo a change to the settings.'],
 ], W, size=9)
 
@@ -110,7 +110,7 @@ d.table(['Button', 'Gives you'], [
 
 d.h1('When something goes wrong')
 d.table(['If', 'Then'], [
-    ['The keyguard stops updating', 'Settings, Troubleshooting, **Reload the app**, then open '
+    ['The keyguard stops updating', 'Settings > Troubleshooting, **Reload the app**, then open '
      'the project again. Your design is safe.'],
     ['It looks wrong', 'Read the Console below the 3D view. It usually names the setting.'],
     ["The openings don't line up", 'Check the bar heights, that only one App Layout section is '
