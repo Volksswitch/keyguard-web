@@ -21,6 +21,9 @@ OUT = sys.argv[1] if len(sys.argv) > 1 else os.path.join(
     DOCUMENTS, 'Keyguard Designer User Manual.docx')
 FIG = os.path.join(HERE, 'figures')
 UPDATED = 'October 30, 2026'
+O_A_PAGE = ('https://volksswitch.org/index.php/volks-devices/customizable-3d-printable-keyguard-for-'
+            'grid-based-free-form-and-hybrid-aac-apps-on-tablets/specifying-a-keyguard-for-a-free-form-'
+            'or-hybrid-aac-app/putting-instructions-in-the-o_a-file/')
 
 
 def fig(name, caption, width=6.0):
@@ -71,8 +74,8 @@ d.b("**The case, if there is one,** and the height, width and corner radius of i
     "in millimeters.")
 d.b("**A screenshot of the AAC app,** taken on the tablet itself with the app showing the page "
     "the keyguard is for. Save it as a PNG or JPEG file.")
-d.b("**How the keyguard will attach:** inside the case opening, with Velcro, with suction cups, "
-    "and so on.")
+d.b("**How the keyguard will attach:** inside the case opening, with microsuction tape, with "
+    "slide-in tabs, with posts, and so on.")
 d.h2('2.4  On a school or hospital computer')
 d.p("You don't need administrator rights, because nothing is installed. If your network blocks "
     "the app, your IT department needs to allow one address: keyguard.volksswitch.org.")
@@ -86,40 +89,42 @@ d.h2('3.1  Opening the app')
 d.p("Go to **keyguard.volksswitch.org** in Chrome or Edge. There's no account to create and "
     "nothing to sign in to. The first time, the app takes a few seconds to load.")
 d.h2('3.2  Installing it as an app')
-d.p("You can keep using the app in a browser tab, but it's easier to install it. It then opens in "
+d.p("You can keep using the app in a browser tab, but it's easier to use if you install it. It then opens in "
     "its own window, without tabs or an address bar, and has its own icon in the Start menu, "
     "the Dock or the shelf.")
 d.p("To install it, look for the install icon at the right end of the address bar. If it isn't "
     "there, open the browser's menu and look for **Install**. Installing doesn't need "
-    "administrator rights, and the installed app is the same app with the same address.")
+    "administrator rights, and the installed app is the same app with the same web address.")
 d.h2('3.3  Starting a project')
 d.p("A **project folder** is a folder on your computer that holds your keyguard work: the "
     "keyguard designer file, your saved designs, the openings-and-additions file and your "
     "screenshots. One project folder can hold the designs for all of your students, so you "
     "don't need a new folder for each keyguard.")
 d.n("**Make a new, empty folder** somewhere you'll find it again, such as Documents. Call it "
-    "something like *keyguard design*.")
+    "something like *keyguard design*.  If you've already been designing keyguards with "
+    "OpenSCAD, you can use the same folder for the web app along with all the designs you've "
+    "already created.")
 d.n("In the app, click **Open Project…** at the top right of the Customizer. Your browser's "
     "folder picker opens.")
 d.n("Choose the new folder and click **Select Folder**. The label varies a little between "
     "browsers.")
 d.n("The browser asks whether the site may view and edit files in the folder. Allow it. The "
     "wording varies: **Edit files**, **Allow** or **Allow on every visit**. Choose **Allow on "
-    "every visit** when it's offered, and the browser stops asking.")
-d.n("The app says **This folder has no keyguard designer file** and offers to set it up. Click "
+    "every visit** when it's offered, and the browser stops asking after that.  The app only adds "
+    "files; it never replaces one that's already in the folder. The folder name appears in the "
+    "question, so you can catch a folder chosen by mistake and click **Cancel**.")
+d.n("If this is a new folder, the app says **This folder has no keyguard designer file** and offers to set it up. Click "
     "**Set it up**. The app puts the current keyguard designer file and a starter "
     "openings-and-additions file into the folder, and opens the project.")
 d.n("Copy your screenshot into the folder. The app notices it within a few seconds.")
-d.p("The app only adds files; it never replaces one that's already in the folder. The folder "
-    "name appears in the question, so you can catch a folder chosen by mistake and click "
-    "**Cancel**.")
 d.callout("Keep a copy of your project folder somewhere safe, such as a cloud drive or a USB "
           "stick. Your designs live only in that folder.")
 d.h2('3.4  Opening a project you already have')
 d.p("The app remembers the last folder you opened. When you come back, the Customizer says "
-    "*last folder: keyguard design*. Click **Open Project…**, allow access if the browser asks, "
-    "and the project opens without the folder picker.")
-d.p("The app remembers your last eight project folders. With no project open, the box below "
+    "*last folder: keyguard design* (or the name of the folder you created). Click **Open "
+    "Project…**, allow access if the browser asks, and the project opens without first showing "
+    "the folder picker.")
+d.p("The app remembers your last eight project folders. Most people will only have one.  With no project open, the box below "
     "**Open Project…** lists them; click one to open it. With a project open, the button reads "
     "**Change Project…** and lists your other folders, plus an option to pick a different one.")
 d.p("A folder you made for OpenSCAD works too. The app reads and writes the same files, so your "
@@ -129,7 +134,7 @@ d.p("The app's window has four parts.")
 fig('um-screen-labeled.png', 'Figure 1. The app with a project open. 1 the 3D view, 2 the toolbar, '
     '3 the Customizer, 4 the Console.', 6.5)
 d.n("**The 3D view** shows the keyguard. Drag to turn it, scroll to zoom and right-drag to slide "
-    "it. It redraws about half a second after you change a setting.")
+    "it. It redraws about half a second after you change a setting in the Customizer.")
 d.n("**The toolbar** runs along the bottom of the 3D view. Section 9.2 lists its buttons.")
 d.n("**The Customizer** on the right lists the settings that make up the design, with the "
     "project and preset controls above them.")
@@ -144,8 +149,8 @@ d.p("This section builds a keyguard for a grid app from start to finish. It uses
 d.h2('4.1  Start from the design default values')
 d.p("When a project opens, the preset box at the top of the Customizer shows **design default "
     "values**: a 3 by 4 grid keyguard for an iPad 9th generation. Every setting starts here.")
-d.p("Set the **Skill level** below the preset box to **Intermediate**. Beginner shows fewer "
-    "settings, but it hides the screenshot and the pixel measurements, which this walkthrough uses.")
+d.p("Set the **Skill level** below the preset box to **Intermediate**. *Beginner shows fewer "
+    "settings, but it also hides the screenshot and the pixel measurements, which this walkthrough uses.*")
 d.h2('4.2  Choose the tablet and the case')
 d.p("Click a section's name to open it. In **Tablet**, choose the tablet model and the "
     "orientation the student uses, portrait or landscape.")
@@ -153,8 +158,8 @@ d.p("In **Tablet Case**, enter the height and width of the case opening and the 
     "corners, in millimeters. If the tablet has no case, set **have a case** to *no*.")
 d.h2("4.3  Describe the app's layout")
 d.p("An AAC app usually has bars across the top of the screen: a status bar, a message bar that "
-    "shows what has been said, and a command bar of controls. The keyguard needs to know how "
-    "tall each one is, so the grid starts below them.")
+    "shows what has been said, and a command bar of controls. The keyguard designer needs to know how "
+    "tall each one is, so the grid starts below or above them.")
 d.n("In **App Layout in px** or **App Layout in mm**, enter the height of each bar. Fill in one "
     "and leave the other at 0: if any number in App Layout in px is above 0, the millimeter "
     "numbers are ignored.")
@@ -164,7 +169,8 @@ d.n("In **Grid Info**, enter the number of rows and columns. If you give the ope
     "pixels, set their size in millimeters to 0, or the millimeter size is used instead.")
 d.p("The 3D view redraws after each change.")
 d.p("None of this depends on the unit of measure for the screen. That setting is only for "
-    "openings placed by number (Section 7.2).")
+    "openings placed by number in the Custom Openings window or the openings_and_additions.txt "
+    "file (Section 7.2).")
 d.h2('4.4  Check it against the screenshot')
 d.p("In Special Actions and Settings, set **include screenshot** to *yes*. The screenshot "
     "appears beneath the keyguard, so you "
@@ -193,16 +199,16 @@ d.n("Try the keyguard on the tablet. Note what to change, change those settings,
 d.h1('5.  The Customizer')
 d.h2('5.1  Sections and settings')
 d.p("The Customizer groups the settings into sections. Click a section's name to open or close "
-    "it. Each setting has a name, a box, list or slider, and sometimes a short gray note.")
-d.p("The keyguard designer file defines the settings, so a newer keyguard designer file can "
-    "add settings. At the Advanced skill level the Customizer shows these sections:")
+    "it. Each setting has a name, a box, list, or slider, and sometimes a short gray note.")
+d.p("The settings come from the keyguard designer file, so a newer version of that file can "
+    "add settings not listed here. At the Advanced skill level the Customizer shows these sections:")
 d.table(['Section', 'What it covers'], [
     ['Keyguard Basics', '3D-printed or laser-cut, thickness, and what to make: the keyguard, '
      'half of a split keyguard, or a clip'],
     ['Tablet', 'The tablet model, its orientation, and openings for the home button and camera'],
     ['Tablet Case', 'Whether there is a case, and the size and corners of its opening'],
     ['App Layout in px, App Layout in mm', "The heights of the app's bars, in pixels or millimeters"],
-    ['Keyguard Inset Info', 'For an app shrunk to leave a border around it on the screen'],
+    ['Keyguard Inset Info', 'For an app that has been shrunk to leave a border around it on the screen'],
     ['Bar Info', 'Which bars get an opening, and the slope and corners of those openings'],
     ['Grid Info', 'Rows and columns, cell size and shape, covered and merged cells, ridges and '
      'slopes'],
@@ -214,20 +220,22 @@ d.table(['Section', 'What it covers'], [
     ['Engraved/Embossed Text', 'Text and braille on the keyguard'],
     ['Cell Inserts', 'Inserts that fit into cell openings'],
     ['Free-form and Hybrid Keyguard Openings', 'The unit of measure and starting corner for '
-     'openings placed by number'],
+     'openings placed by number in the Custom Openings window or the openings_and_additions.txt '
+     'file'],
     ['Special Actions and Settings', 'The screenshot, edge chamfers, sizes for tablets not on '
-     'the list, test prints of the first two layers, and the Custom Openings'],
+     'the list, test prints of the first two layers, and the Custom Openings data'],
 ], [2.2, 4.3], size=10)
 d.h2('5.2  Skill levels')
 d.p("The skill level decides how many settings the Customizer shows. Change it with the "
-    "**Skill level** list below the preset box, or in Settings, General.")
+    "**Skill level** list below the preset box, or in Settings > General.")
 d.b("**Beginner:** the settings for a basic grid keyguard.")
 d.b("**Intermediate:** adds pixel measurements, more grid settings, mounting and split "
     "keyguards.")
 d.b("**Advanced:** every setting, including frames, cell inserts and engraved text.")
 d.p("A lower level hides settings without changing them, so a design made at Advanced keeps all "
     "its values when you switch to Beginner. At Beginner the screenshot and "
-    "the pixel measurements are hidden, which is why Section 4 uses Intermediate.")
+    "the pixel measurements are hidden, which is why Section 4 uses Intermediate.  You decide what "
+    "your skill level is and set the value for yourself.")
 d.h2('5.3  Undo and redo')
 d.p("The curved arrows near the right end of the toolbar undo and redo changes to the settings. "
     "They work until you choose another preset or close the app.")
@@ -235,50 +243,48 @@ d.p("The curved arrows near the right end of the toolbar undo and redo changes t
 # =====================================================================
 d.h1('6.  Saving Designs as Presets')
 d.p("A **preset** is a design saved by name, with all its settings. The presets live in one file "
-    "in the project folder, named keyguard.json. "
-    "OpenSCAD reads the same file.")
+    "in the project folder, named keyguard.json.")
 fig('um-presets.png', 'Figure 3. The top of the Customizer: the project, the preset box and its '
     'buttons, and the skill level.', 4.5)
 d.table(['Control', 'What it does'], [
     ['Preset box and ▾', 'Shows the current preset. Click ▾ for the list, or use the Up and Down '
-     'arrow keys to step through it. The first entry, design default values, is the keyguard '
+     'arrow keys to step through it. The first entry, called "design default values", is the keyguard '
      "designer's own starting point."],
     ['Renaming', 'Edit the name in the box and press Enter.'],
     ['+', 'Saves the current settings as a new preset. Type its name and press Enter.'],
     ['−', 'Deletes the current preset.'],
-    ['Save preset', 'Saves your changes into the current preset.'],
+    ['Save preset', 'Saves your changes to the current preset.'],
     ['Reset', 'Throws away unsaved changes and goes back to the preset as it was last saved.'],
-    ['📂', 'Opens a different preset file, such as one a colleague sent. Saving then updates that '
+    ['📂', 'Opens a different preset file, such as one a colleague sent. Saving updates that '
      'file.'],
     ['📂+', 'Adds the presets from another file to this project\'s preset file.'],
     ['📥', 'Saves the current preset as a file of its own, to share or keep as a backup.'],
 ], [1.6, 4.9], size=10)
-d.p("A red asterisk beside the preset box means the settings differ from the saved preset. If "
+d.p("A red asterisk to the right of the preset box means the settings differ from the saved preset. If "
     "you close the tab, refresh the page or leave while it shows, the browser asks **Leave "
-    "site?** first. Choose **Cancel** to stay and save.")
-d.p("You can list the presets alphabetically or in the order you made them, in Settings, "
+    "site?** first. Choose **Cancel** to stay and save your changes.")
+d.p("You can list the presets alphabetically or in the order you made them, in Settings > "
     "General.")
 d.callout("The preset file holds every design in the project. Copy it somewhere safe from time "
           "to time, along with the rest of the folder.")
 
 # =====================================================================
 d.h1('7.  Custom Openings')
-d.p("Custom Openings is for openings a grid can't make: a button outside the grid, a free-form "
+d.p("Custom Openings is for openings other than bars and the grid: a button outside the grid, a free-form "
     "app's scene, a ridge to find by touch, a rounded corner. Click the **Custom Openings** "
     "button in the toolbar to open it. It has two tabs that show the same openings, so a change "
     "on one appears on the other.")
 d.h2('7.1  The by eye tab')
 d.p("On the **by eye** tab you work on the keyguard itself. Your screen openings appear as "
-    "see-through pink shapes, the 3D view turns to look straight down, and the panel shrinks to "
-    "a row of buttons.")
+    "see-through pink shapes, and the 3D view turns to look straight down.")
 fig('um-byeye.png', 'Figure 4. Custom Openings, by eye tab, with a rectangle selected. Drag the '
     'white handles to resize it and the yellow dot to round its corners.', 6.0)
-d.h3('Adding')
+d.h3('Adding Shapes')
 d.b("**+ Rectangle** and **+ Circle** put an opening 10 mm across in the middle of the screen.")
 d.b("**+ Ridge**, then click the keyguard for a 10 mm ridge starting there, or press and drag "
     "to draw one, in steps of 45°. Ridges are 2 mm thick and 2 mm tall.")
-d.b("**+ Rounded corner** rings every square corner that points outward. Click one to round it "
-    "by 2 mm, or drag from it along an edge to choose how much.")
+d.b("**+ Rounded corner** puts a ring around every 90-degree corner. Click one to round it "
+    "by 2 mm, or drag the yellow circle to choose how much.")
 d.h3('Selecting, moving and shaping')
 d.table(['Move', 'What it does'], [
     ['Click', 'Selects an opening, ridge or rounded corner.'],
@@ -287,6 +293,7 @@ d.table(['Move', 'What it does'], [
     ['Drag', 'Moves what you drag. Dragging anywhere else turns the keyguard.'],
     ['Shift + drag', 'Keeps to a straight line.'],
     ['Ctrl + drag', 'Leaves a copy behind and drags the copy.'],
+    ['Shift + Ctrl + drag', 'Makes a copy and moves the copy in a straight line'],
     ['Arrow keys', 'Nudge the selection 1 mm. Hold Shift for 10 mm.'],
     ['Handles', "Drag one to resize an opening, or drag a ridge's end to lengthen, shorten or "
      "swing it. Hold Shift on a corner handle to keep a rectangle's proportions, and Ctrl to "
@@ -298,13 +305,12 @@ d.table(['Move', 'What it does'], [
     ['Ctrl+Z or Undo', 'Takes back the last change: a whole drag, or a whole run of arrow-key '
      'nudges.'],
     ['Ctrl+Y or Redo', 'Puts back a change you took back. Undo and Redo are at the bottom of the '
-     'panel, and work on both tabs.'],
+     'Custom Openings window, and work on both tabs.'],
 ], [1.6, 4.9], size=10)
-d.p("On a Mac, use the Command key where this manual says Ctrl. To look at the keyguard square "
-    "on again after turning it, click the **Top** view button in the toolbar.")
+d.p("On a Mac, use the Command key where this manual says Ctrl. To look at the keyguard from "
+    "the top again after turning it, click the **Top** view button in the toolbar.")
 d.p("An opening can be dragged past the edge of the screen, which is how you reach the area "
-    "around it. Working by eye in pixels needs a recent keyguard designer file; if yours is "
-    "older, the tab says so, and millimeters work with any version.")
+    "around it.")
 d.h2('7.2  The pixels or millimeters tab')
 d.p("This tab lists the same openings as numbers. Use it to type an exact position, or to check "
     "one you placed by eye.")
@@ -312,10 +318,10 @@ fig('um-table.png', 'Figure 5. Custom Openings, pixels or millimeters tab.', 6.0
 d.b("**Screen openings** are measured in the unit of measure for the screen, pixels or "
     "millimeters, from its starting corner. Both are set in Free-form and Hybrid Keyguard "
     "Openings, and the heading says which. Set them before you type: changing the unit later "
-    "converts these openings so they stay put, but not the ones in the openings and additions "
-    "file.")
+    "converts the measurements so they stay put.  Note that the numbers in the openings and "
+    "additions file aren't converted.")
 d.b("**Case openings** are measured in millimeters from the lower-left corner of the case "
-    "opening. They're for openings outside the screen, and they live only on this tab.")
+    "opening. They're for openings outside the screen, and they exist only on this tab.")
 d.b("Each opening is positioned by its center. For a circle, the height is the diameter. A hot "
     "dog takes only a height and a width. Every change on this tab can be undone.")
 d.b("A tinted box holds a number you've changed but not applied. Press Enter, or click another "
@@ -327,22 +333,22 @@ d.p("**Save** puts your openings into the design, and **Cancel** or **✕** clos
     "you've changed anything, the app asks before throwing it away.")
 d.p("Saving in Custom Openings changes the design but doesn't save the preset. The red asterisk "
     "appears beside the preset box: click **Save preset** to keep the openings.")
-d.callout("The **?** button's Help menu has a card of every Custom Openings move, so you can "
-          "check one without leaving the app.")
+d.callout("The **?** button's Help menu has a list of every Custom Openings move, so you can "
+          "find one without leaving the app.")
 
 # =====================================================================
 d.h1('8.  The Openings-and-Additions File')
-d.p("The file openings_and_additions.txt in the project folder is another place to describe "
+d.p("The file called \"openings_and_additions.txt\" in the project folder is another place to describe "
     "openings and additions, written as lines of text. It can do things Custom Openings "
-    "doesn't, such as adding shapes to the case area or engraving text in one spot.")
+    "can't, such as adding shapes to the keyguard perimeter or engraving text in more than one spot.")
 d.p("Open it in any text editor, such as Notepad, TextEdit or Notepad++. While a project is "
     "open, the app checks the file about every second and a half, and redraws the keyguard when "
     "you save a change. The line under the project name says *watching project folder*.")
-d.p("The file explains its own columns at the bottom. The page Putting Instructions in the O&A "
-    "File, on volksswitch.org, covers it in full.")
+p = d.p("The file explains its own columns at the bottom. The page ")
+d.link(p, 'Putting Instructions in the O&A File', O_A_PAGE)
+d.runs(p, ", on volksswitch.org, covers it in full.")
 d.p("The app watches the screenshot the same way, so a new screenshot saved over the old one "
-    "shows up on its own. It doesn't watch the keyguard designer file; open the project again "
-    "after replacing that.")
+    "shows up on its own.")
 
 # =====================================================================
 d.h1('9.  Looking at the Keyguard')
@@ -350,7 +356,7 @@ d.h2('9.1  Turning, zooming and sliding')
 d.b("**Drag** to turn the keyguard.")
 d.b("**Scroll** to zoom in and out.")
 d.b("**Right-drag** to slide it across the view.")
-d.p("Settings, Viewport sets how dragging turns it. **Free tumble** rolls it in any direction "
+d.p("Settings > Viewport sets how dragging turns it. **Free tumble** rolls it in any direction "
     "and is the default. **Guided tumble** adds a ring guide, and double-clicking a point centers "
     "the view on it. **Turntable** spins it around an upright line. The same tab sets how fast it "
     "turns and zooms.")
@@ -363,7 +369,7 @@ d.table(['Button', 'What it does'], [
     ['Six cube buttons', 'Look from the top, bottom, front, back, left or right.'],
     ['Show Axes', 'Shows a small marker of the x, y and z directions in the lower-left corner.'],
     ['Show grid', "Shows a grid the size of your printer's build plate beneath the keyguard. Set "
-     'its size in Settings, Grid.'],
+     'its size in Settings > Grid.'],
     ['Custom Openings', 'Opens Custom Openings (Section 7).'],
     ['STL, STL*, SVG, PNG', 'Export the design (Section 10).'],
     ['Undo, Redo', 'Undo and redo changes to the settings.'],
@@ -374,17 +380,18 @@ d.table(['Button', 'What it does'], [
 # =====================================================================
 d.h1('10.  Exporting')
 d.p("Each export button opens a Save As box. The first time, it opens in the project folder, "
-    "with the preset's name filled in; after that, it opens wherever you last saved.")
+    "with the preset's name, followed by the item being generated, filled in; after that, it opens wherever you last saved.")
 d.table(['Button', 'What you get', 'Use it for'], [
     ['STL', 'A 3D file, made in seconds', 'Printing. Open it in your slicer.'],
     ['STL*', 'The same 3D file, made the slower, more precise way OpenSCAD makes it',
      'A design your slicer reports problems with. It can take minutes.'],
     ['SVG', 'A flat drawing of the keyguard', 'Laser cutting. Set the type of keyguard to '
-     'Laser-Cut first.'],
+     "Laser-Cut first. Clips, cell inserts, split keyguards, frames and keyguards that snap into a "
+     "frame can't be laser-cut."],
     ['PNG', 'A picture of the 3D view as it looks now', 'Showing a design to a colleague or a '
      'family.'],
 ], [0.9, 2.7, 2.9], size=10)
-d.p("A frame and a keyguard that snaps into a frame can't be laser-cut. For a split keyguard, "
+d.p("For a split keyguard, "
     "export each half: set **generate** in Keyguard Basics to the first half, export, then to "
     "the second half and export again.")
 
@@ -426,14 +433,12 @@ d.p("The **?** button beside the gear opens the Help menu.")
 fig('um-help.png', 'Figure 7. The Help menu.', 3.0)
 d.b("**Web app guide, How-to pages, How-to videos, Documents** and **Known issues** open "
     "pages on volksswitch.org in a new tab.")
-d.b("**Custom Openings moves:** a card of every move, built into the app.")
-d.b("**Check my setup** opens Settings, Troubleshooting and runs the check. **Report a "
+d.b("**Custom Openings moves:** a list of every move, built into the app.")
+d.b("**Check my setup** opens Settings > Troubleshooting and runs the check. **Report a "
     "problem** opens the same tab at the report.")
 d.b("**Contact Volksswitch** starts an email to Volksswitch.")
-d.p("The menu and the moves card are part of the app, so they work on a network that blocks "
-    "volksswitch.org.")
 d.h2('13.2  Check my setup')
-d.p("In Settings, Troubleshooting, **Check my setup** checks what the app needs from this "
+d.p("In Settings > Troubleshooting, **Check my setup** checks what the app needs from this "
     "computer, browser and network. It looks at the browser and the project folder, whether the "
     "app can reach its own address, whether your keyguard designer file is the newest, and "
     "whether the 3D view works. "
@@ -462,7 +467,7 @@ d.h1('14.  Keeping Up to Date')
 d.h2('14.1  The app')
 d.p("The app updates itself. When a new release is out, the app loads it the next time you open "
     "it or open a project, and a **What's new** notice lists the changes. The release number is "
-    "on Settings, About.")
+    "on Settings > About.")
 d.h2('14.2  The keyguard designer file')
 d.p("When a newer keyguard designer file is published, the app offers it as you open a project. "
     "The **Keyguard update available** box shows your version, the new one and what changed.")
@@ -503,10 +508,10 @@ d.p("The Known Issues page on volksswitch.org lists the problems already known. 
     "there, use **Report a problem**.")
 
 # =====================================================================
-d.h1('16.  Designing for Conversant AAC')
+d.h1('16.  Designing a Keyguard for Conversant AAC')
 d.p("Conversant AAC, also from Volksswitch, can write out where each of its buttons sits on the "
     "screen. The keyguard designer reads that list directly, so you don't measure the buttons.")
-d.n("In Conversant, open Settings, **Keyguard Design**. Enter the title bar height and click "
+d.n("In Conversant, open **Settings** > **Keyguard Design**. Enter the title bar height and click "
     "**Generate Screen Openings**. Conversant saves a file named Screen Openings.txt in its data "
     "folder, and says what size of screenshot it expects.")
 d.n("Take a screenshot of Conversant at that size and copy it into your keyguard project folder.")

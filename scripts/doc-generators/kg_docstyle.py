@@ -147,6 +147,30 @@ class KgDoc:
                 r.font.color.rgb = color
         return p
 
+    def link(self, p, text, url):
+        """Adds a web link to paragraph p, after what's already in it."""
+        rid = self.doc.part.relate_to(
+            url, 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink',
+            is_external=True)
+        link = OxmlElement('w:hyperlink')
+        link.set(qn('r:id'), rid)
+        link.set(qn('w:history'), '1')
+        r = OxmlElement('w:r')
+        rpr = OxmlElement('w:rPr')
+        color = OxmlElement('w:color')
+        color.set(qn('w:val'), '0563C1')
+        underline = OxmlElement('w:u')
+        underline.set(qn('w:val'), 'single')
+        rpr.append(color)
+        rpr.append(underline)
+        t = OxmlElement('w:t')
+        t.text = smart(text)
+        r.append(rpr)
+        r.append(t)
+        link.append(r)
+        p._p.append(link)
+        return p
+
     def p(self, text, style=None):
         return self.runs(self.doc.add_paragraph(style=style), text)
 
