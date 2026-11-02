@@ -1757,7 +1757,8 @@ const RELEASE_NOTES = {
     "The Recent changes box in Settings → About now shows the keyguard designer file's changes even when you're offline. It no longer has to reach the internet when you open the About tab."
   ],
   "123": [
-    "A project or presets file with saved designs now opens on a saved design. It shows the first design in the preset list, in your chosen sort order, so a file someone sends you opens on their design instead of the design default values. design default values is still first in the list whenever you want it, and it's what you see when nothing has been saved yet. Before you change settings and click + to make a new design, check that the preset box shows the design you want to begin from."
+    "A project or presets file with saved designs now opens on a saved design. It shows the first design in the preset list, in your chosen sort order, so a file someone sends you opens on their design instead of the design default values. design default values is still first in the list whenever you want it, and it's what you see when nothing has been saved yet. Before you change settings and click + to make a new design, check that the preset box shows the design you want to begin from.",
+    "Importing designs no longer moves you off the design you're working on. The imported designs are added to the preset list, a message tells you they're there, and your design stays on screen with any unsaved changes intact."
   ]
 };
 const RELEASE_DATES = {
@@ -6905,9 +6906,15 @@ document.getElementById('import-preset-btn').addEventListener('click', async () 
     project.jsonName = jsonName;
     if (!project.jsonFileHandle) project.jsonFileHandle = fh;
     logLine(`Wrote ${importedNames.length} imported preset(s) to ${jsonName}`);
+    // Stay on the design she was on, unsaved changes included (Ken, 1 Nov 2026). With
+    // nothing on screen changing, say it where she is looking, not only in the log.
     rebuildPresetDropdown();
-    await selectPreset(importedNames[0]);
     logLine(`Imported ${importedNames.length} preset(s) from "${name}": ${importedNames.join(', ')}`);
+    await showNotice('Designs imported',
+      (importedNames.length === 1
+        ? `"${importedNames[0]}" is now in the preset list.`
+        : `${importedNames.length} designs are now in the preset list.`)
+      + ` You're still on "${project.currentPreset}".`);
   } catch (e) {
     if (e && e.name === 'AbortError') return;
     logLine('Import preset failed: ' + e.message);
