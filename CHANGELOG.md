@@ -13,6 +13,8 @@ notes, because nothing at this address could have been missed yet.
 
 ## Unreleased (next release)
 
+## Release 123
+
 - **A project or presets file with saved designs now opens on a saved design.** It shows the first design in the preset list, in your chosen sort order, so a file someone sends you opens on their design instead of the design default values. **design default values** is still first in the list whenever you want it, and it's what you see when nothing has been saved yet. Before you change settings and click **+** to make a new design, check that the preset box shows the design you want to begin from.
 - **Importing designs no longer moves you off the design you're working on.** The imported designs are added to the preset list, a message tells you they're there, and your design stays on screen with any unsaved changes intact.
 
