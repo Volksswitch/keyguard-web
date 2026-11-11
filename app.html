@@ -1759,6 +1759,9 @@ const RELEASE_NOTES = {
   "123": [
     "A project or presets file with saved designs now opens on a saved design. It shows the first design in the preset list, in your chosen sort order, so a file someone sends you opens on their design instead of the design default values. design default values is still first in the list whenever you want it, and it's what you see when nothing has been saved yet. Before you change settings and click + to make a new design, check that the preset box shows the design you want to begin from.",
     "Importing designs no longer moves you off the design you're working on. The imported designs are added to the preset list, a message tells you they're there, and your design stays on screen with any unsaved changes intact."
+  ],
+  "124": [
+    "When a file isn't saved, the app no longer says you canceled. If the Save As window closes without saving an STL, SVG, picture, console or problem report, the console says the file wasn't saved. It explains that Chrome may have refused the folder you chose. Chrome reports this the same way as choosing Cancel, so before this release the app said \"export canceled\" even when you had clicked Save. Try another folder, such as Downloads. If Chrome refuses every folder, your organization may block saving files from websites, and your IT department can tell you."
   ]
 };
 const RELEASE_DATES = {
@@ -4669,6 +4672,22 @@ async function saveAs(data, opts) {
   return writeSaveLocation(target, data, opts);
 }
 
+// What to say when the Save As window ends without a file. Chrome reports
+// three different events identically (AbortError, no message): the user
+// choosing Cancel, Chrome refusing a system folder, and enterprise policy
+// blocking the chosen path (Chromium's OnCheckPathsAgainstEnterprisePolicy
+// "simulate[s] a user abort"). The app cannot tell them apart, so it must not
+// call it a cancel — that told a clinician blocked by policy (problem report,
+// 10 Nov 2026) that she had cancelled. Locked files, read-only files and a full
+// disk do NOT land here: Chrome reports those as NoModificationAllowedError /
+// QuotaExceededError, which reach the callers' "failed" paths.
+// "wasn't saved" is matched by PROBLEM_RE so it shows in Recent problems.
+function notSavedMessage(what) {
+  return `${what} wasn’t saved. If you clicked Save, Chrome refused that folder: try another, `
+    + 'such as Downloads. If Chrome refuses every folder, your organization may block saving '
+    + 'files from websites. Ask your IT department.';
+}
+
 // Step 1 — choose the destination. This is the ONLY part that needs a live user
 // gesture. Returns a FileSystemFileHandle, the sentinel 'DOWNLOAD' when the FSA
 // API is unavailable (the write falls back to a browser download), or null if
@@ -4726,6 +4745,7 @@ async function exportPNG() {
       description: 'PNG image', mime: 'image/png', exts: ['.png'],
     });
     if (saved) logLine(`Saved PNG to "${saved}" (${blob.size.toLocaleString()} bytes)`);
+    else logLine(notSavedMessage('The PNG picture'));
   } catch (e) {
     logLine('PNG export failed: ' + e.message);
   }
@@ -4991,7 +5011,7 @@ async function exportCurrent(fmt) {
     console.error(e);
     return;
   }
-  if (target === null) { logLine(`${fmt} export canceled.`); return; }
+  if (target === null) { logLine(notSavedMessage(`The ${fmt} file`)); return; }
 
   const prevStatusText = statusEl.innerHTML;
   const prevStatusKind = statusEl.className;
@@ -6371,8 +6391,8 @@ document.getElementById('save-btn').addEventListener('click', async () => {
       description: 'Text file', mime: 'text/plain', exts: ['.txt'],
     });
     if (saved) logLine(`Saved console to "${saved}"`);
+    else logLine(notSavedMessage('The console'));
   } catch (e) {
-    if (e && e.name === 'AbortError') return;   // user cancelled the dialog
     logLine('Save console failed: ' + e.message);
   }
 });
@@ -7933,7 +7953,7 @@ function setupCheckHTML() {
 }
 
 // ---- Recent problems ----
-const PROBLEM_RE = /\berror\b|failed|failure|out of bounds|out of memory|exception|damaged|couldn.t|could not|cannot|blocked/i;
+const PROBLEM_RE = /\berror\b|failed|failure|out of bounds|out of memory|exception|damaged|couldn.t|could not|cannot|blocked|wasn.t saved/i;
 const PROBLEM_WHY = [
   [/memory access out of bounds|out of memory/i,
    'The 3D engine ran out of working memory, which can happen on heavy designs. Use Reload the app below, then open your project again.'],
@@ -7947,6 +7967,10 @@ const PROBLEM_WHY = [
    'The keyguard couldn’t be drawn with these settings. Undo the last change, or report the problem so the settings come with it.'],
   [/export failed/i,
    'The file wasn’t saved. Try again; if it fails again, report the problem.'],
+  [/wasn.t saved\. If you clicked Save/i,
+   'The Save As window closed without saving. Chrome says the same thing whether you chose Cancel, '
+   + 'it refused a system folder, or your organization blocks saving there, so the app can’t tell which. '
+   + 'Try saving to Downloads.'],
 ];
 function recentProblems() {
   const lines = consoleEl.textContent.split('\n').map(l => l.trim()).filter(l => l && PROBLEM_RE.test(l));
@@ -8118,7 +8142,7 @@ function wireTroubleshooting(root) {
     try {
       const target = await pickSaveLocation({ suggestedName: name, description: 'Text file',
                                                mime: 'text/plain', exts: ['.txt'] });
-      if (!target) return;
+      if (!target) { tsSay(notSavedMessage('The report')); return; }
       const saved = await writeSaveLocation(target, buildReport(), { suggestedName: name, mime: 'text/plain' });
       tsSay(`Saved as ${saved}. Attach it to an email to ${SUPPORT_EMAIL}.`);
     } catch (e) {
