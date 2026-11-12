@@ -18,6 +18,17 @@ the app the same way, through `scripts/lib/sample-project.mjs`.
 **File boxes are drawn, not described (Ken, 30 Oct 2026):** the computer's folder, Save As
 and Open boxes, and the browser's "edit files?" question, can't be captured, so a step shows
 a generic stand-in with `dialog:` (`scripts/video/file-dialog.mjs`) and rings its buttons.
+The openings and additions file is shown the same way, in a stand-in text editor (`dialog:`
+kind `text`), and a video saves a change to it with `writeProjectFile` (helpers.mjs), as a
+clinician saving from Notepad would; the app sees it and redraws (video 7.11).
+
+**The Advanced videos (7.x, added 11 Nov 2026) use their own sample folders:**
+`Documents/video-samples/advanced/` is the manual sample with the current keyguard designer
+file (the others keep version 92, and these videos teach behavior from 94 on), and
+`video-samples/inset/` is the WordPower screenshot shrunk inside a white border, a stand-in
+so no client's design is shown. Where Ken's website and the keyguard designer disagree,
+the videos teach what the designer does (Ken, 11 Nov 2026; the pages are in TODO.md).
+
 **The unit of measure for the screen is not a normal step:** it matters only for openings
 typed as numbers (Custom Openings, the openings and additions file), so videos mention it
 only there; video 2.5 explains which numbers count when pixels and millimeters are both filled in.

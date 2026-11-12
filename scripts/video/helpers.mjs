@@ -2,12 +2,30 @@
 // use as a step's `before`. They act the way a person would - clicking, typing, choosing
 // from a list - so a video shows the app doing its own work.
 import { settled, sleep, rememberFolder, projectReady } from '../lib/sample-project.mjs';
+export { settled };
 
 export { sleep };
 
 // A project folder left where Open Project will find it (see sample-project.mjs).
 export const folder = (opts = {}) => (page) => rememberFolder(page, opts);
 export const ready = (opts = {}) => (page) => projectReady(page, opts);
+
+// A file in the open project folder, written as a clinician saving it from Notepad would.
+// The app checks the openings and additions file about every second and a half and redraws
+// when it changes, so this waits for that redraw. Show what was typed with a `dialog` of
+// kind 'text' (file-dialog.mjs): the editor itself belongs to the computer and can't be
+// captured.
+export const writeProjectFile = (name, text) => async (page) => {
+  await page.evaluate(async ([name, text]) => {
+    const root = await navigator.storage.getDirectory();
+    const dir = await root.getDirectoryHandle('keyguard design');
+    const w = await (await dir.getFileHandle(name, { create: true })).createWritable();
+    await w.write(text);
+    await w.close();
+  }, [name, text]);
+  await sleep(2500);
+  await settled(page, 1500);
+};
 
 // For a ring: one box around several controls (a row of toolbar buttons).
 export const around = (...sels) => async (page) => {
@@ -132,15 +150,57 @@ export async function viewPoint(page, fx, fy) {
 }
 
 // A press-and-drag in the 3D view, from and to fractions of it, with keys held if asked.
-export const drag = (from, to, { keys = [], steps = 12 } = {}) => async (page) => {
+// The left button turns the keyguard; the right button slides it (`pan`).
+export const drag = (from, to, { keys = [], steps = 12, button = 'left' } = {}) => async (page) => {
   const a = await viewPoint(page, ...from), b = await viewPoint(page, ...to);
   for (const k of keys) await page.keyboard.down(k);
   await page.mouse.move(a.x, a.y);
-  await page.mouse.down();
+  await page.mouse.down({ button });
   await page.mouse.move(b.x, b.y, { steps });
-  await page.mouse.up();
+  await page.mouse.up({ button });
   for (const k of keys.reverse()) await page.keyboard.up(k);
   await settled(page, 1500);
+};
+export const pan = (from, to) => drag(from, to, { button: 'right' });
+// A close look at one spot: from the top view, the spot at (fx, fy) of the 3D view is slid to
+// its middle and zoomed in on, then tilted back by `tilt` (a fraction of the view's height
+// dragged) so a slope shows.
+// The view slides about a third less than the pointer moves, so the drag aims past the middle.
+const OVERSHOOT = 1.45;
+export const closeUp = (fx, fy, clicks = 6, tilt = 0) => all(view('top'),
+  pan([fx, fy], [fx + (0.5 - fx) * OVERSHOOT, fy + (0.5 - fy) * OVERSHOOT]), zoom(clicks),
+  ...(tilt ? [drag([0.5, 0.6], [0.5, 0.6 - tilt])] : []));
+// Slides the 3D view so the pixels of one color sit in its middle, measured from what is
+// drawn, so a close-up lands on its subject however far in it zooms: `color` is [r, g, b],
+// matched within `tol`; `axis` 'x', 'y' or 'xy' says which way to slide. Twice, as the view
+// slides a little less than the pointer moves.
+export const centerOn = (color, { axis = 'xy', tol = 30 } = {}) => async (page) => {
+  for (let pass = 0; pass < 2; pass++) {
+    const c = await page.evaluate(([col, tol]) => {
+      const cv = document.getElementById('three-canvas');
+      const t = document.createElement('canvas'); t.width = cv.width; t.height = cv.height;
+      const g = t.getContext('2d'); g.drawImage(cv, 0, 0);
+      const d = g.getImageData(0, 0, cv.width, cv.height).data;
+      let sx = 0, sy = 0, n = 0;
+      for (let y = 0; y < cv.height; y += 2) for (let x = 0; x < cv.width; x += 2) {
+        const i = (y * cv.width + x) * 4;
+        if (Math.abs(d[i] - col[0]) < tol && Math.abs(d[i + 1] - col[1]) < tol && Math.abs(d[i + 2] - col[2]) < tol) { sx += x; sy += y; n++; }
+      }
+      return n ? { fx: sx / n / cv.width, fy: sy / n / cv.height } : null;
+    }, [color, tol]);
+    if (!c) throw new Error(`STOPPING - nothing of color ${color} in the 3D view to center on`);
+    const tx = axis.includes('x') ? 0.5 + (0.5 - c.fx) * 0.45 : c.fx;
+    const ty = axis.includes('y') ? 0.5 + (0.5 - c.fy) * 0.45 : c.fy;
+    if (Math.abs(tx - c.fx) < 0.01 && Math.abs(ty - c.fy) < 0.01) break;
+    await pan([c.fx, c.fy], [tx, ty])(page);
+  }
+};
+
+// Brings a row of settings into the middle of the Customizer, so a ring around several rows
+// shows them all.
+export const scrollTo = (sel) => async (page) => {
+  await page.locator(sel).first().evaluate((e) => e.scrollIntoView({ block: 'center' }));
+  await sleep(300);
 };
 export const clickAt = (at, { keys = [] } = {}) => async (page) => {
   const p = await viewPoint(page, ...at);

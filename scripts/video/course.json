@@ -40,6 +40,21 @@
       { "num": "6.1", "id": "6.1-looks-wrong", "title": "When the App Looks Wrong", "learn": "Reload the app and read the Console." },
       { "num": "6.2", "id": "6.2-report-problem", "title": "Telling Us About a Problem", "learn": "Write a problem report and send it." },
       { "num": "6.3", "id": "6.3-it-on-board", "title": "Getting IT on Board", "learn": "Run Check my setup and send IT the letter." }
+    ] },
+    { "name": "Advanced topics", "items": [
+      { "num": "7.1", "id": "7.1-padding", "title": "Setting the Padding by Hiding the Grid", "learn": "Line the grid up with the app's buttons using padding." },
+      { "num": "7.2", "id": "7.2-inset", "title": "Inset Keyguards", "learn": "Design for an app shrunk inside a white border." },
+      { "num": "7.3", "id": "7.3-openings-off", "title": "When the Cell Openings Are Off", "learn": "Find why openings miss their buttons, and fix it." },
+      { "num": "7.4", "id": "7.4-bar-edge-slope", "title": "What Bar Edge Slope Affects", "learn": "Know which edge bar edge slope tilts, and when it can't." },
+      { "num": "7.5", "id": "7.5-unequal-case-openings", "title": "Unequal Case Openings", "learn": "Design for a screen that isn't centered in its case." },
+      { "num": "7.6", "id": "7.6-tight-cases", "title": "Tight Cases: There's No Free Lunch", "learn": "Add plastic at a thin edge, and know what it costs." },
+      { "num": "7.7", "id": "7.7-posts", "title": "Mounting with Posts", "learn": "Snap a keyguard into a case that has its own mount." },
+      { "num": "7.8", "id": "7.8-frame", "title": "Keyguard Frames", "learn": "Make a frame, and size the keyguard inside it." },
+      { "num": "7.9", "id": "7.9-clip-on-straps", "title": "Measuring a Case for Clip-on Straps", "learn": "Measure the case so the clips fit." },
+      { "num": "7.10", "id": "7.10-dovetails", "title": "Getting the Dovetails Right", "learn": "Place the split, and tune the joint's fit." },
+      { "num": "7.11", "id": "7.11-oa-variables", "title": "Variables in the Openings and Additions File", "learn": "Write openings that follow the grid." },
+      { "num": "7.12", "id": "7.12-my-boxes", "title": "The \"My\" Openings and Additions Boxes", "learn": "Keep a design's own openings in its preset." },
+      { "num": "7.13", "id": "7.13-settings-text-or-json", "title": "Settings as Text, or as a .json File", "learn": "Choose how to write a design down or send it." }
     ] }
   ]
 }

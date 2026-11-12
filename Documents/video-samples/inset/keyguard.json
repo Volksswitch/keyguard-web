@@ -1,0 +1,29 @@
+{
+    "parameterSets": {
+        "WordPower 42 inset": {
+            "height_of_opening_in_case": "163",
+            "width_of_opening_in_case": "239",
+            "unit_of_measure_for_screen": "px",
+            "starting_corner_for_screen_measurements": "upper-left",
+            "bottom_of_status_bar": "119",
+            "bottom_of_upper_message_bar": "177",
+            "bottom_of_upper_command_bar": "255",
+            "top_of_lower_message_bar": "1530",
+            "top_of_lower_command_bar": "1530",
+            "expose_upper_message_bar": "yes",
+            "bar_edge_slope": "30",
+            "number_of_rows": "6",
+            "number_of_columns": "7",
+            "cell_height_in_px": "166",
+            "cell_width_in_px": "231",
+            "cell_height_in_mm": "0",
+            "cell_width_in_mm": "0",
+            "cell_corner_radius": "2",
+            "include_screenshot": "yes",
+            "keyguard_inset_mode": "yes",
+            "left_inset_size_in_px": "120",
+            "bottom_inset_size_in_px": "90"
+        }
+    },
+    "fileFormatVersion": "1"
+}

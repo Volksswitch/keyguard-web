@@ -139,6 +139,32 @@ quietly waits forever.
   designer/`), under its own rules, released by "bump keyguard designer".
 - **Why not now:** each fix changes what clinicians print; Ken decides which and when.
 
+### Website pages that disagree with the Advanced videos (7.1 to 7.13)
+- **Raised:** 2026-11-11, while writing the Advanced how-to videos from the website's own
+  pages. Ken's decision (11 Nov 2026): the videos teach what the keyguard designer does
+  now, and the pages are corrected to match. Ken edits pages himself.
+- **What's wanted** (all under `.../customizable-3d-printable-keyguard-for-grid-based-free-form-and-hybrid-aac-apps-on-tablets/`):
+  1. **Changing the Slope of a Message/Command Bar Edge:** says a command bar's top edge
+     can be sloped too. The designer slopes only an open message bar's edge beside a
+     covered command bar (video 7.4). The old video "sloped message or command bar edge"
+     says the same.
+  2. **Handling Tight Fitting Cases** (and the hub's Tablet Case paragraph): says the
+     plastic is added "from the edge of the screen inward". The designer measures it in
+     from the keyguard's edge, and only the part past the existing gap reaches the screen
+     (video 7.6).
+  3. **Splitting your keyguard into two pieces:** says to turn show split line off before
+     rendering; not needed since keyguard designer version 94 (video 3.7 corrected the
+     same day).
+  4. **Keyguard Frame:** tightness of fit "10 = 1 mm"; it is now the millimeters
+     themselves, -1 to 1 (video 7.8). It also says posts always trim at the upper command bar.
+  5. **A broken link:** `.../comparing-an-image-of-your-keyguard-to-a-screenshot-of-the-aac-app/`
+     is not found, and is linked twice from the hub and once from the openings and
+     additions page.
+- **Already listed elsewhere:** the Console's move-screenshot advice naming a setting that
+  doesn't exist, and the portrait frame split on the wrong side, are in "Faults found in the
+  keyguard designer file" above.
+- **Why not now:** the pages are Ken's to edit.
+
 ### Folders with two files of saved designs
 - **Raised:** 2026-10-26 - the plain file names change. Before it, a folder holding
   `keyguard_v92.scad` beside a presets file with another name (say `keyguard.json`) opened

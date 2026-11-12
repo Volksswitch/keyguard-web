@@ -12,9 +12,11 @@ const gridSize = (x, y) => async (page) => {
 
 export default {
   id: '3.7-splitting',
+  // The current keyguard designer: before version 94, show split line carried a note to set it
+  // to no before rendering, which the narration no longer says.
+  project: { dir: 'Documents/video-samples/advanced' },
   trouble: [
     "If the halves don't fit together, change tightness of dovetail joint: a larger number fits tighter.",
-    "Set show split line back to no before you export.",
   ],
   steps: [
     { before: all(openSettings('grid'), gridSize(180, 180)), highlight: '#settings-panel',
@@ -37,8 +39,8 @@ export default {
         setParam('generate', 'first half of keyguard'), view('top')),
       highlight: row('generate'),
       page: "Set generate to the first half of keyguard and export, then the second half and export again.",
-      say: "To print, set show split line back to no. Then set generate to the first half of keyguard, " +
-           "and export it. Then choose the second half, and export again." },
+      say: "To print, set generate to the first half of keyguard, and export it. Then choose the second " +
+           "half, and export again. The split line isn't part of either file." },
     { before: all(setParam('generate', 'second half of keyguard'), view('top')), highlight: '#viewport',
       say: "Print both halves, and join them. {next}" },
   ],

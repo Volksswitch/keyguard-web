@@ -11,7 +11,8 @@
 // and takes it away after the picture. Its parts carry data-part names, so a step's
 // `highlight` can ring one: inDialog('ok') in helpers.mjs.
 //
-//   kind      'save', 'open', 'folder', or 'permission' (the browser's question)
+//   kind      'save', 'open', 'folder', 'permission' (the browser's question), or 'text'
+//             (a plain text editor, such as Notepad or TextEdit, showing a file)
 //   title     the title bar; each kind has its own
 //   path      the folders above the one shown, ending with it
 //   items     [name, type] for each row; folders have type 'folder'
@@ -21,6 +22,10 @@
 //   faded     true dims every row that isn't a folder, as a Save box does
 //   site      the address the browser names (permission)
 //   folder    the folder the browser names (permission)
+//   file      the file name in the title bar (text)
+//   lines     the file's lines (text); each is ringed as inDialog('line-<n>'), from 1
+//   mark      line numbers shown picked out (text)
+//   top       the first line to show, for a long file (text)
 
 export const SAMPLE_FILES = [
   ['keyguard.json', 'JSON file'],
@@ -69,6 +74,11 @@ const CSS = `
   #vid-dialog .ask .d { color: #3e4c59; margin-bottom: 16px; line-height: 1.4; }
   #vid-dialog .ask .buttons { flex-direction: column; align-items: stretch; gap: 8px; }
   #vid-dialog .ask .btn { text-align: center; padding: 8px 14px; }
+  #vid-dialog .win.text { width: 900px; height: 520px; }
+  #vid-dialog .menu { padding: 6px 14px; color: #3e4c59; border-bottom: 1px solid #e3e7eb; word-spacing: 14px; }
+  #vid-dialog .doc { flex: 1; overflow: hidden; padding: 10px 0; font: 15px Consolas, 'Courier New', monospace; }
+  #vid-dialog .doc div { white-space: pre; padding: 1px 16px; min-height: 19px; }
+  #vid-dialog .doc div.mk { background: #fff3c4; }
 `;
 
 const TITLES = { save: 'Save As', open: 'Open', folder: 'Choose a folder' };
@@ -111,9 +121,20 @@ function askHtml(d) {
       <span class="btn" data-part="once">Allow this time</span><span class="btn" data-part="deny">Don't allow</span></div></div>`;
 }
 
+function textHtml(d) {
+  const mark = new Set(d.mark || []);
+  const from = (d.top || 1) - 1;
+  const rows = (d.lines || []).slice(from).map((l, i) => `<div data-part="line-${from + i + 1}"${mark.has(from + i + 1) ? ' class="mk"' : ''}>${esc(l)}</div>`).join('');
+  return `<div class="dim"></div><div class="win text" data-part="box">
+    <div class="bar">${esc(d.file || 'openings_and_additions.txt')} - text editor<span class="x">&times;</span></div>
+    <div class="menu">File Edit View</div>
+    <div class="doc" data-part="text">${rows}</div></div>`;
+}
+
 export async function showDialog(page, d) {
-  if (!['save', 'open', 'folder', 'permission'].includes(d.kind)) throw new Error(`STOPPING - unknown dialog kind ${d.kind}`);
-  const html = `<style>${CSS}</style>${d.kind === 'permission' ? askHtml(d) : boxHtml(d)}`;
+  if (!['save', 'open', 'folder', 'permission', 'text'].includes(d.kind)) throw new Error(`STOPPING - unknown dialog kind ${d.kind}`);
+  const body = d.kind === 'permission' ? askHtml(d) : d.kind === 'text' ? textHtml(d) : boxHtml(d);
+  const html = `<style>${CSS}</style>${body}`;
   await page.evaluate((html) => {
     document.getElementById('vid-dialog')?.remove();
     const el = document.createElement('div');
