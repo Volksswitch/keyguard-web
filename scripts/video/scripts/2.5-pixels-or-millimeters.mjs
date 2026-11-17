@@ -64,8 +64,8 @@ export default {
       say: "The starting corner says where those numbers count from. Graphics programs, like Paint, count " +
            "from the upper-left corner." },
     { highlight: section('Free-form and Hybrid Keyguard Openings'),
-      say: "Set both before you place any openings. If you change the unit later, the openings in Custom " +
+      say: "Set both before you place any openings. If you change either one later, the openings in Custom " +
            "Openings are converted, so they stay put. Numbers in the openings and additions file aren't: " +
-           "they're read in the new unit. {next}" },
+           "they're read in the new unit, from the new corner. {next}" },
   ],
 };

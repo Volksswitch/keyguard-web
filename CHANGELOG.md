@@ -13,6 +13,8 @@ notes, because nothing at this address could have been missed yet.
 
 ## Unreleased (next release)
 
+- **Changing the starting corner no longer moves your custom openings.** Switching **starting corner for screen measurements** between upper-left and lower-left used to leave the numbers as they were and measure them from the other corner, so every opening you placed with Custom Openings jumped to the opposite end of the keyguard, top to bottom. Now each opening is re-measured from the new corner, so it stays exactly where it was, just as it does when you change the unit of measure. One Undo takes back the corner and the conversion together. Screen openings typed into your openings-and-additions file are still yours to change.
+
 ## Release 124
 
 - **When a file isn't saved, the app no longer says you canceled.** If the Save As window closes without saving an STL, SVG, picture, console or problem report, the console says the file wasn't saved. It explains that Chrome may have refused the folder you chose. Chrome reports this the same way as choosing Cancel, so before this release the app said "export canceled" even when you had clicked Save. Try another folder, such as Downloads. If Chrome refuses every folder, your organization may block saving files from websites, and your IT department can tell you.

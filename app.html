@@ -1762,6 +1762,9 @@ const RELEASE_NOTES = {
   ],
   "124": [
     "When a file isn't saved, the app no longer says you canceled. If the Save As window closes without saving an STL, SVG, picture, console or problem report, the console says the file wasn't saved. It explains that Chrome may have refused the folder you chose. Chrome reports this the same way as choosing Cancel, so before this release the app said \"export canceled\" even when you had clicked Save. Try another folder, such as Downloads. If Chrome refuses every folder, your organization may block saving files from websites, and your IT department can tell you."
+  ],
+  "125": [
+    "Changing the starting corner no longer moves your custom openings. Switching starting corner for screen measurements between upper-left and lower-left used to leave the numbers as they were and measure them from the other corner, so every opening you placed with Custom Openings jumped to the opposite end of the keyguard, top to bottom. Now each opening is re-measured from the new corner, so it stays exactly where it was, just as it does when you change the unit of measure. One Undo takes back the corner and the conversion together. Screen openings typed into your openings-and-additions file are still yours to change."
   ]
 };
 const RELEASE_DATES = {
@@ -6267,11 +6270,15 @@ container.addEventListener('change', async e => {
       t.value !== '' && !Number.isNaN(parseFloat(t.value))) {
     t.value = parseFloat(t.value).toFixed(+t.dataset.decimals);
   }
-  // A new screen unit converts the screen openings with it, before the change is
-  // recorded, so they stay put and one Undo takes back both.
-  if (t.dataset.paramName === 'unit_of_measure_for_screen' && histBase) {
-    ogConvertScreenField(histBase.unit_of_measure_for_screen === 'mm' ? 'mm' : 'px',
-                         t.value === 'mm' ? 'mm' : 'px');
+  // A new screen unit, or a new starting corner, converts the screen openings with
+  // it, before the change is recorded, so they stay put and one Undo takes back both.
+  if (histBase && (t.dataset.paramName === 'unit_of_measure_for_screen' ||
+                   t.dataset.paramName === 'starting_corner_for_screen_measurements')) {
+    const unitOf   = v => v.unit_of_measure_for_screen === 'mm' ? 'mm' : 'px';
+    const originOf = v => v.starting_corner_for_screen_measurements === 'lower-left'
+      ? 'lower-left' : 'upper-left';
+    const now = currentFormValues();
+    ogConvertScreenField(unitOf(histBase), unitOf(now), originOf(histBase), originOf(now));
   }
   updateDirty();
   commitHistory();   // one undo step per committed value (focus left the field)
@@ -8763,10 +8770,10 @@ function ogHighlight(grid, idx) {
 
 // The units and the 0,0 corner the screen grid is expressed in are Customizer
 // values, and the clinician can change either with this panel still open — so
-// the label is re-read from the form rather than frozen at open time. The
-// stored numbers are the .scad's own, written back centre-anchored, so a change
-// of corner re-labels them without disturbing them; a change of unit also moves
-// the number boxes to that unit's step and precision.
+// the label is re-read from the form rather than frozen at open time, and the
+// panel's own openings are converted to match (ogConvertScreenUnits,
+// ogFlipScreenCorner). A change of unit also moves the number boxes to that
+// unit's step and precision.
 function ogSyncScreenUnits() {
   if (!ogState) return;
   const vals   = currentFormValues();
@@ -8791,7 +8798,53 @@ function ogSyncScreenUnits() {
     ogConvertScreenUnits(was, unit);
     ogRenderGrid('screen');
   }
+  if (origin !== ogState.screenOrigin) {
+    ogState.screenOrigin = origin;
+    ogFlipScreenCorner(unit);
+    ogRenderGrid('screen');
+  }
   ogeRefresh();
+}
+
+// The screen's height in the given unit, measured the way the openings are: the
+// whole screen for pixels (a screenshot is of the whole screen), the app for
+// millimetres — the same rule ogeGeom follows. Null when it isn't known.
+function ogScreenSpan(unit) {
+  const d = project && project.dims;
+  if (!d) return null;
+  if (unit === 'px') return d.shp > 0 ? d.shp : null;
+  const h = d.ahm > 0 ? d.ahm : d.shm;
+  return h > 0 ? h : null;
+}
+
+// Switching the starting corner between upper-left and lower-left re-measures
+// every screen opening from the new corner, so each one stays exactly where it
+// was — the same promise a change of unit keeps (Ken, 17 Nov 2026). Left alone,
+// the numbers would be re-read from the other corner and every opening would
+// jump to its mirror image, top to bottom. Only the up-and-down measurement
+// changes; left-to-right, sizes, ridge angles and which way a rounded corner
+// points are all the same from either corner.
+function ogFlipRows(rows, span, unit) {
+  const dp = unit === 'px' ? 0 : 1;
+  for (const row of rows) {
+    // A rounded corner's point stays exactly on its corner, unrounded — see
+    // ogeRoundRow. Everything else is written at the panel's own precision.
+    row.y = ogIsArc(row.shape) ? span - (row.y || 0)
+                               : parseFloat((span - (row.y || 0)).toFixed(dp));
+  }
+}
+
+// The panel's own rows while it is open, and its undo history with them, so an
+// Undo here never brings back numbers measured from the other corner. Not a step
+// of its own: the corner is a Customizer setting, and the Customizer's Undo
+// takes it back.
+function ogFlipScreenCorner(unit) {
+  if (!ogState || ogState.screen.error) return;
+  const span = ogScreenSpan(unit);
+  if (!span) return;
+  ogFlipRows(ogState.screen.rows, span, unit);
+  for (const snap of [...ogeUndo, ...ogeRedo]) ogFlipRows(snap.rows, span, unit);
+  ogPreview();
 }
 
 // Switching the screen's unit of measure re-scales every screen opening, so the
@@ -8831,26 +8884,29 @@ function ogCanConvertUnits() {
 // opening became 253 mm and vanished off the screen. Called by the Customizer
 // before it records the change, so one Undo takes back the unit and the
 // conversion together. Rows the panel can't model are kept exactly as typed.
-function ogConvertScreenField(from, to) {
-  if (from === to || !ogCanConvertUnits()) return;
+// A change of starting corner is handled here the same way (Ken, 17 Nov 2026):
+// the rows are read as measured from the OLD corner and written back measured
+// from the new one.
+function ogConvertScreenField(fromUnit, toUnit, fromOrigin, toOrigin) {
+  const unitChanged = fromUnit !== toUnit && ogCanConvertUnits();
+  const flipSpan = fromOrigin !== toOrigin ? ogScreenSpan(toUnit) : null;
+  if (!unitChanged && !flipSpan) return;
   const el = ogFieldInput('my_screen_openings');
   if (!el || !el.value.trim()) return;
   const parsed = parseOAText(el.value);
   if (!parsed.ok) return;
-  const vals = currentFormValues();
-  const origin = vals.starting_corner_for_screen_measurements === 'lower-left'
-    ? 'lower-left' : 'upper-left';
   const d = project.dims;
-  const perMM = from === 'mm' ? 1 : d.swp / d.swm;
+  const perMM = fromUnit === 'mm' ? 1 : (d.swp > 0 && d.swm > 0 ? d.swp / d.swm : null);
   const rows = [], kept = [], hl = new Set();
   for (const row of parsed.rows) {
-    const simple = ogSimplify(row, 'screen', origin, perMM);
+    const simple = ogSimplify(row, 'screen', fromOrigin, perMM);
     if (!simple) { kept.push(row.raw); continue; }
     if (simple.id === '#') { simple.id = 0; hl.add(rows.length); }
     rows.push(simple);
   }
   if (!rows.length) return;
-  ogConvertRows(rows, to);
+  if (unitChanged) ogConvertRows(rows, toUnit);
+  if (flipSpan) ogFlipRows(rows, flipSpan, toUnit);
   el.value = ogSerialize(rows, hl, kept);
 }
 
@@ -10251,6 +10307,7 @@ function openOpenings() {
 
   ogState = {
     screenUnit: unit,
+    screenOrigin: origin,
     previewed: false,
     screen: { rows: [], kept: [], error: null, converted: 0, hl: new Set() },
     case:   { rows: [], kept: [], error: null, converted: 0, hl: new Set() },

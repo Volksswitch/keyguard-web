@@ -33,7 +33,7 @@ export default {
       page: "Screen openings are in the unit of measure for the screen, from its starting corner. The heading says which.",
       say: "Screen openings are measured in the unit of measure for the screen, pixels or millimeters, " +
            "counted from its starting corner. Both are set in Free-form and Hybrid Keyguard Openings, " +
-           "and the heading here says which. Set them before you type. If you change the unit later, " +
+           "and the heading here says which. Set them before you type. If you change either one later, " +
            "the openings are converted, so they stay put." },
     { before: click('.og-add[data-grid="screen"]'), highlight: lastRow,
       page: "Click + Add opening. A row appears for the new opening.",
