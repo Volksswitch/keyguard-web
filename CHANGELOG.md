@@ -13,6 +13,8 @@ notes, because nothing at this address could have been missed yet.
 
 ## Unreleased (next release)
 
+## Release 125
+
 - **Changing the starting corner no longer moves your custom openings.** Switching **starting corner for screen measurements** between upper-left and lower-left used to leave the numbers as they were and measure them from the other corner, so every opening you placed with Custom Openings jumped to the opposite end of the keyguard, top to bottom. Now each opening is re-measured from the new corner, so it stays exactly where it was, just as it does when you change the unit of measure. One Undo takes back the corner and the conversion together. Screen openings typed into your openings-and-additions file are still yours to change.
 
 ## Release 124
