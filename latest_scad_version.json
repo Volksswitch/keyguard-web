@@ -1,13 +1,20 @@
 {
-  "version": 97,
-  "scad_filename": "keyguard_v97.scad",
-  "scad_url": "./keyguard_v97.scad",
+  "version": 98,
+  "scad_filename": "keyguard_v98.scad",
+  "scad_url": "./keyguard_v98.scad",
   "oa_filename": "openings_and_additions.txt",
   "oa_url": "./openings_and_additions.txt",
   "notes": [
-    "**Ridges and other raised shapes no longer stick out underneath the keyguard.** Where the underside of the keyguard is cut away (under a sloped keyguard edge, at the case-to-slope step, or by a \"my case additions\" shape that thins the keyguard from below), a ridge, bump or other raised shape placed above that spot used to poke out below it. These cuts now trim raised shapes too, so the underside keeps the shape you designed and the keyguard still sits flat on the case. A ridge that crosses an opening still reaches down through it, as before."
+    "**Nothing on a keyguard mounted on posts reaches past the posts toward the top of the case any more, so the keyguard can always swing on them.** The keyguard has always been cut off at the posts, but a case addition reaching more than half a millimeter past the side of the case opening kept the part of it that lay beyond the posts. So did ridges, raised text and additions thinner than the keyguard that were placed beyond the posts. Everything between the posts and the top of the case opening is now cut away, whatever it is; only the posts themselves remain there. Nothing changes below the posts. If you made a keyguard with posts that had something beyond them, open the design again and export it once you have this version."
   ],
   "history": [
+    {
+      "version": 98,
+      "date": "2026-11-18",
+      "notes": [
+        "**Nothing on a keyguard mounted on posts reaches past the posts toward the top of the case any more, so the keyguard can always swing on them.** The keyguard has always been cut off at the posts, but a case addition reaching more than half a millimeter past the side of the case opening kept the part of it that lay beyond the posts. So did ridges, raised text and additions thinner than the keyguard that were placed beyond the posts. Everything between the posts and the top of the case opening is now cut away, whatever it is; only the posts themselves remain there. Nothing changes below the posts. If you made a keyguard with posts that had something beyond them, open the design again and export it once you have this version."
+      ]
+    },
     {
       "version": 97,
       "date": "2026-10-29",
@@ -114,25 +121,6 @@
       "notes": [
         "Removed `tab1-4` from the list of case addition shapes in `openings_and_additions.txt`. The designer has never supported a shape by that name, so asking for one simply produced nothing.",
         "If you use a case addition shape name the designer doesn't recognise, it now tells you so instead of quietly leaving that item out of your design."
-      ]
-    },
-    {
-      "version": 83,
-      "date": "2026-07-14",
-      "notes": [
-        "Openings and additions marked for highlighting (`\"#\"`) are now highlighted when you generate a keyguard **frame**, not just a keyguard. Previously a highlighted item simply didn't show up while the frame was being displayed. This covers everything the frame itself carries: openings placed in the screen area or the case area, plastic added to or subtracted from the frame edge, and tablet openings.",
-        "Fixed: a tablet opening now cuts all the way through a keyguard frame. It was only being cut to the *keyguard's* thickness, so on a frame thicker than the keyguard it left a blind pocket with a floor in it instead of an opening.",
-        "Fixed: when your design has a frame, tablet openings and case additions are now applied only to the frame — the part that actually carries them. The keyguard was also being cut for the same tablet openings (leaving a second, shallower hole with its own chamfer) and slotted for clip-on strap pedestals it never receives."
-      ]
-    },
-    {
-      "version": 82,
-      "date": "2026-07-03",
-      "notes": [
-        "The controls to slide the keyguard within its frame now take a distance in millimeters (entered in a number box, in 0.5 mm steps) instead of a percentage of the frame — so you can position the keyguard by the exact amount you want.",
-        "Frame posts now attach the keyguard to its frame correctly when the keyguard is slid within a widened frame: the frame's post slots and relief openings track the keyguard's position, the relief is squared to clear the posts, and cells/bars extend through the frame where they overlap it.",
-        "Fixed a bug where a frame post (and its matching slot) could float above the top edge of the keyguard instead of meeting it.",
-        "The top and bottom edges of the frame's post-relief opening are now chamfered."
       ]
     }
   ]
