@@ -13,9 +13,10 @@ old name in the manual. Never edit those links by hand.
 Each link opens the video's watch page, a child of the videos page, whose address comes
 from the video's number (course.json: a published number never changes). ⚠ THE VIDEOS
 PAGE DOESN'T EXIST YET (October 27 2026), so these are the addresses the pages WILL have,
-and every link shows "not found" until the videos are published there. The manual must
-not go out before the videos do; this script lists the videos not yet recorded as
-published (scripts/video/published.json) every time it runs.
+and every link shows "not found" until the videos are published there. So a video gets
+its link only once it is recorded as published (scripts/video/published.json); the rest
+are listed as waiting every time this runs, and are linked by the next "sync docs" after
+"sync videos" publishes them.
 
 A link already in the manual is never added twice. A manual with tracked changes or
 comments is left alone, because it is still under review. The edit goes through
@@ -111,6 +112,11 @@ def wanted():
                 continue
             if v not in ITEM:
                 raise LookupError('%s is in MAP but not in course.json' % v)
+            # A link to a video not yet on the website would show "not found" in a
+            # published manual, so it waits until "sync videos" publishes the video
+            # (17 Nov 2026: the unreviewed Advanced videos were nearly linked).
+            if v not in published:
+                continue
             out.append((heading, watch_page(v), 'Video:  ', ITEM[v]['title']))
     return out
 
@@ -192,7 +198,7 @@ def main(apply):
         print('    add: ' + w)
     waiting = [ITEM[v]['num'] for _h, vids in MAP for v in vids if v != 'ALL' and v not in published]
     if waiting:
-        print('NOT PUBLISHED YET, so these links show "not found" until they are: %d of %d videos'
+        print('NOT PUBLISHED YET, so not linked until "sync videos" publishes them: %d of %d videos'
               % (len(waiting), len(waiting) + sum(1 for _h, vids in MAP for v in vids
                                                   if v != 'ALL' and v in published)))
     if not apply:

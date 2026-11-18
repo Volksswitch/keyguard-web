@@ -20,7 +20,7 @@ from kg_docstyle import DOCUMENTS, HERE, KgDoc, GREY  # noqa: E402
 OUT = sys.argv[1] if len(sys.argv) > 1 else os.path.join(
     DOCUMENTS, 'Keyguard Designer User Manual.docx')
 FIG = os.path.join(HERE, 'figures')
-UPDATED = 'November 1, 2026'
+UPDATED = 'November 17, 2026'
 O_A_PAGE = ('https://volksswitch.org/index.php/volks-devices/customizable-3d-printable-keyguard-for-'
             'grid-based-free-form-and-hybrid-aac-apps-on-tablets/specifying-a-keyguard-for-a-free-form-'
             'or-hybrid-aac-app/putting-instructions-in-the-o_a-file/')
@@ -321,7 +321,7 @@ d.p("This tab lists the same openings as numbers. Use it to type an exact positi
 fig('um-table.png', 'Figure 5. Custom Openings, pixels or millimeters tab.', 6.0)
 d.b("**Screen openings** are measured in the unit of measure for the screen, pixels or "
     "millimeters, from its starting corner. Both are set in Free-form and Hybrid Keyguard "
-    "Openings, and the heading says which. Set them before you type: changing the unit later "
+    "Openings, and the heading says which. Set them before you type: changing either one later "
     "converts the measurements so they stay put.  Note that the numbers in the openings and "
     "additions file aren't converted.")
 d.b("**Case openings** are measured in millimeters from the lower-left corner of the case "
