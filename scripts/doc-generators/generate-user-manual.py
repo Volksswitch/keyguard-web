@@ -125,7 +125,9 @@ d.p("The app remembers the last folder you opened. When you come back, the Custo
     "Project…**, allow access if the browser asks, and the project opens without first showing "
     "the folder picker.")
 d.p("The app remembers your last eight project folders. Most people will only have one.  With no project open, the box below "
-    "**Open Project…** lists them; click one to open it. With a project open, the button reads "
+    "**Open Project…** lists them; click one to open it. To open a folder that isn’t listed, or "
+    "one the app can’t open, click **Pick a different folder…** at the bottom of the list. "
+    "With a project open, the button reads "
     "**Change Project…** and lists your other folders, plus an option to pick a different one.")
 d.p("A folder you made for OpenSCAD works too. The app reads and writes the same files, so your "
     "saved designs appear in the preset list.")
@@ -502,6 +504,9 @@ d.table(['What you see', 'What to do'], [
      'Use Chrome or Edge. Safari and Firefox can\'t open a project folder.'],
     ['The browser asks again for access to the folder', 'Choose Allow, or Allow on every visit '
      'to stop the question.'],
+    ['The app says it couldn’t open your project folder', 'The browser’s memory of the folder '
+     'has gone bad, most often after a browser update. Click Pick a different folder… and choose '
+     'the same folder again. Your designs are safe in the folder.'],
     ['The keyguard stops updating, and the Console says memory access out of bounds',
      'A large design used up the 3D engine\'s working memory. Click Reload the app on the '
      'Troubleshooting or About tab, then open the project again. Your design is safe.'],
