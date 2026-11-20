@@ -251,6 +251,7 @@
                     overflow: hidden; text-overflow: ellipsis; }
   #preset-list li:hover { background: #e8f0fc; }
   #preset-list li.active { background: #d6e6fb; font-weight: bold; }
+  #preset-list li.picker { border-top: 1px solid #ddd; font-style: italic; color: #444; }
 
   /* When no project is open the preset combo is repurposed as a Recent Projects
      picker: the action buttons and dirty marker are nonsensical, so hide them.
@@ -1774,6 +1775,10 @@ const RELEASE_NOTES = {
   "126": [
     "You can now add a support by eye. A support is a flat bar that stiffens the keyguard across an opening without standing above it. The “by eye” tab of Custom Openings has a new + Support button. Press it, then click on the keyguard for a 10 mm support starting where you clicked, or press and drag to draw one across an opening, either across or up and down. A support starts 2 mm wide. Where it meets the keyguard it gets fillets that round off the corners it makes, and they start with the corner radius of the opening you drew it across: a cell's corner radius, or the corner radius of the custom opening it lies in. On the “pixels or millimeters” tab you can change a support's width (under height / width), its length and its fillet radius (under corner radius), and turn it between 0° and 90°. Supports need version 99 or later of the keyguard designer file; until you have it, the + Support button is greyed out.",
     "Shapes can now snap into line on the “by eye” tab. Tick the new Snap box and, as you move or size an opening, ridge or support, its middle lines up with the middle of the keyguard, the middle of the screen, the middle of the grid or the middle of another opening, across and up and down, once it comes close; a dashed line shows what it lined up with. Other openings means your other custom openings, ridges and supports, and every opening the keyguard already has: its cells, its bars and the openings in your openings-and-additions file. A support laid across a cell lines up with the middle of that cell, even though it divides it in two. The middle of the keyguard is the middle of the keyguard itself, so if your case opening's sides are unequal it is not the same line as the middle of the screen. Edges line up too: the left, right, top or bottom edge of the shape you are moving lines up with an edge of another opening, and when you size a shape by a handle, the edge you are dragging does. Whichever line is nearest wins, middle or edge. A ridge or support lines up by its ends as well as its middle, so you can stop a support exactly at the wall of the opening it crosses. Hold Alt while you drag to place a shape freely. Nudging with the arrow keys never snaps, and the box stays as you left it. Lining up with the grid needs version 99 or later of the keyguard designer file; with an older one, shapes snap to the keyguard and the screen."
+  ],
+  "127": [
+    "If the app can't open the folder it remembered for you, it now says so and helps you pick it again. The browser keeps its own memory of your project folder, and once in a while that memory goes bad, most often after a browser update. Until now, clicking Open Project… or your folder in Recent projects then did nothing at all, and the only cure was to clear the site's data in the browser's settings. Now a message tells you the folder couldn't be opened, the app forgets it, and the message's Pick a different folder… button opens the folder picker so you can choose the same folder again. Your designs are safe the whole time: they live in the folder, not in the browser.",
+    "Recent projects now ends with Pick a different folder…. With no project open, the Recent projects list under Open Project… has the same Pick a different folder… choice that Change Project… has. It always goes straight to the folder picker, skipping the folder the app remembers."
   ]
 };
 const RELEASE_DATES = {
@@ -1803,6 +1808,16 @@ const RELEASE_DATES = {
   "126": "2026-11-20"
 };
 const DESIGNER_NOTES = [
+  {
+    "version": 99,
+    "date": "2026-11-20",
+    "notes": [
+      "**New shape: the support, a flat bar that stiffens the keyguard across an opening.** Unlike a ridge, a support never stands above the keyguard: it is exactly as thick as the keyguard where it lies, so on the screen area it is as thick as the screen area, and on a thicker border as thick as the border. Everywhere it meets plastic it gets fillets, at the wall of every opening it crosses and at the plastic between them, so each opening it divides keeps rounded corners like the rest. Where two supports cross, the corners where they meet are filleted too. Its top edges are beveled to match the openings around it. You can write one in screen openings, case openings or tablet openings, in `openings_and_additions.txt` or the matching \"my … openings\" setting, as the shape `\"support\"`. Its corner value is the radius of its fillets (0 for square corners). It is 2 mm wide and 10 mm long unless you give it a width and a length. Its x and y are the middle of its starting end, or its middle with the \"C\" anchor. It runs only across or up and down: a direction of 0, 90, 180 or 270 degrees, and a support at any other angle is skipped with a warning in the console. Laser-cut keyguards get supports too. In desktop OpenSCAD, a design with a support previews about as slowly as it renders, because the support has to see the finished keyguard to know where its fillets go.",
+      "**New grid variables gl and gr: the left and right edges of the grid.** They join gw, gh, gt and gb, and are measured the same way as a screen opening's x, in millimeters or pixels as appropriate, so gr minus gl is the grid width. You can use them in `openings_and_additions.txt` and in the \"my … openings\" settings, for example to center an opening on the grid at x = (gl+gr)/2.",
+      "**New variable bw: the width of the bars.** It is the width the status bar, message bars and command bars are actually cut at: the app's width, less any left or right edge compensation for tight cases that reaches past the case border. Like the other app variables it is in millimeters or pixels as appropriate, and you can use it in `openings_and_additions.txt` and in the \"my … openings\" settings.",
+      "The designer now tells the Keyguard Designer web app where the middle of the grid is, so that **Snap** on its “by eye” tab can line openings up with it. Nothing about the keyguard changes, and there is nothing different to see in OpenSCAD."
+    ]
+  },
   {
     "version": 98,
     "date": "2026-11-18",
@@ -2538,10 +2553,30 @@ async function refreshRecentsDropdown() {
     li.addEventListener('mousedown', (e) => {
       e.preventDefault();
       list.classList.remove('open');
-      openProject(h);
+      openProject(h).catch(openProjectFailed);
     });
     list.appendChild(li);
   }
+  // The way out when a remembered folder won't open (20 Nov 2026: a Chrome
+  // whose memory of a clinician's folder went bad left her clicking Open
+  // Project to no effect, with nothing on this screen that skipped it). Goes
+  // straight to the folder picker, never through the remembered folder.
+  const pick = document.createElement('li');
+  pick.className = 'picker';
+  pick.textContent = PICK_DIFFERENT;
+  pick.title = 'Choose a project folder in the folder picker';
+  pick.addEventListener('mousedown', (e) => {
+    e.preventDefault();
+    list.classList.remove('open');
+    openProject(null, { pick: true }).catch(openProjectFailed);
+  });
+  list.appendChild(pick);
+}
+const PICK_DIFFERENT = 'Pick a different folder…';
+function openProjectFailed(e) {
+  logLine('Open Project failed: ' + (e && e.message || e));
+  setStatus('Open Project failed: ' + (e && e.message || e), 'error');
+  console.error(e);
 }
 
 // ===== Project model =====
@@ -2722,7 +2757,57 @@ async function resetToNoProject() {
   await applyNoProjectUI();
 }
 
-async function openProject(presetHandle = null) {
+// A remembered folder the browser can no longer open. Seen 20 Nov 2026 in a
+// clinician's Chrome after a browser update (Edge on the same computer was
+// fine): every click retried the same broken memory, said nothing, and only
+// clearing the site's data got her back in. So: forget that folder (as the last
+// one opened and from Recent projects), say so in plain words, and offer the
+// folder picker from the notice itself, whose button click is a fresh user
+// gesture the picker needs. Her designs live in the folder, so nothing is lost.
+async function forgetFolder(handle) {
+  const stored = await idbGetHandle();
+  let same = false;
+  if (stored) {
+    try { same = await stored.isSameEntry(handle); }
+    catch { same = stored.name === handle.name; }
+  }
+  if (same) await idbClearHandle();
+  const recents = await idbGetRecents();
+  const kept = [];
+  for (const h of recents) {
+    let match;
+    try { match = await h.isSameEntry(handle); }
+    catch { match = h.name === handle.name; }   // a broken entry can't compare itself
+    if (!match) kept.push(h);
+  }
+  if (kept.length !== recents.length) await idbPutRecents(kept);
+}
+async function folderWontOpen(handle, err, moved = false) {
+  const name = handle && handle.name ? handle.name : 'your project folder';
+  if (err) logLine(`  "${name}" could not be opened (${err.name || ''}${err.message ? ': ' + err.message : ''}).`);
+  if (handle) await forgetFolder(handle);
+  if (project) { if (!watchTimer) startWatcher(); setStatus('Kept the project that was already open.'); }
+  else {
+    await applyNoProjectUI();
+    setStatus('Click <b>Open Project…</b> to begin.');
+    // It no longer says "last folder: …" if that was the folder just forgotten.
+    if (!(await idbGetHandle()))
+      document.getElementById('project-folder-label').innerHTML = '<i>no project folder open</i>';
+  }
+  logLine(`  The app has forgotten "${name}". Click "${PICK_DIFFERENT}" and choose it again; your designs are safe in the folder.`);
+  const pickAgain = await askConfirm({
+    title: "Couldn't open your project folder",
+    message: moved
+      ? `The folder "${name}" seems to have been moved, renamed or deleted. ` +
+        `Click ${PICK_DIFFERENT} and choose it where it is now.`
+      : `The browser couldn't open "${name}", the folder it remembered for you. ` +
+        `Your designs are safe in the folder itself. ` +
+        `Click ${PICK_DIFFERENT} and choose "${name}" again.`,
+    ok: PICK_DIFFERENT, cancel: 'Cancel' });
+  if (pickAgain) await openProject(null, { pick: true });
+}
+
+async function openProject(presetHandle = null, { pick = false } = {}) {
   if (!window.showDirectoryPicker) {
     alert('This browser does not support the File System Access API. Please use Chrome or Edge.');
     return;
@@ -2737,6 +2822,9 @@ async function openProject(presetHandle = null) {
     if (!proceed) return;
   }
   let dirHandle = presetHandle;
+  // From the app's memory (Recent projects, or the last folder opened) rather
+  // than the folder picker just now: only such a folder is forgotten on failure.
+  let remembered = !!presetHandle;
   // Caller supplied a handle (e.g. clicking a Recent Projects entry): do the
   // readwrite permission dance and skip the picker entirely. If denied, drop
   // the dead handle from recents so it stops cluttering the list.
@@ -2745,7 +2833,11 @@ async function openProject(presetHandle = null) {
     try {
       perm = await dirHandle.queryPermission({ mode: 'readwrite' });
       if (perm !== 'granted') perm = await dirHandle.requestPermission({ mode: 'readwrite' });
-    } catch {}
+    } catch (e) {
+      // Not a "Don't allow": the browser could not even ask about this folder.
+      await folderWontOpen(dirHandle, e);
+      return;
+    }
     if (perm !== 'granted') {
       logLine('Folder access was not granted — keeping the current project.');
       if (!project) { await removeRecent(dirHandle); await applyNoProjectUI(); }
@@ -2757,8 +2849,9 @@ async function openProject(presetHandle = null) {
   // last-opened folder on a fresh page load: requestPermission must be called
   // from a user gesture (the button click that drove us here), so this is
   // the right place. Chrome shows one prompt covering read+write.
+  // `pick` is "Pick a different folder…": the picker, never the remembered folder.
   const isChangeProject = !!project;
-  if (!dirHandle && !isChangeProject) {
+  if (!dirHandle && !isChangeProject && !pick) {
     const stored = await idbGetHandle();
     if (stored) {
       try {
@@ -2766,6 +2859,7 @@ async function openProject(presetHandle = null) {
         if (perm !== 'granted') perm = await stored.requestPermission({ mode: 'readwrite' });
         if (perm === 'granted') {
           dirHandle = stored;
+          remembered = true;
         } else {
           // User denied re-access to the remembered folder. Drop every
           // reference (incl. the persisted handle) and return to the clean
@@ -2775,8 +2869,8 @@ async function openProject(presetHandle = null) {
           return;
         }
       } catch (e) {
-        logLine(`Stored project handle could not be reused (${e.name || e.message}); showing picker.`);
-        await idbClearHandle();
+        await folderWontOpen(stored, e);
+        return;
       }
     }
   }
@@ -2836,9 +2930,11 @@ async function openProject(presetHandle = null) {
   let oaMtime = null;
   let oaHash = null;
 
+  let readingFile = null;   // set while one file is read: a failure there is that file's, not the folder's
   try {
     for await (const [name, handle] of dirHandle.entries()) {
       if (handle.kind !== 'file') continue;       // ignore subfolders for now
+      readingFile = name;
       const file = await handle.getFile();
       const buf = new Uint8Array(await file.arrayBuffer());
       files[name] = buf;
@@ -2852,20 +2948,18 @@ async function openProject(presetHandle = null) {
           scadName = name;
         }
       }
+      readingFile = null;
     }
   } catch (e) {
-    // Most common cause: a stale handle persisted in IndexedDB still has
-    // permission but points to a folder that has since been moved, renamed,
-    // or deleted. Clear it so a subsequent click goes straight to the
-    // directory picker instead of reusing the dead handle.
-    if (e.name === 'NotFoundError' || /could not be found/i.test(e.message || '')) {
-      await idbClearHandle();
-      // Also drop it from recents so the dead entry doesn't clog the
-      // Recent Projects / Change Project dropdowns indefinitely.
-      await removeRecent(dirHandle);
-      await refreshRecentsDropdown();
-      logLine(`  Stored folder is no longer accessible — cleared. Click "Open Project…" again and pick the folder.`);
-      setStatus('Folder not found — click Open Project to pick it again.', 'error');
+    // A remembered folder the browser can't list: moved, renamed or deleted
+    // since (NotFoundError), or a memory of it the browser can no longer use
+    // (any other error). Either way, retrying it can only fail again, so
+    // forget it and offer the picker. Was NotFoundError only until 20 Nov
+    // 2026, which left every other failure retried on every click. A folder
+    // picked just now, or one file that won't read, is reported as before.
+    if (remembered && readingFile === null) {
+      const moved = e.name === 'NotFoundError' || /could not be found/i.test(e.message || '');
+      await folderWontOpen(dirHandle, e, moved);
       return;
     }
     throw e;
@@ -6445,11 +6539,11 @@ async function maybeShowChangeProjectMenu() {
   }
   const pick = document.createElement('li');
   pick.className = 'picker';
-  pick.textContent = 'Pick a different folder…';
+  pick.textContent = PICK_DIFFERENT;
   pick.addEventListener('mousedown', (e) => {
     e.preventDefault();
     menu.classList.remove('open');
-    openProject().catch(err => {
+    openProject(null, { pick: true }).catch(err => {
       logLine('Open Project failed: ' + err.message);
       setStatus('Open Project failed: ' + err.message, 'error');
     });
