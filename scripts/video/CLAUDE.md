@@ -47,9 +47,15 @@ in one PDF in viewing order, after a contents page, every page numbered, for a p
 the computer; linked on the videos page and uploaded again whenever a video or the list
 changes. A video that couldn't be made keeps its published copy. Then checks every link on
 the pages and in the published PDFs as a visitor (`check-links.py`), and names any video the
-User Manual doesn't link yet, for "sync docs". Old copies of replaced files are listed for
-Ken, never deleted. `--only 1.` limits it to a group; without `--publish` it only re-makes
-and reports.
+User Manual doesn't link yet, for "sync docs". **Old copies of replaced files are deleted
+(Ken, 20 Nov 2026: "delete all old videos after an update")** — every video, guide, guide
+book and course map a run replaces is recorded in `videos.json`'s `oldCopies` as it is
+replaced and deleted at the end of a successful publish, once the pages point at the new
+files. Each is checked first (its address matches the record; the site isn't using it);
+one that fails stays on the list and is tried next run, so report any "NOT DELETED" line to
+Ken. Report what was deleted. (Until that date they were only listed, for Ken to delete by
+hand.) Replaced *documents* from "sync docs" are still only listed. `--only 1.` limits it
+to a group; without `--publish` it only re-makes and reports.
 
 ## The User Manual's video links (Ken, 27 Oct 2026)
 

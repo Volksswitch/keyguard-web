@@ -40,8 +40,14 @@ contents page, every page numbered, for a printout to keep by the computer
 (scripts/video/guide_book.py). It is made again from the published videos and uploaded
 whenever any of them, or the list, changes, and the videos page links it.
 
-OLD COPIES ARE NOT DELETED: deleting media is permanent. Replaced files are listed at
-the end so Ken can delete them in WordPress.
+OLD COPIES ARE DELETED (Ken, 20 Nov 2026: "delete all old videos after an update").
+Every file a run replaces (a video, its guide, the guide book, the course map) is written
+into videos.json's "oldCopies" the moment it is replaced, and deleted at the very end of a
+successful --apply run, after the pages point at the new files. Deleting media is
+permanent (WordPress has no trash for it), so each one is checked first: its address must
+match what was recorded, and it must not be one the site is using now. One that fails a
+check or the delete stays on the list and is tried again next run. Until 20 Nov 2026 they
+were only listed, for Ken to delete by hand.
 
 ORDER: uploads first, then the pages, then the local list. After a successful run each
 video published is recorded as published for "sync videos" (sync-videos.mjs --published),
@@ -259,7 +265,8 @@ def main():
                 sig = json.load(open(made, encoding='utf-8'))['signature']
                 if (cfg['videos'].get(vid) or {}).get('signature') != sig:
                     ids.append(vid)
-    replaced = []
+    # Kept in videos.json, so an old copy is never forgotten if a run stops part-way.
+    replaced = cfg.setdefault('oldCopies', [])
 
     for vid in ids:
         if vid not in items:
@@ -345,8 +352,57 @@ def main():
         save(cfg)
         for vid in ids:
             subprocess.run(['node', SYNC, '--published', vid], check=True, cwd=ROOT)
-    for m in replaced:
-        print(f'  OLD COPY LEFT IN MEDIA LIBRARY: id {m["id"]} {m["url"]}')
+    delete_old_copies(cfg, apply)
+
+
+def live_addresses(cfg):
+    """Every file the site is using now: these are never deleted."""
+    live = set()
+    for v in cfg['videos'].values():
+        live |= {v['video']['url'], v['guide']['url']}
+    for k in ('courseMap', 'guideBook'):
+        if cfg.get(k):
+            live.add(cfg[k]['url'])
+    return live
+
+
+def delete_old_copies(cfg, apply):
+    old = cfg.get('oldCopies') or []
+    if not old:
+        return
+    if not apply:
+        for m in old:
+            print(f'  OLD COPY TO DELETE: id {m["id"]} {m["url"]}  (run with --apply)')
+        return
+    live = live_addresses(cfg)
+    for m in list(old):
+        if m['url'] in live:
+            print(f'  NOT DELETED, the site is using it: id {m["id"]} {m["url"]}')
+            old.remove(m)                 # it is current, so it is not an old copy at all
+            save(cfg)
+            continue
+        try:
+            found = call('GET', f'/wp/v2/media/{m["id"]}?context=edit')
+        except SystemExit as e:
+            if ' 404 ' in str(e) or 'rest_post_invalid_id' in str(e):
+                print(f'  ALREADY GONE: id {m["id"]} {m["url"]}')
+                old.remove(m)
+                save(cfg)
+            else:
+                print(f'  NOT DELETED, could not look it up ({e}); kept for next run: id {m["id"]}')
+            continue
+        if found.get('source_url') != m['url']:
+            print(f'  NOT DELETED, id {m["id"]} is now {found.get("source_url")}, not {m["url"]}; '
+                  'kept on the list for Ken to look at')
+            continue
+        try:
+            call('DELETE', f'/wp/v2/media/{m["id"]}?force=true')
+        except SystemExit as e:
+            print(f'  NOT DELETED ({e}); kept for next run: id {m["id"]} {m["url"]}')
+            continue
+        print(f'  DELETED OLD COPY: id {m["id"]} {m["url"]}')
+        old.remove(m)
+        save(cfg)
 
 
 main()
