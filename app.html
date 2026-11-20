@@ -967,6 +967,7 @@
       <button id="oge-add-rect" type="button">+ Rectangle</button>
       <button id="oge-add-circ" type="button">+ Circle</button>
       <button id="oge-add-ridge" type="button" title="Then click on the keyguard for a 10 mm ridge, or drag to draw one">+ Ridge</button>
+      <button id="oge-add-support" type="button" title="Then click on the keyguard for a 10 mm support, or drag to draw one across an opening">+ Support</button>
       <button id="oge-add-arc" type="button" title="Then click one of the ringed square corners to round it, or drag from it to set how much">+ Rounded corner</button>
       <button id="oge-del" type="button" title="Delete the selected opening(s)">Delete</button>
     </div>
@@ -1765,6 +1766,9 @@ const RELEASE_NOTES = {
   ],
   "125": [
     "Changing the starting corner no longer moves your custom openings. Switching starting corner for screen measurements between upper-left and lower-left used to leave the numbers as they were and measure them from the other corner, so every opening you placed with Custom Openings jumped to the opposite end of the keyguard, top to bottom. Now each opening is re-measured from the new corner, so it stays exactly where it was, just as it does when you change the unit of measure. One Undo takes back the corner and the conversion together. Screen openings typed into your openings-and-additions file are still yours to change."
+  ],
+  "126": [
+    "You can now add a support by eye. A support is a flat bar that stiffens the keyguard across an opening without standing above it. The “by eye” tab of Custom Openings has a new + Support button. Press it, then click on the keyguard for a 10 mm support starting where you clicked, or press and drag to draw one across an opening, either across or up and down. A support starts 2 mm wide. Where it meets the keyguard it gets fillets that round off the corners it makes, and they start with the corner radius of the opening you drew it across: a cell's corner radius, or the corner radius of the custom opening it lies in. On the “pixels or millimeters” tab you can change a support's width (under height / width), its length and its fillet radius (under corner radius), and turn it between 0° and 90°. Supports need version 99 or later of the keyguard designer file; until you have it, the + Support button is greyed out."
   ]
 };
 const RELEASE_DATES = {
@@ -1793,6 +1797,13 @@ const RELEASE_DATES = {
   "125": "2026-11-17"
 };
 const DESIGNER_NOTES = [
+  {
+    "version": 98,
+    "date": "2026-11-18",
+    "notes": [
+      "**Nothing on a keyguard mounted on posts reaches past the posts toward the top of the case any more, so the keyguard can always swing on them.** The keyguard has always been cut off at the posts, but a case addition reaching more than half a millimeter past the side of the case opening kept the part of it that lay beyond the posts. So did ridges, raised text and additions thinner than the keyguard that were placed beyond the posts. Everything between the posts and the top of the case opening is now cut away, whatever it is; only the posts themselves remain there. Nothing changes below the posts. If you made a keyguard with posts that had something beyond them, open the design again and export it once you have this version."
+    ]
+  },
   {
     "version": 97,
     "date": "2026-10-29",
@@ -1899,25 +1910,6 @@ const DESIGNER_NOTES = [
     "notes": [
       "Removed `tab1-4` from the list of case addition shapes in `openings_and_additions.txt`. The designer has never supported a shape by that name, so asking for one simply produced nothing.",
       "If you use a case addition shape name the designer doesn't recognise, it now tells you so instead of quietly leaving that item out of your design."
-    ]
-  },
-  {
-    "version": 83,
-    "date": "2026-07-14",
-    "notes": [
-      "Openings and additions marked for highlighting (`\"#\"`) are now highlighted when you generate a keyguard **frame**, not just a keyguard. Previously a highlighted item simply didn't show up while the frame was being displayed. This covers everything the frame itself carries: openings placed in the screen area or the case area, plastic added to or subtracted from the frame edge, and tablet openings.",
-      "Fixed: a tablet opening now cuts all the way through a keyguard frame. It was only being cut to the *keyguard's* thickness, so on a frame thicker than the keyguard it left a blind pocket with a floor in it instead of an opening.",
-      "Fixed: when your design has a frame, tablet openings and case additions are now applied only to the frame — the part that actually carries them. The keyguard was also being cut for the same tablet openings (leaving a second, shallower hole with its own chamfer) and slotted for clip-on strap pedestals it never receives."
-    ]
-  },
-  {
-    "version": 82,
-    "date": "2026-07-03",
-    "notes": [
-      "The controls to slide the keyguard within its frame now take a distance in millimeters (entered in a number box, in 0.5 mm steps) instead of a percentage of the frame — so you can position the keyguard by the exact amount you want.",
-      "Frame posts now attach the keyguard to its frame correctly when the keyguard is slid within a widened frame: the frame's post slots and relief openings track the keyguard's position, the relief is squared to clear the posts, and cells/bars extend through the frame where they overlap it.",
-      "Fixed a bug where a frame post (and its matching slot) could float above the top edge of the keyguard instead of meeting it.",
-      "The top and bottom edges of the frame's post-relief opening are now chamfered."
     ]
   }
 ];
@@ -7785,10 +7777,11 @@ function movesHTML() {
     <h4>Adding</h4><table>
       ${row('+ Rectangle, + Circle', 'An opening 10 mm across appears in the middle of the screen.')}
       ${row('+ Ridge', 'Then click on the keyguard for a 10 mm ridge starting there, or press and drag to draw one, in steps of 45°.')}
+      ${row('+ Support', 'Then click on the keyguard for a 10 mm support starting there, or press and drag to draw one across an opening, across or up and down.')}
       ${row('+ Rounded corner', 'Square corners are ringed. Click one to round it by 2 mm, or drag from it along an edge to choose how much.')}
     </table>
     <h4>Selecting</h4><table>
-      ${row('Click', 'Selects an opening, ridge or rounded corner.')}
+      ${row('Click', 'Selects an opening, ridge, support or rounded corner.')}
       ${row('Shift-click', 'Adds another to the selection, so they move together.')}
       ${row('<kbd>Esc</kbd>', 'Lets go of the selection. With nothing selected, it closes Custom Openings.')}
     </table>
@@ -7797,7 +7790,7 @@ function movesHTML() {
       ${row('Shift + drag', 'Keeps to a straight line.')}
       ${row(`${k} + drag`, 'Leaves a copy behind and drags the copy.')}
       ${row('Arrow keys', 'Nudge the selection 1 mm. Hold Shift for 10 mm.')}
-      ${row('Handles', 'Drag one to resize an opening, or drag a ridge’s end to lengthen, shorten or swing it.')}
+      ${row('Handles', 'Drag one to resize an opening, or drag a ridge’s or support’s end to lengthen, shorten or swing it.')}
       ${row('Yellow dot', 'Drag it to round a rectangle’s corners, or to change a rounded corner.')}
     </table>
     <h4>Taking back and finishing</h4><table>
@@ -8171,8 +8164,9 @@ function wireTroubleshooting(root) {
 // The panel only ever reads and writes the SIMPLE subset of that format —
 // rectangles ("r") and circles ("c") that cut straight through (cut/build = 0,
 // no slopes, no surface, no depth override), and on the screen, straight
-// "ridge" rows 2 mm thick and 2 mm tall at a multiple of 45°, anchored at
-// their left end ("L"). Everything else in those fields (text, SVG, other
+// "ridge" rows 2 mm thick and 2 mm tall at a multiple of 45°, and "support"
+// rows running across or up and down, both anchored at their left (bottom)
+// end ("L"). Everything else in those fields (text, SVG, other
 // ridges, build-ups…) is reported as beyond the panel and KEPT: written back
 // exactly as it was typed, after the rows the panel manages. (Until release
 // 112 Save dropped it.)
@@ -8313,6 +8307,18 @@ const ogNum = t => (t && typeof t.n === 'number') ? t.n : null;
 const OG_RIDGE_MM = 2;
 const OG_RIDGE_ANGLES = [0, 45, 90, -45];
 
+// Supports are the keyguard file's "support": a flat bar laid across an opening,
+// as thick as the keyguard there, with fillets where it meets plastic (Ken,
+// 20 Nov 2026). Placed like a ridge — x,y its left (bottom) end — but it only
+// ever runs across or up: 0 or 90 degrees. Its width (2 mm to start) and its
+// fillet radius, kept in the corner-radius column, can be changed.
+const OG_SUPPORT_W_MM = 2;
+const OG_SUPPORT_LEN_MM = 10;
+const OG_SUPPORT_ANGLES = [0, 90];
+// A ridge or a support: a straight line of a shape, drawn and moved by its ends.
+const ogIsLine = shape => shape === 'ridge' || shape === 'support';
+const ogLineAngles = shape => shape === 'support' ? OG_SUPPORT_ANGLES : OG_RIDGE_ANGLES;
+
 // Outer arcs are the keyguard file's "oa1" … "oa4": a square corner of the
 // keyguard rounded off by cutting the plastic outside a quarter circle. x,y is
 // the corner's own point, the corner-radius column is the arc's radius, and the
@@ -8356,6 +8362,51 @@ function ogSimplifyRidge(row, perMM) {
   const id = ogStr(row[0]) !== null ? ogStr(row[0]) : ogNum(row[0]);
   if (id === null) return null;
   return { id, shape: 'ridge', h: 0, w: 0, cr: 0, x, y, len, ang, th, rh };
+}
+
+// A support row the panel can manage, or null: one written as the panel writes
+// it, left-anchored, across or up. Its width is held in `th`, as a ridge's
+// thickness is, and its fillet radius in `cr`. A 0 width or length means the
+// keyguard file's 2 mm or 10 mm, so it is read as that.
+function ogSimplifySupport(row, perMM) {
+  if (!perMM || row.length < 14) return null;
+  const x = ogNum(row[5]), y = ogNum(row[6]), w = ogNum(row[3]), cr = ogNum(row[4]);
+  const len = ogNum(row[10]);
+  if ([x, y, w, cr, len].some(v => v === null) || w < 0 || cr < 0 || len < 0) return null;
+  // Columns a support doesn't use must be empty, or Save would lose what is in them.
+  if (ogNum(row[2]) !== 0 || ogNum(row[7]) !== 0 || ogNum(row[11]) !== 0) return null;
+  const anchor = ogStr(row[8]), surface = ogStr(row[9]);
+  if (anchor === null || !['', 'L', 'l'].includes(anchor)) return null;
+  if (surface === null || !['', 'T', 't'].includes(surface)) return null;
+  const es = row[12], sp = row[13];
+  if (!es || !es.isList || es.length) return null;
+  if (!sp || !sp.isList || sp.length !== 1 || ogNum(sp[0]) === null) return null;
+  const ang = ogNum(sp[0]);
+  if (!OG_SUPPORT_ANGLES.includes(ang)) return null;
+  const id = ogStr(row[0]) !== null ? ogStr(row[0]) : ogNum(row[0]);
+  if (id === null) return null;
+  return { id, shape: 'support', h: 0, w: 0, cr, x, y,
+           len: len > 0 ? len : OG_SUPPORT_LEN_MM * perMM, ang,
+           th: w > 0 ? w : OG_SUPPORT_W_MM * perMM, rh: 0 };
+}
+
+// The fillet radius a new support takes, in the clinician's unit: the corner
+// radius of the opening its middle lies in — one of the openings on this list,
+// or else a cell, whose corners are the cell corner radius.
+function ogSupportRadius(row, rows, perMM) {
+  const a = row.ang * Math.PI / 180;
+  const mx = row.x + Math.cos(a) * row.len / 2;
+  const upperLeft = ogState && ogState.screenOrigin === 'upper-left';
+  const my = row.y + (upperLeft ? -1 : 1) * Math.sin(a) * row.len / 2;
+  for (const o of rows) {
+    if (o === row || ogIsLine(o.shape) || ogIsArc(o.shape)) continue;
+    const w = o.shape === 'c' ? o.h : o.w;
+    if (Math.abs(mx - o.x) <= w / 2 && Math.abs(my - o.y) <= o.h / 2) {
+      return o.shape === 'c' ? o.h / 2 : o.shape === 'hd' ? ogHotDogCr(o) : o.cr;
+    }
+  }
+  const ccr = parseFloat(currentFormValues().cell_corner_radius);
+  return Number.isFinite(ccr) && ccr > 0 ? ccr * perMM : 0;
 }
 
 // A new ridge's fixed thickness and height, in the clinician's unit.
@@ -8410,6 +8461,7 @@ function ogSimplify(row, grid, screenOrigin, perMM) {
   if (!row || !row.isList || row.length < 7) return null;
   const shape = ogStr(row[1]);
   if (shape === 'ridge') return grid === 'screen' ? ogSimplifyRidge(row, perMM) : null;
+  if (shape === 'support') return grid === 'screen' ? ogSimplifySupport(row, perMM) : null;
   const isArc = ogIsArc(shape);
   if (isArc && grid !== 'screen') return null;
   if (shape !== 'r' && shape !== 'c' && !isArc) return null;
@@ -8484,6 +8536,12 @@ function ogSerialize(rows, highlighted, kept = []) {
       return `[${id},"ridge",0,0,0,${ogFmt(r.x)},${ogFmt(r.y)},${ogFmt(r.rh)},"L","",` +
              `${ogFmt(r.len)},${ogFmt(r.th)},[],[${r.ang}]],`;
     }
+    if (r.shape === 'support') {
+      // The keyguard file's support: width, fillet radius, then its length and
+      // its direction as its one special parameter.
+      return `[${id},"support",0,${ogFmt(r.th)},${ogFmt(r.cr)},${ogFmt(r.x)},${ogFmt(r.y)},0,"L","",` +
+             `${ogFmt(r.len)},0,[],[${r.ang}]],`;
+    }
     if (ogIsArc(r.shape)) {
       return `[${id},"${r.shape}",0,0,${ogFmt(r.cr)},${ogFmt(r.x)},${ogFmt(r.y)},0,"","",0,0,[],[]],`;
     }
@@ -8497,7 +8555,9 @@ function ogSerialize(rows, highlighted, kept = []) {
 
 // ---- Grid rendering ------------------------------------------------------
 const OG_HEADERS = ['shape', 'height', 'width', 'corner radius', 'x', 'y', '', ''];
-const OG_HEADERS_SCREEN = ['shape', 'height', 'width / length', 'corner radius', 'angle',
+// A support's width goes under "height / width" (it is the height of one that
+// runs across), its length under "width / length", its fillets under corner radius.
+const OG_HEADERS_SCREEN = ['shape', 'height / width', 'width / length', 'corner radius', 'angle',
                            'x', 'y', '', ''];
 
 function ogRenderGrid(grid) {
@@ -8543,7 +8603,7 @@ function ogRenderGrid(grid) {
     // A ridge or a rounded corner is shown under its own name and can't be
     // turned into anything else here — nor can anything be turned into one.
     const rowIsArc = ogIsArc(row.shape);
-    const fixed = rowIsArc ? 'rounded corner' : row.shape === 'ridge' ? 'ridge' : null;
+    const fixed = rowIsArc ? 'rounded corner' : ogIsLine(row.shape) ? row.shape : null;
     const shapes = fixed ? [[row.shape, fixed]]
                          : [['r', 'rectangle'], ['c', 'circle'], ['hd', 'hot dog']];
     sel.disabled = !!fixed;
@@ -8569,22 +8629,26 @@ function ogRenderGrid(grid) {
     // so it is shown but greyed; its length goes in the width column.
     const isCircle = row.shape === 'c';
     const isRidge  = row.shape === 'ridge';
+    // A support's width, length and fillet radius can all be set.
+    const isSupport = row.shape === 'support';
+    const isLine   = isRidge || isSupport;
     // An outer arc has only a radius, kept in the corner-radius column as the
     // keyguard file keeps it.
     const cols = [
-      ['h',  isRidge || rowIsArc, true],
-      [isRidge ? 'len' : 'w', isCircle || rowIsArc, true],
+      [isSupport ? 'th' : 'h',  isRidge || rowIsArc, true],
+      [isLine ? 'len' : 'w', isCircle || rowIsArc, true],
       ['cr', isCircle || isRidge || row.shape === 'hd', true],
     ];
-    if (isScreen) cols.push(['ang', !isRidge, false]);
+    if (isScreen) cols.push(['ang', !isLine, false]);
     cols.push(['x', false, false], ['y', false, false]);
     for (const [key, disabled, minZero] of cols) {
       const td = document.createElement('td');
       if (key === 'ang') {
-        // Only the four directions a left-anchored ridge can point.
+        // Only the four directions a left-anchored ridge can point; a support,
+        // only across or up.
         const a = document.createElement('select');
         a.disabled = disabled;
-        for (const v of (disabled ? [''] : OG_RIDGE_ANGLES)) {
+        for (const v of (disabled ? [''] : ogLineAngles(row.shape))) {
           const o = document.createElement('option');
           o.value = String(v); o.textContent = v === '' ? '' : `${v}°`;
           a.appendChild(o);
@@ -8602,6 +8666,8 @@ function ogRenderGrid(grid) {
       inp.disabled = disabled;
       inp.value = (isRidge && key === 'h') ? row.rh.toFixed(decimals)
                 : disabled ? (0).toFixed(decimals) : row[key].toFixed(decimals);
+      if (isSupport) inp.title = { th: 'Width of the support', len: 'Length of the support',
+                                   cr: 'Radius of the fillets where the support meets the keyguard' }[key] || '';
 
       // The viewport follows the value the clinician has FINISHED with: it
       // re-renders on blur (focus moved elsewhere) or Enter, never on 'change'.
@@ -8635,6 +8701,8 @@ function ogRenderGrid(grid) {
         if (key === 'len') v = Math.max(v, ogRidgeMinLen(ogScreenPerMM() || 1, decimals));
         // An outer arc of no radius cuts nothing at all.
         if (key === 'cr' && rowIsArc) v = Math.max(v, decimals ? 0.1 : 1);
+        // A support of no width would be read by the keyguard file as 2 mm.
+        if (key === 'th') v = Math.max(v, decimals ? 0.1 : 1);
         inp.value = v.toFixed(decimals);
         row[key] = v;
         inp.classList.remove('pending');
@@ -8946,6 +9014,12 @@ function ogConvertRows(rows, to) {
       ogRidgeSize(row, to === 'mm' ? 1 : perMM);
       continue;
     }
+    if (row.shape === 'support') {
+      row.len = Math.max(ogRidgeMinLen(to === 'mm' ? 1 : perMM, dp), r(row.len));
+      row.th  = Math.max(step, r(row.th));
+      row.cr  = Math.max(0, r(row.cr));
+      continue;
+    }
     row.h = Math.max(step, r(row.h));
     if (row.shape === 'c') { row.w = 0; row.cr = 0; continue; }
     row.w  = Math.max(step, r(row.w));
@@ -9012,7 +9086,7 @@ let ogeDrag    = null;      // the gesture in progress, or null
 let ogeGeomKey = null;      // last-drawn screen size, to spot a unit change
 let ogeDragPendingDrop = null;   // shift-clicked an already-selected opening
 let ogeKeyRun = null;            // arrow keys held down: one undo step per run
-let ogeDrawing = null;           // 'ridge' / 'arc': the next press places one
+let ogeDrawing = null;           // 'ridge' / 'support' / 'arc': the next press places one
 let ogeHotCorner = null;         // + Outer arc: the corner the pointer would snap to
 
 // + Ridge arms a single ridge, as PowerPoint's line tool does: the next press
@@ -9024,6 +9098,7 @@ function ogeSetDrawing(kind) {
   ogeDrawing = kind || null;
   ogeHotCorner = null;
   document.getElementById('oge-add-ridge')?.classList.toggle('on', ogeDrawing === 'ridge');
+  document.getElementById('oge-add-support')?.classList.toggle('on', ogeDrawing === 'support');
   document.getElementById('oge-add-arc')?.classList.toggle('on', ogeDrawing === 'arc');
   viewport.classList.toggle('oge-drawing', !!ogeDrawing);
   if (ogeBooted) ogeSyncHandles();
@@ -9265,12 +9340,15 @@ function ogeBlockedText() {
 // millimetres and its angle — so moving and nudging, which only shift cx/cy,
 // treat it exactly as they treat an opening.
 function ogeToModel(row, g) {
-  if (row.shape === 'ridge') {
+  if (ogIsLine(row.shape)) {
+    // A support is drawn and handled exactly as a ridge is (isRidge), only with
+    // its own width (th) and fewer directions.
     const cx = -g.owm / 2 + row.x / g.perMM;
     const cy = g.origin === 'upper-left'
       ?  g.ohm / 2 - row.y / g.perMM
       : -g.ohm / 2 + row.y / g.perMM;
-    return { cx, cy, len: row.len / g.perMM, ang: row.ang, isRidge: true };
+    return { cx, cy, len: row.len / g.perMM, ang: row.ang, isRidge: true,
+             th: row.shape === 'support' ? row.th / g.perMM : OG_RIDGE_MM };
   }
   if (ogIsArc(row.shape)) {
     // cx/cy is the corner point itself; sx/sy the way the plastic runs from it.
@@ -9293,7 +9371,7 @@ function ogeToModel(row, g) {
 function ogeFromModel(row, m, g) {
   row.x = (m.cx + g.owm / 2) * g.perMM;
   row.y = (g.origin === 'upper-left' ? (g.ohm / 2 - m.cy) : (m.cy + g.ohm / 2)) * g.perMM;
-  if (row.shape === 'ridge') { row.len = m.len * g.perMM; row.ang = m.ang; return; }
+  if (ogIsLine(row.shape)) { row.len = m.len * g.perMM; row.ang = m.ang; return; }
   if (ogIsArc(row.shape)) { row.cr = m.r * g.perMM; return; }
   if (row.shape === 'c') { row.h = Math.max(m.w, m.h) * g.perMM; row.w = 0; row.cr = 0; }
   else if (row.shape === 'hd') { row.w = m.w * g.perMM; row.h = m.h * g.perMM; row.cr = ogHotDogCr(row); }
@@ -9309,8 +9387,9 @@ function ogeRoundRow(row, g) {
   // leave a nick of plastic beside the curve. Only its radius is rounded.
   if (ogIsArc(row.shape)) { row.h = 0; row.w = 0; row.cr = Math.max(g.step, r(row.cr)); return; }
   row.x = r(row.x); row.y = r(row.y);
-  if (row.shape === 'ridge') {
+  if (ogIsLine(row.shape)) {
     row.len = Math.max(ogRidgeMinLen(g.perMM, g.dp), r(row.len));
+    if (row.shape === 'support') { row.th = Math.max(g.step, r(row.th)); row.cr = Math.max(0, r(row.cr)); }
     return;
   }
   row.h = Math.max(g.step, r(row.h));
@@ -9393,9 +9472,10 @@ function ogeRidgeEnds(m) {
   return [{ x: m.cx, y: m.cy },
           { x: m.cx + Math.cos(a) * m.len, y: m.cy + Math.sin(a) * m.len }];
 }
-// Its footprint's four corners — the line widened to the ridge's 2 mm.
+// Its footprint's four corners — the line widened to the ridge's 2 mm (or the
+// support's width).
 function ogeRidgeCorners(m) {
-  const a = m.ang * Math.PI / 180, t = OG_RIDGE_MM / 2;
+  const a = m.ang * Math.PI / 180, t = (m.th || OG_RIDGE_MM) / 2;
   const nx = -Math.sin(a) * t, ny = Math.cos(a) * t;
   const [p, q] = ogeRidgeEnds(m);
   return [[p.x - nx, p.y - ny], [q.x - nx, q.y - ny], [q.x + nx, q.y + ny], [p.x + nx, p.y + ny]];
@@ -9404,7 +9484,7 @@ function ogeRidgeCorners(m) {
 function ogeShapeGeometry(m) {
   if (m.isRidge) {
     // Laid along +x from the anchor; the mesh is rotated into place.
-    const t = OG_RIDGE_MM / 2;
+    const t = (m.th || OG_RIDGE_MM) / 2;
     const s = new THREE.Shape();
     s.moveTo(0, -t); s.lineTo(m.len, -t); s.lineTo(m.len, t); s.lineTo(0, t);
     s.closePath();
@@ -9613,7 +9693,7 @@ function ogeRender() {
   if (ogeSel.size === 1) {
     const idx = [...ogeSel][0];
     const row = ogState.screen.rows[idx];
-    if (row && row.shape === 'ridge') {
+    if (row && ogIsLine(row.shape)) {
       // A line has a handle at each end and nothing else, as in PowerPoint.
       const [a, b] = ogeRidgeEnds(ogeToModel(row, g));
       ogeHandleDefs.push({ pos: 'a', x: a.x, y: a.y }, { pos: 'b', x: b.x, y: b.y });
@@ -9644,8 +9724,22 @@ function ogeRender() {
 // Which toolbar buttons are live. The measurements themselves are not repeated
 // here: the grid tab is one click away and shows every number for every
 // opening, and this panel sits over the keyguard the clinician is looking at.
+// A keyguard.scad older than version 99 doesn't know the "support" shape, so
+// + Support waits for the keyguard file update.
+const OG_SUPPORT_MIN_SCAD = 99;
+function ogSupportsKnown() {
+  const v = project ? parseDesignerVersion(project.scadText) : null;
+  return v === null || v >= OG_SUPPORT_MIN_SCAD;
+}
 function ogeUpdateBar() {
   document.getElementById('oge-del').disabled  = ogeSel.size === 0;
+  const sup = document.getElementById('oge-add-support');
+  if (sup) {
+    sup.disabled = !ogSupportsKnown();
+    sup.title = sup.disabled
+      ? `Supports need keyguard file version ${OG_SUPPORT_MIN_SCAD} or later — update your keyguard file first`
+      : 'Then click on the keyguard for a 10 mm support, or drag to draw one across an opening';
+  }
   ogUpdateUndoBtns();
 }
 
@@ -9702,7 +9796,7 @@ function ogePick(ev, g) {
   const px = ev.clientX - rect.left, py = ev.clientY - rect.top;
   let best = null, bestD = OGE_RIDGE_PICK_PX;
   ogState.screen.rows.forEach((row, idx) => {
-    if (row.shape !== 'ridge') return;
+    if (!ogIsLine(row.shape)) return;
     const [a, b] = ogeRidgeEnds(ogeToModel(row, g))
       .map(p => ogeProject(p.x, p.y, g.topZ, rect));
     const vx = b.x - a.x, vy = b.y - a.y;
@@ -9803,12 +9897,14 @@ function ogeResize(row, drag, p, g, ev) {
 // Ctrl, as on a PowerPoint line, holds the MIDDLE still instead and stretches
 // both ends at once (while drawing one, the middle is where the press landed).
 // Shift has nothing to add: a ridge already only ever points in steps of 45°.
+// A support turns in steps of 90° instead: across or up and down only.
 function ogeRidgeEnd(row, drag, p, g, ev) {
   const centred = ev.ctrlKey || ev.metaKey;
   const f = centred ? drag.mid : drag.fixed;
   const dx = p.x - f.x, dy = p.y - f.y;
-  const step = Math.PI / 4;
-  let deg = Math.round(Math.atan2(dy, dx) / step) * 45;     // -180 … 180
+  const stepDeg = row.shape === 'support' ? 90 : 45;
+  const step = stepDeg * Math.PI / 180;
+  let deg = Math.round(Math.atan2(dy, dx) / step) * stepDeg;   // -180 … 180
   const rad = deg * Math.PI / 180;
   const minLen = ogRidgeMinLen(g.perMM, g.dp) / g.perMM;
   let len = Math.max(centred ? minLen / 2 : minLen, dx * Math.cos(rad) + dy * Math.sin(rad));
@@ -9819,7 +9915,7 @@ function ogeRidgeEnd(row, drag, p, g, ev) {
     len *= 2;
   }
   let ax = fx, ay = fy;
-  if (!OG_RIDGE_ANGLES.includes(deg)) {
+  if (!ogLineAngles(row.shape).includes(deg)) {
     // Pointing left (or straight down): the far end is the left (bottom) one.
     ax = fx + Math.cos(rad) * len;
     ay = fy + Math.sin(rad) * len;
@@ -9871,12 +9967,19 @@ viewport.addEventListener('pointerdown', ev => {
     return;
   }
 
-  if (ogeDrawing === 'ridge') {
+  // + Support works the same way: a 10 mm support, 2 mm wide, whose fillets take
+  // the corner radius of the opening it ends up across (set again when the
+  // drawing gesture ends — see pointerup).
+  if (ogeDrawing === 'ridge' || ogeDrawing === 'support') {
+    const kind = ogeDrawing;
     ogeSetDrawing(null);
     ogePush();
-    const row = ogRidgeSize({ id: 0, shape: 'ridge', h: 0, w: 0, cr: 0, x: 0, y: 0,
-                              len: 0, ang: 0 }, g.perMM);
-    ogeFromModel(row, { cx: p.x, cy: p.y, len: 10, ang: 0 }, g);
+    const row = kind === 'ridge'
+      ? ogRidgeSize({ id: 0, shape: 'ridge', h: 0, w: 0, cr: 0, x: 0, y: 0, len: 0, ang: 0 }, g.perMM)
+      : { id: 0, shape: 'support', h: 0, w: 0, cr: 0, x: 0, y: 0, len: 0, ang: 0,
+          th: OG_SUPPORT_W_MM * g.perMM, rh: 0 };
+    ogeFromModel(row, { cx: p.x, cy: p.y, len: kind === 'ridge' ? 10 : OG_SUPPORT_LEN_MM, ang: 0 }, g);
+    if (kind === 'support') row.cr = ogSupportRadius(row, ogState.screen.rows, g.perMM);
     ogeRoundRow(row, g);
     ogState.screen.rows.push(row);
     const idx = ogState.screen.rows.length - 1;
@@ -9893,7 +9996,7 @@ viewport.addEventListener('pointerdown', ev => {
     const idx = [...ogeSel][0];
     const row = ogState.screen.rows[idx];
     if (!row) return;
-    if (row.shape === 'ridge') {
+    if (ogIsLine(row.shape)) {
       // Whichever end is grabbed, the OTHER end stays put.
       const [a, b] = ogeRidgeEnds(ogeToModel(row, g));
       ogeStart(ev, {
@@ -10057,8 +10160,16 @@ function ogeDragMove(ev) {
 
 function ogeEndDrag(ev) {
   if (!ogeDrag) { ogeDragPendingDrop = null; return; }
-  const { g, moved, kind, pushed, hit } = ogeDrag;
+  const { g, moved, kind, pushed, hit, idx, draw } = ogeDrag;
   ogeDrag = null;
+  // A support just drawn out takes its fillets from the opening it now crosses.
+  if (moved && draw && kind === 'ridge-end') {
+    const row = ogState.screen.rows[idx];
+    if (row && row.shape === 'support') {
+      row.cr = ogSupportRadius(row, ogState.screen.rows, g.perMM);
+      ogeRoundRow(row, g);
+    }
+  }
   ogeDragVisuals();
   if (controls) controls.enabled = true;
   try { viewport.releasePointerCapture(ev.pointerId); } catch (e) { /* already gone */ }
@@ -10135,6 +10246,9 @@ document.getElementById('oge-add-rect').addEventListener('click', () => ogeAdd('
 document.getElementById('oge-add-circ').addEventListener('click', () => ogeAdd('c'));
 document.getElementById('oge-add-ridge').addEventListener('click', () => {
   if (ogeGeom()) ogeSetDrawing(ogeDrawing === 'ridge' ? null : 'ridge');
+});
+document.getElementById('oge-add-support').addEventListener('click', () => {
+  if (ogeGeom()) ogeSetDrawing(ogeDrawing === 'support' ? null : 'support');
 });
 document.getElementById('oge-add-arc').addEventListener('click', () => {
   if (!ogeGeom()) return;

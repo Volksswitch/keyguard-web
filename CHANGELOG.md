@@ -13,6 +13,8 @@ notes, because nothing at this address could have been missed yet.
 
 ## Unreleased (next release)
 
+- **You can now add a support by eye.** A support is a flat bar that stiffens the keyguard across an opening without standing above it. The “by eye” tab of Custom Openings has a new **+ Support** button. Press it, then click on the keyguard for a 10 mm support starting where you clicked, or press and drag to draw one across an opening, either across or up and down. A support starts 2 mm wide. Where it meets the keyguard it gets fillets that round off the corners it makes, and they start with the corner radius of the opening you drew it across: a cell's corner radius, or the corner radius of the custom opening it lies in. On the “pixels or millimeters” tab you can change a support's width (under **height / width**), its length and its fillet radius (under **corner radius**), and turn it between 0° and 90°. Supports need version 99 or later of the keyguard designer file; until you have it, the **+ Support** button is greyed out.
+
 ## Release 125
 
 - **Changing the starting corner no longer moves your custom openings.** Switching **starting corner for screen measurements** between upper-left and lower-left used to leave the numbers as they were and measure them from the other corner, so every opening you placed with Custom Openings jumped to the opposite end of the keyguard, top to bottom. Now each opening is re-measured from the new corner, so it stays exactly where it was, just as it does when you change the unit of measure. One Undo takes back the corner and the conversion together. Screen openings typed into your openings-and-additions file are still yours to change.
