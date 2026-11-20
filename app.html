@@ -973,7 +973,7 @@
       <button id="oge-add-support" type="button" title="Then click on the keyguard for a 10 mm support, or drag to draw one across an opening">+ Support</button>
       <button id="oge-add-arc" type="button" title="Then click one of the ringed square corners to round it, or drag from it to set how much">+ Rounded corner</button>
       <button id="oge-del" type="button" title="Delete the selected opening(s)">Delete</button>
-      <label id="oge-snap-label" title="Line shapes up with the middle of the keyguard, the screen and the grid as you move or size them. Hold Alt to place one freely."><input type="checkbox" id="oge-snap"> Snap</label>
+      <label id="oge-snap-label" title="Line shapes up with the middle of the keyguard, the screen, the grid or another opening as you move or size them. Hold Alt to place one freely."><input type="checkbox" id="oge-snap"> Snap</label>
     </div>
     <div id="oge-blocked"></div>
    </div>
@@ -1773,7 +1773,7 @@ const RELEASE_NOTES = {
   ],
   "126": [
     "You can now add a support by eye. A support is a flat bar that stiffens the keyguard across an opening without standing above it. The “by eye” tab of Custom Openings has a new + Support button. Press it, then click on the keyguard for a 10 mm support starting where you clicked, or press and drag to draw one across an opening, either across or up and down. A support starts 2 mm wide. Where it meets the keyguard it gets fillets that round off the corners it makes, and they start with the corner radius of the opening you drew it across: a cell's corner radius, or the corner radius of the custom opening it lies in. On the “pixels or millimeters” tab you can change a support's width (under height / width), its length and its fillet radius (under corner radius), and turn it between 0° and 90°. Supports need version 99 or later of the keyguard designer file; until you have it, the + Support button is greyed out.",
-    "Shapes can now snap into line on the “by eye” tab. Tick the new Snap box and, as you move or size an opening, ridge or support, its middle lines up with the middle of the keyguard, the middle of the screen or the middle of the grid, across and up and down, once it comes close; a dashed line shows what it lined up with. A ridge or support lines up by its ends as well as its middle. Hold Alt while you drag to place a shape freely. Nudging with the arrow keys never snaps, and the box stays as you left it. Lining up with the grid needs version 99 or later of the keyguard designer file; with an older one, shapes snap to the keyguard and the screen."
+    "Shapes can now snap into line on the “by eye” tab. Tick the new Snap box and, as you move or size an opening, ridge or support, its middle lines up with the middle of the keyguard, the middle of the screen, the middle of the grid or the middle of another opening, across and up and down, once it comes close; a dashed line shows what it lined up with. Other openings means your other custom openings, ridges and supports, and every opening the keyguard already has: its cells, its bars and the openings in your openings-and-additions file. A support laid across a cell lines up with the middle of that cell, even though it divides it in two. The middle of the keyguard is the middle of the keyguard itself, so if your case opening's sides are unequal it is not the same line as the middle of the screen. A ridge or support lines up by its ends as well as its middle. Hold Alt while you drag to place a shape freely. Nudging with the arrow keys never snaps, and the box stays as you left it. Lining up with the grid needs version 99 or later of the keyguard designer file; with an older one, shapes snap to the keyguard and the screen."
   ]
 };
 const RELEASE_DATES = {
@@ -7800,7 +7800,7 @@ function movesHTML() {
     <h4>Moving and shaping</h4><table>
       ${row('Drag', 'Moves what you drag. Dragging anywhere else turns the keyguard.')}
       ${row('Shift + drag', 'Keeps to a straight line.')}
-      ${row('Snap', 'With Snap ticked, a shape lines its middle up with the middle of the keyguard, the screen or the grid as you move or size it, and a dashed line shows which. A ridge or support lines up by its ends too.')}
+      ${row('Snap', 'With Snap ticked, a shape lines its middle up with the middle of the keyguard, the screen, the grid or another opening as you move or size it, and a dashed line shows which. A ridge or support lines up by its ends too.')}
       ${row('Alt + drag', 'Places the shape freely, without snapping.')}
       ${row(`${k} + drag`, 'Leaves a copy behind and drags the copy.')}
       ${row('Arrow keys', 'Nudge the selection 1 mm. Hold Shift for 10 mm.')}
@@ -9197,7 +9197,7 @@ function ogeSnapMove(drag, dx, dy, g, ev, lockX, lockY) {
   const f = drag.from.find(o => o.i === drag.hit) || drag.from[0];
   const pts = f ? ogeSnapPoints(f.model) : [];
   if (!pts.length) return { dx, dy };
-  const L = ogeSnapLines();
+  const L = ogeDragLines(drag, g);
   const tol = ogeSnapTol(g, { x: pts[0].x + dx, y: pts[0].y + dy });
   const sx = lockX ? null : ogeSnapShift(pts.map(q => q.x + dx), L.xs, tol);
   const sy = lockY ? null : ogeSnapShift(pts.map(q => q.y + dy), L.ys, tol);
@@ -9218,7 +9218,7 @@ function ogeSnapResize(row, drag, p, g, ev) {
   const hasS = pos.indexOf('s') >= 0, hasN = pos.indexOf('n') >= 0;
   const horiz = hasE || hasW, vert = hasN || hasS;
   if (horiz && vert && (ev.shiftKey || row.shape === 'c')) return p;
-  const L = ogeSnapLines(), tol = ogeSnapTol(g, p), q = { ...p };
+  const L = ogeDragLines(drag, g), tol = ogeSnapTol(g, p), q = { ...p };
   if (horiz) {
     const fixed = hasE ? b.cx - b.w / 2 : b.cx + b.w / 2;
     const s = ogeSnapShift([(p.x + fixed) / 2], L.xs, tol);
@@ -9241,7 +9241,7 @@ function ogeSnapLineEnd(row, drag, p, g, ev) {
   const m = ogeToModel(row, g);
   const axis = (m.ang === 0) ? 'x' : (m.ang === 90) ? 'y' : null;
   if (!axis) return p;
-  const L = ogeSnapLines(), lines = axis === 'x' ? L.xs : L.ys, tol = ogeSnapTol(g, p);
+  const L = ogeDragLines(drag, g), lines = axis === 'x' ? L.xs : L.ys, tol = ogeSnapTol(g, p);
   const v = p[axis], f = drag.fixed[axis];
   const end = ogeSnapShift([v], lines, tol);
   const mid = ogeSnapShift([(v + f) / 2], lines, tol);
@@ -9250,6 +9250,122 @@ function ogeSnapLineEnd(row, drag, p, g, ev) {
   if (!pick) return p;
   ogeGuides.push({ axis, at: pick.at });
   return { ...p, [axis]: pick.to };
+}
+
+// ---- Snap: the middles of other shapes and openings (stage 2) ---------------
+// Besides the keyguard, screen and grid, a shape lines up with the middle of
+// every other opening (Ken, 20 Nov 2026): the other custom openings, ridges and
+// supports on this tab, and everything the keyguard itself has — its cells, the
+// bars, openings from the openings-and-additions file, the home button. Those
+// are read off the finished model, as the square corners are: cut through just
+// above its underside, every closed outline other than the keyguard's own edge
+// is an opening, and its middle is the middle of the box around it.
+let ogeLoopCache = { mesh: null, loops: [] };
+function ogeOpeningBoxes() {
+  const kg = currentMesh && currentMesh.children
+    ? currentMesh.children.find(o => o.isMesh && o.userData.kgBody) : null;
+  if (!kg) return [];
+  if (ogeLoopCache.mesh === kg) return ogeLoopCache.loops;
+  kg.updateMatrixWorld(true);
+  const pos = kg.geometry.getAttribute('position');
+  const idx = kg.geometry.index;
+  const nTri = (idx ? idx.count : pos.count) / 3;
+  const vert = k => new THREE.Vector3().fromBufferAttribute(pos, idx ? idx.getX(k) : k)
+    .applyMatrix4(kg.matrixWorld);
+  const box = new THREE.Box3().setFromObject(kg);
+  const z0 = box.min.z + Math.min(0.3137, (box.max.z - box.min.z) / 4);   // as ogeCorners
+  // The outline's pieces, joined where they meet into one group per outline.
+  const parent = new Map();
+  const find = k => { let r = k; while (parent.get(r) !== r) r = parent.get(r);
+                      while (parent.get(k) !== r) { const n = parent.get(k); parent.set(k, r); k = n; } return r; };
+  const key = p => `${Math.round(p.x * 1000)},${Math.round(p.y * 1000)}`;
+  const pts = new Map();
+  const touch = p => { const k = key(p); if (!parent.has(k)) { parent.set(k, k); pts.set(k, p); } return k; };
+  for (let t = 0; t < nTri; t++) {
+    const v = [vert(3 * t), vert(3 * t + 1), vert(3 * t + 2)];
+    const above = v.map(p => p.z >= z0);
+    if (above[0] === above[1] && above[1] === above[2]) continue;
+    const cut = [];
+    for (let i = 0; i < 3; i++) {
+      let a = v[i], b = v[(i + 1) % 3];
+      if ((a.z >= z0) === (b.z >= z0)) continue;
+      if (a.x > b.x || (a.x === b.x && (a.y > b.y || (a.y === b.y && a.z > b.z)))) [a, b] = [b, a];
+      const f = (z0 - a.z) / (b.z - a.z);
+      cut.push({ x: a.x + f * (b.x - a.x), y: a.y + f * (b.y - a.y) });
+    }
+    if (cut.length !== 2) continue;
+    const ka = find(touch(cut[0])), kb = find(touch(cut[1]));
+    if (ka !== kb) parent.set(ka, kb);
+  }
+  const boxes = new Map();
+  for (const [k, p] of pts) {
+    const r = find(k);
+    const b = boxes.get(r) || { x0: Infinity, x1: -Infinity, y0: Infinity, y1: -Infinity };
+    b.x0 = Math.min(b.x0, p.x); b.x1 = Math.max(b.x1, p.x);
+    b.y0 = Math.min(b.y0, p.y); b.y1 = Math.max(b.y1, p.y);
+    boxes.set(r, b);
+  }
+  const W = box.max.x - box.min.x, H = box.max.y - box.min.y;
+  const loops = [...boxes.values()].filter(b =>
+    !(b.x1 - b.x0 > 0.8 * W && b.y1 - b.y0 > 0.8 * H) &&     // the keyguard's own edge
+    (b.x1 - b.x0 >= 0.5 || b.y1 - b.y0 >= 0.5));              // slivers aren't openings
+  ogeLoopCache = { mesh: kg, loops };
+  return loops;
+}
+
+// The lines a shape can line up with during the drag under way, worked out once
+// when it starts. The shapes being moved are left out, along with the openings
+// they make on the keyguard — otherwise a shape would snap back to where it came
+// from. A ridge or support splits the openings it crosses in two; while it is
+// moved, those halves are put back together, so the opening it was laid across
+// still offers its own middle.
+function ogeDragLines(drag, g) {
+  if (drag.lines) return drag.lines;
+  const base = ogeSnapLines();
+  const xs = [...base.xs], ys = [...base.ys];
+  const moving = drag.snapFrom || [];
+  const near = (a, b) => Math.abs(a - b) < 0.3;
+  let loops = ogeOpeningBoxes().map(b => ({ ...b }));
+  for (const f of moving) {
+    const m = f.model;
+    if (m.isArc) continue;
+    if (!m.isRidge) {
+      loops = loops.filter(b => !(near((b.x0 + b.x1) / 2, m.cx) && near((b.y0 + b.y1) / 2, m.cy)));
+      continue;
+    }
+    const row = ogState.screen.rows[f.i];
+    const reach = (m.th || OG_RIDGE_MM) / 2 + ((row && row.shape === 'support') ? row.cr / g.perMM : 0) + 0.6;
+    const c = ogeRidgeCorners(m);
+    const fx0 = Math.min(...c.map(q => q[0])) - reach, fx1 = Math.max(...c.map(q => q[0])) + reach;
+    const fy0 = Math.min(...c.map(q => q[1])) - reach, fy1 = Math.max(...c.map(q => q[1])) + reach;
+    const hit = b => b.x1 >= fx0 && b.x0 <= fx1 && b.y1 >= fy0 && b.y0 <= fy1;
+    const split = loops.filter(hit);
+    loops = loops.filter(b => !hit(b));
+    // Halves of one opening lie side by side across the line: across for a
+    // support that runs across, so their spans along it overlap.
+    const along = m.ang === 0 ? ['x0', 'x1'] : m.ang === 90 ? ['y0', 'y1'] : null;
+    if (!along) continue;
+    const [lo, hi] = along;
+    const groups = [];
+    for (const b of split) {
+      const gp = groups.find(q => b[lo] < q[hi] - 0.1 && b[hi] > q[lo] + 0.1);
+      if (gp) { gp.x0 = Math.min(gp.x0, b.x0); gp.x1 = Math.max(gp.x1, b.x1);
+                gp.y0 = Math.min(gp.y0, b.y0); gp.y1 = Math.max(gp.y1, b.y1); }
+      else groups.push({ ...b });
+    }
+    loops.push(...groups);
+  }
+  for (const b of loops) { xs.push((b.x0 + b.x1) / 2); ys.push((b.y0 + b.y1) / 2); }
+  // The other shapes on this tab, by their middles — kept current, so one moved
+  // a moment ago counts where it is now, not where the keyguard last showed it.
+  const still = new Set(moving.map(f => f.i));
+  ogState.screen.rows.forEach((row, i) => {
+    if (still.has(i)) return;
+    const pt = ogeSnapPoints(ogeToModel(row, g))[0];
+    if (pt) { xs.push(pt.x); ys.push(pt.y); }
+  });
+  drag.lines = { xs, ys, box: base.box };
+  return drag.lines;
 }
 
 // ---- Finding square corners ---------------------------------------------
@@ -10237,6 +10353,10 @@ function ogeDragVisuals() {
 // Taking the gesture: the orbit controls are switched off for its duration, and
 // the event is stopped here so they never begin one of their own.
 function ogeStart(ev, drag) {
+  // The shapes this gesture moves, as they are before it: Snap leaves them, and
+  // the openings they make, out of what can be lined up with (ogeDragLines).
+  const startRow = drag.idx != null ? ogState.screen.rows[drag.idx] : null;
+  drag.snapFrom = drag.from || (startRow ? [{ i: drag.idx, model: ogeToModel(startRow, drag.g) }] : []);
   ogeDrag = drag;
   ogeDragVisuals();
   if (controls) controls.enabled = false;
