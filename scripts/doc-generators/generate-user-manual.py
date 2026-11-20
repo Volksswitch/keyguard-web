@@ -20,7 +20,7 @@ from kg_docstyle import DOCUMENTS, HERE, KgDoc, GREY  # noqa: E402
 OUT = sys.argv[1] if len(sys.argv) > 1 else os.path.join(
     DOCUMENTS, 'Keyguard Designer User Manual.docx')
 FIG = os.path.join(HERE, 'figures')
-UPDATED = 'November 17, 2026'
+UPDATED = 'November 20, 2026'
 O_A_PAGE = ('https://volksswitch.org/index.php/volks-devices/customizable-3d-printable-keyguard-for-'
             'grid-based-free-form-and-hybrid-aac-apps-on-tablets/specifying-a-keyguard-for-a-free-form-'
             'or-hybrid-aac-app/putting-instructions-in-the-o_a-file/')
@@ -287,19 +287,30 @@ d.h3('Adding Shapes')
 d.b("**+ Rectangle** and **+ Circle** put an opening 10 mm across in the middle of the screen.")
 d.b("**+ Ridge**, then click the keyguard for a 10 mm ridge starting there, or press and drag "
     "to draw one, in steps of 45°. Ridges are 2 mm thick and 2 mm tall.")
+d.b("**+ Support**, then click the keyguard for a 10 mm support starting there, or press and drag "
+    "to draw one across an opening, across or up and down. A support is a flat bar that stiffens "
+    "the keyguard across an opening without standing above it. It starts 2 mm wide, and its "
+    "fillets, the rounded corners where it meets the keyguard, take the corner radius of the "
+    "opening you drew it across. Supports need version 99 or later of the keyguard designer file.")
 d.b("**+ Rounded corner** puts a ring around every 90-degree corner. Click one to round it "
     "by 2 mm, or drag the yellow circle to choose how much.")
 d.h3('Selecting, moving and shaping')
 d.table(['Move', 'What it does'], [
-    ['Click', 'Selects an opening, ridge or rounded corner.'],
+    ['Click', 'Selects an opening, ridge, support or rounded corner.'],
     ['Shift-click', 'Adds another to the selection, so they move together.'],
     ['Esc', 'Lets go of the selection. With nothing selected, it closes Custom Openings.'],
     ['Drag', 'Moves what you drag. Dragging anywhere else turns the keyguard.'],
     ['Shift + drag', 'Keeps to a straight line.'],
     ['Ctrl + drag', 'Leaves a copy behind and drags the copy.'],
     ['Shift + Ctrl + drag', 'Makes a copy and moves the copy in a straight line'],
+    ['Snap', "Tick Snap and, as you move or size a shape, its middle lines up with the middle of "
+     "the keyguard, the screen, the grid or another opening, and its edges with the edges of "
+     "other openings. A dashed line shows what it lined up with, and the nearest line wins. A "
+     "ridge or support lines up by its ends too, so a support can stop exactly at an opening's "
+     "wall. Lining up with the grid needs version 99 or later of the keyguard designer file."],
+    ['Alt + drag', 'Places the shape freely, without snapping.'],
     ['Arrow keys', 'Nudge the selection 1 mm. Hold Shift for 10 mm.'],
-    ['Handles', "Drag one to resize an opening, or drag a ridge's end to lengthen, shorten or "
+    ['Handles', "Drag one to resize an opening, or drag a ridge's or support's end to lengthen, shorten or "
      "swing it. Hold Shift on a corner handle to keep a rectangle's proportions, and Ctrl to "
      "grow or shrink it around its center; Ctrl on a ridge's end moves both ends. Drag a "
      "circle's side handle to stretch it into a hot dog, a long opening with fully rounded "
@@ -331,7 +342,9 @@ d.b("Each opening is positioned by its center. For a circle, the height is the d
 d.b("A tinted box holds a number you've changed but not applied. Press Enter, or click another "
     "box, to update the keyguard.")
 d.b("**+ Add opening** adds a row. Ridges are listed here too, with their angle; a ridge's x and "
-    "y are its left end, or its bottom end if it stands upright.")
+    "y are its left end, or its bottom end if it stands upright. Supports are listed too: a "
+    "support's width is under height / width, its length under width / length, and the radius "
+    "of its fillets under corner radius.")
 d.h2('7.3  Saving your openings')
 d.p("**Save** puts your openings into the design, and **Cancel** or **✕** closes without them. If "
     "you've changed anything, the app asks before throwing it away.")

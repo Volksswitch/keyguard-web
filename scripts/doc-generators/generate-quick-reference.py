@@ -18,7 +18,7 @@ from kg_docstyle import DOCUMENTS, KgDoc, NAVY, GREY  # noqa: E402
 
 OUT = sys.argv[1] if len(sys.argv) > 1 else os.path.join(
     DOCUMENTS, 'Keyguard Designer Quick Reference Card.docx')
-UPDATED = 'November 1, 2026'
+UPDATED = 'November 20, 2026'
 W = [1.6, 5.7]          # two-column tables across the 7.3-inch measure
 
 d = KgDoc(footer='Keyguard Designer Quick Reference', body_pt=10, margin=0.6)
@@ -82,12 +82,16 @@ d.p("Click **Custom Openings** in the toolbar. On the **by eye** tab you work on
 d.table(['Move', 'What it does'], [
     ['+ Rectangle, + Circle', 'An opening 10 mm across appears in the middle of the screen.'],
     ['+ Ridge', 'Then click the keyguard for a 10 mm ridge, or drag to draw one, in steps of 45°.'],
+    ['+ Support', 'Then click the keyguard for a 10 mm support, or drag one across an opening, '
+     'across or up and down.'],
     ['+ Rounded corner', 'Square corners are ringed. Click one to round it by 2 mm, or drag from '
      'it along an edge.'],
     ['Click, Shift-click', 'Select one; add another to the selection.'],
     ['Drag', 'Move what you drag. Dragging anywhere else turns the keyguard.'],
     ['Shift + drag', 'Keep to a straight line.'],
     ['Ctrl + drag', 'Leave a copy behind and drag the copy.'],
+    ['Snap, Alt + drag', 'Tick Snap to line shapes up with the middles and edges of the keyguard, '
+     'screen, grid and other openings. Alt places one freely.'],
     ['Arrow keys', 'Nudge 1 mm. Hold Shift for 10 mm.'],
     ['Handles, yellow dot', "Resize (Shift keeps the shape, Ctrl the center; a circle's side "
      'handle makes a hot dog); round corners.'],
@@ -119,6 +123,17 @@ d.table(['If', 'Then'], [
     ["It isn't a known issue", 'Click **?**, then **Report a problem**. You read the report '
      'before you send it.'],
 ], W, size=9)
+
+# Word keeps an empty paragraph after the last table. Make it 1 pt so that, when the card
+# fills page 2 exactly, it cannot spill onto a blank third page (20 Nov 2026, release 126).
+from docx.shared import Pt  # noqa: E402
+from docx.enum.text import WD_LINE_SPACING  # noqa: E402
+_tail = d.doc.add_paragraph()
+_tail.paragraph_format.space_before = Pt(0)
+_tail.paragraph_format.space_after = Pt(0)
+_tail.paragraph_format.line_spacing_rule = WD_LINE_SPACING.EXACTLY
+_tail.paragraph_format.line_spacing = Pt(1)
+_tail.add_run().font.size = Pt(1)
 
 d.save(OUT)
 print('saved', OUT)

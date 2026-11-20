@@ -320,6 +320,7 @@ distance_between_horizontal_raised_tabs=60;
 vertical_raised_tab_length=8;
 vertical_raised_tab_width=20;
 distance_between_vertical_raised_tabs=60;
+//thickness of each raised tab in mm; the tab is built exactly this thick (a tab with embedded magnets is made thick enough to enclose them)
 preferred_raised_tab_thickness=2; // .1
 raised_tabs_starting_height = 0.0; // .1
 ramp_angle = 30;
@@ -355,7 +356,6 @@ cut_cell_openings_and_bars_through_frame = "yes"; //[yes,no]
 
 /*[Split Keyguard Info]*/
 split_line_location = 0; // [-300:.1:300]
-// set this option to "no" before rendering your design
 show_split_line = "no"; //[yes,no]
 split_line_type = "flat"; //[flat,dovetails]
 dovetail_width = 4.0; //[3:.1:6]
@@ -548,7 +548,11 @@ screen_through_cut_overlap = 2.0; // [0.5:0.1:5]
 grid_is_hidden = (hide_screen_region=="yes" || hide_app_region=="yes" || hide_grid_region=="yes");
 if (echo_dims=="yes") echo("__KG_DIMS__", swm=swm, shm=shm, awm=awm, ahm=ahm, sat=sat, kt=kt, swp=swp, shp=shp, vpt=$vpt, vpr=$vpr, vpd=$vpd,
                            vrw=(column_count>0 && row_count>0 && grid_width>0 && grid_height>0 && !grid_is_hidden) ? vrw : undef,
-                           hrw=(column_count>0 && row_count>0 && grid_width>0 && grid_height>0 && !grid_is_hidden) ? hrw : undef);
+                           hrw=(column_count>0 && row_count>0 && grid_width>0 && grid_height>0 && !grid_is_hidden) ? hrw : undef,
+                           // the grid's middle, in millimeters on the model, for the
+                           // web app's by-eye snapping (Ken, 20 Nov 2026)
+                           gcx=(column_count>0 && row_count>0 && grid_width>0 && grid_height>0 && !grid_is_hidden) ? grid_x0 + grid_width/2 : undef,
+                           gcy=(column_count>0 && row_count>0 && grid_width>0 && grid_height>0 && !grid_is_hidden) ? grid_y0 + grid_height/2 : undef);
 
 // IMPORTANT — DECLARATION ORDER IN THIS SECTION
 // ----------------------------------------------
@@ -568,7 +572,7 @@ if (echo_dims=="yes") echo("__KG_DIMS__", swm=swm, shm=shm, awm=awm, ahm=ahm, sa
 //   tablet selection → screen/case geometry → grid geometry → bar geometry →
 //   cell geometry → opening/addition helpers → mounting geometry → text/SVG helpers
 
-keyguard_designer_version = 92; //*****************************
+keyguard_designer_version = 99; //*****************************
 
 
 // Boolean shorthands for the most-used string comparisons.
@@ -1317,8 +1321,17 @@ grid_y0 = app_y0 + bottom_padding + lmbhm + lcbhm;
 
 	gw = (!using_px) ? grid_width : grid_width * ppm;
 	gh = (!using_px) ? grid_height : grid_height * ppm;
+	// bar width (Ken, 20 Nov 2026): the width the bars are actually cut at — the
+	// app's width less whatever left and right edge compensation (lec/rec) takes
+	// past the case border, as bar_width — in the working unit like gw
+	bw = (!using_px) ? bar_width : bar_width * ppm;
 	gt = ucbb;  // grid top
 	gb = lmbt;  // grid bottom
+	// grid left and right (Ken, 20 Nov 2026): x positions of the grid's own edges,
+	// measured exactly as a screen opening's x is (from osx0, in the working unit),
+	// so gr - gl == gw
+	gl = (!using_px) ? grid_x0 - osx0 : (grid_x0 - osx0) * ppm;  // grid left
+	gr = gl + gw;  // grid right
 
 	// The app's own edges, for txt files, in the same working unit as the grid
 	// variables above. Without keyguard inset mode the app fills the screen and
@@ -1652,7 +1665,7 @@ als_openings=[
 	[[ "Pro-11M4ALS1",  "c",   3.0,   0,   0,   xtls+sxo*4.71,            ytbs+syo*88.76,   0,   "",   "",   0,   0,   [60],   [] ],
 	[  "Pro-11M4ALS2",  "c",   3.0,   0,   0,   xtls+sxo*124.85,          ytts-syo*4.71,    0,   "",   "",   0,   0,   [60],   [] ]],
 
-	/* iPad Pro 13-inch M4 *& M5/
+	/* iPad Pro 13-inch M4 & M5 */
 	[[ "Pro-13M4ALS1",  "c",   3.0,   0,   0,   xtls+sxo*4.71,            ytbs+syo*107.76,  0,   "",   "",   0,   0,   [60],   [] ],
 	[  "Pro-13M4ALS2",  "c",   3.0,   0,   0,   xtls+sxo*140.79,          ytts-syo*4.71,    0,   "",   "",   0,   0,   [60],   [] ]],
 
@@ -1720,14 +1733,14 @@ ttao =
   : (type_of_tablet=="iPad Air 13-inch M4")? als_openings[27] 
   : (type_of_tablet=="Via Mini")? als_openings[19]  
   : (type_of_tablet=="Via Pro")? als_openings[8]
-  : (type_of_tablet=="TobiiDynavox I-16")? als_openings[28] 
+  : (type_of_tablet=="Tobii-Dynavox I-16")? als_openings[28] 
   : []; // all other tablets
   
 // All variables that can be used in the openings an additions file called out here for Customizer parameters
 // Put this *above* where you parse user input.
 // Add every variable name you want resolvable.
-RESOLVE_NAMES  = ["ab","ah","at","aw","bcoh","bp","ccr","ch","cloc","cmd","cmh","cmw","cocr","coh","cow","cw","gb","gh","gt","gw","hbd","hbh","hbw","hloc","hor","hrw","kcr","kh","kw","lcbb","lcbh","lcow","lmbb","lmbh","lmbt","lp","mpp","nc","nr","ppm","r180","rp","sbb","sbh","sh","shp","sw","swm","swp","sxo","syo","tcr","th","tor","tp","tw","ucbb","ucbh","umbb","umbh","vrw","xols","xors","yobs","yots"];
-RESOLVE_VALUES = [ab,ah,at,aw,bcoh,bp,ccr,ch,cloc,cmd,cmh,cmw,cocr,coh,cow,cw,gb,gh,gt,gw,hbd,hbh,hbw,hloc,hor,hrw,kcr,kh,kw,lcbb,lcbh,lcow,lmbb,lmbh,lmbt,lp,mpp,nc,nr,ppm,r180,rp,sbb,sbh,sh,shp,sw,awm,swp,sxo,syo,tcr,th,tor,tp,tw,ucbb,ucbh,umbb,umbh,vrw,xols,xors,yobs,yots]; 
+RESOLVE_NAMES  = ["ab","ah","at","aw","bcoh","bp","bw","c_cr","c_h","c_w","ccr","ch","cloc","cmd","cmh","cmw","cocr","coh","cow","ctsd","cw","gb","gh","gl","gr","gt","gw","hbd","hbh","hbw","hloc","hor","hrw","kcr","kh","kw","lcbb","lcbh","lcow","lmbb","lmbh","lmbt","lp","mpp","nc","nr","ppm","r180","rp","sbb","sbh","sew","sh","shp","sw","swm","swp","sxo","syo","tcr","th","tor","tp","tw","ucbb","ucbh","umbb","umbh","vrw","xols","xors","yobs","yots"];
+RESOLVE_VALUES = [ab,ah,at,aw,bcoh,bp,bw,c_cr,c_h,c_w,ccr,ch,cloc,cmd,cmh,cmw,cocr,coh,cow,ctsd,cw,gb,gh,gl,gr,gt,gw,hbd,hbh,hbw,hloc,hor,hrw,kcr,kh,kw,lcbb,lcbh,lcow,lmbb,lmbh,lmbt,lp,mpp,nc,nr,ppm,r180,rp,sbb,sbh,sew,sh,shp,sw,awm,swp,sxo,syo,tcr,th,tor,tp,tw,ucbb,ucbh,umbb,umbh,vrw,xols,xors,yobs,yots]; 
 
 m_s_o = parse_user_vector(my_screen_openings, /*strict=*/true);
 m_c_o = parse_user_vector(my_case_openings, /*strict=*/true);
@@ -2141,6 +2154,8 @@ module keyguard(cheat){
 		union(){
 			difference(){
 				union(){
+					// supports are built from the keyguard as cut, so they wrap it
+					keyguard_supports(cheat)
 					difference(){
 						//slide case opening plastic based on unequal case opening settings
 						translate(unequal_opening)
@@ -2319,10 +2334,10 @@ module keyguard(cheat){
 
 						//cut screen openings
 						if(!is_undef(screen_openings) && len(screen_openings)>0 && type_of_tablet!="blank"){
-							if(is_v2(screen_openings)) cut_screen_openings_v2(screen_openings,sat); else cut_screen_openings(screen_openings,sat);
+							screen_openings_cut(screen_openings,sat);
 						}
 						if(len(m_s_o)>0 && type_of_tablet!="blank"){
-							if(is_v2(m_s_o)) cut_screen_openings_v2(m_s_o,sat); else cut_screen_openings(m_s_o,sat);
+							screen_openings_cut(m_s_o,sat);
 						}
 
 						// add engraved text in the screen region
@@ -2343,41 +2358,59 @@ module keyguard(cheat){
 
 					//*** add items screen elements  and case elements that will override screen cutouts
 					
-					//add cell ridges	
-					if (column_count>0 && row_count>0 && is_3d_printed){
-						cell_ridges();
-					}
-
-					//add bumps and ridges
-					if(!is_undef(screen_openings) && len(screen_openings)>0 && is_3d_printed){
-						if(is_v2(screen_openings)) adding_plastic_v2(screen_openings,"screen"); else adding_plastic(screen_openings,"screen");
-					}
-					if(len(m_s_o)>0 && is_3d_printed){
-						if(is_v2(m_s_o)) adding_plastic_v2(m_s_o,"screen"); else adding_plastic(m_s_o,"screen");
-					}
-
-					//add bumps and ridges from case_openings file and adjust for unequal case opening
-					if(!is_undef(case_openings) && len(case_openings)>0){
-						translate(unequal_opening)
-						if(is_3d_printed && has_case && !has_frame && cheat=="no"){
-							if(is_v2(case_openings)) adding_plastic_v2(case_openings,"case"); else adding_plastic(case_openings,"case");
+					// cut by the underside's own cuts too, so nothing raised hangs out underneath
+					keyguard_underside_trim(cheat){
+						//add cell ridges	
+						if (column_count>0 && row_count>0 && is_3d_printed){
+							cell_ridges();
 						}
-					}
-					if(len(m_c_o)>0){
-						translate(unequal_opening)
-						if(is_3d_printed && has_case && !has_frame && cheat=="no"){
-							if(is_v2(m_c_o)) adding_plastic_v2(m_c_o,"case"); else adding_plastic(m_c_o,"case");
-						}
-					}
 
-					// add embossed text
-					if (text!="" && keyguard_region=="screen region" && text_depth > 0){
-						engrave_emboss_instruction();
+						//add bumps and ridges
+						if(!is_undef(screen_openings) && len(screen_openings)>0 && is_3d_printed){
+							screen_openings_build(screen_openings);
+						}
+						if(len(m_s_o)>0 && is_3d_printed){
+							screen_openings_build(m_s_o);
+						}
+
+						//add bumps and ridges from case_openings file and adjust for unequal case opening
+						if(!is_undef(case_openings) && len(case_openings)>0){
+							translate(unequal_opening)
+							if(is_3d_printed && has_case && !has_frame && cheat=="no"){
+								if(is_v2(case_openings)) adding_plastic_v2(case_openings,"case"); else adding_plastic(case_openings,"case");
+							}
+						}
+						if(len(m_c_o)>0){
+							translate(unequal_opening)
+							if(is_3d_printed && has_case && !has_frame && cheat=="no"){
+								if(is_v2(m_c_o)) adding_plastic_v2(m_c_o,"case"); else adding_plastic(m_c_o,"case");
+							}
+						}
+
+						// add embossed text
+						if (text!="" && keyguard_region=="screen region" && text_depth > 0){
+							engrave_emboss_instruction();
+						}
 					}
 				}
 				
 				//*** add cuts that should override anything added to the screen
-				
+
+				// nothing may stand above the posts, or the keyguard cannot swing on them
+				// (Ken, 18 Nov 2026). The outline is trimmed there already; this also takes
+				// raised and part-height additions, ridges and text. The posts themselves
+				// are spared, so their upper half still stands above the line.
+				if(has_case && m_m=="Posts"){
+					translate(unequal_opening)
+					difference(){
+						translate([0,0,-500])
+						linear_extrude(height=1000)
+						above_posts_2d();
+
+						add_mounting_posts();
+					}
+				}
+
 				// remove parts of keyguard frame above posts (tracks the slid keyguard)
 				if(has_case && has_frame && mount_keyguard_with=="posts"){
 					translate(kg_slide)
@@ -2437,6 +2470,8 @@ module lc_keyguard(){
 		union(){
 			difference(){
 				union(){
+					// supports are built from the keyguard as cut, so they wrap it
+					keyguard_supports_2d()
 					difference(){
 						//slide case opening plastic based on unequal case opening settings
 						translate(unequal_opening)
@@ -2849,6 +2884,16 @@ module trim_keyguard_to_bar(){
 	//remove top portion of keyguard
 	translate([0,50+post_cl,0])
 	cube([keyguard_width+10,100,kt+10],center=true);
+}
+
+
+// The region above the posts' centre line, in case-opening coordinates: everything
+// there is removed, so the keyguard can swing on its posts. It is far wider than the
+// case opening on purpose. It used to be only 1 mm wider, so a case addition reaching
+// more than 0.5 mm past the side of the opening kept its part above the posts.
+module above_posts_2d(){
+	translate([0,coh/2-mount_to_top_of_opening_distance+500])
+	square([1000,1000],center=true);
 }
 
 
@@ -3415,7 +3460,7 @@ module raised_tab(depth, tab_width, tab_length){
 	b = raised_tab_height;
 	s = (raised_tabs_starting_height < depth - 1) ? raised_tabs_starting_height : depth - 1;
 	angle = ramp_angle;
-	e = min((depth-s+1)*cos(angle),preferred_raised_tab_thickness);
+	e = preferred_raised_tab_thickness;  // honored exactly; only the starting height (s) is limited
 	r_h = a * tan(angle);
 		
 	// magnet variables
@@ -3432,6 +3477,7 @@ module raised_tab(depth, tab_width, tab_length){
 		 0;
 		 
 	th1 = (embed_magnets=="no") ? e : max(e, mh+1);
+	th2 = (embed_magnets=="no") ? e : max(e, mh+2);  // ramp-only tab: its magnet pocket sits higher
 
 	if (r_h > b){  //tread exists
 		f = (sin(angle)!=0) ? (b-s)/sin(angle) : a;
@@ -3507,25 +3553,25 @@ module raised_tab(depth, tab_width, tab_length){
 			difference(){
 				union(){
 					translate([-2,0,0])
-					cube([f+2-2.5,tab_width,th1+1]);
-					
-					translate([f-2.5,2.5,0])
-					cube([2.5,tab_width-5,th1+1]);
-					
-					translate([f-2.5,2.5,0])
-					cylinder(h=th1+1,r=2.5);
-				
-					translate([f-2.5,tab_width-2.5,0])
-					cylinder(h=th1+1,r=2.5);
-				}
-				
-				translate([f+ff,0,(th1+1)/2])
-				rotate([0,-45,0])
-				cube([th1+1,tab_width,th1+1]);
+					cube([f+2-2.5,tab_width,th2]);
 
-				translate([-th1-1+2-ff,-ff,depth/2])
+					translate([f-2.5,2.5,0])
+					cube([2.5,tab_width-5,th2]);
+
+					translate([f-2.5,2.5,0])
+					cylinder(h=th2,r=2.5);
+
+					translate([f-2.5,tab_width-2.5,0])
+					cylinder(h=th2,r=2.5);
+				}
+
+				translate([f+ff,0,th2/2])
 				rotate([0,-45,0])
-				cube([th1+1,tab_width+2*ff,th1+1]);
+				cube([th2,tab_width,th2]);
+
+				translate([-th2+2-ff,-ff,depth/2])
+				rotate([0,-45,0])
+				cube([th2,tab_width+2*ff,th2]);
 				
 
 				if(embed_magnets=="yes"){
@@ -5116,8 +5162,9 @@ module create_cell_insert(){
 //                  screen. Forwards type "keyguard" (full-thickness z-placement and
 //                  kec chamfer) instead of "screen"; x/y/unit/starting-corner logic
 //                  is unchanged.
-module cut_screen_openings(s_o,depth,hl=false,on_frame=false){
-	cut_region = on_frame ? "keyguard" : "screen";
+module cut_screen_openings(s_o,depth,hl=false,on_frame=false,as_keyguard=false){
+	// as_keyguard: cut from the keyguard's top surface, as a case opening is (see screen_openings_cut)
+	cut_region = (on_frame || as_keyguard) ? "keyguard" : "screen";
 	for(i = [0 : len(s_o)-1]){
 		opening = s_o[i]; //0:ID, 1:x, 2:y, 3:width,  4:height, 5:shape, 6:top slope, 7:bottom slope, 8:left slope, 9:right slope, 10:corner_radius, 11:other
 		opening_ID = opening[0];
@@ -5351,8 +5398,9 @@ function v2_parse_addition(r) =
 //                  rather than the screen recess — forwards type "keyguard"
 //                  (full-thickness z-placement and kec chamfer) instead of "screen".
 //                  See cut_screen_openings (V1) for the framed-keyguard rationale.
-module cut_screen_openings_v2(s_o, depth, hl=false, on_frame=false) {
-	cut_region = on_frame ? "keyguard" : "screen";
+module cut_screen_openings_v2(s_o, depth, hl=false, on_frame=false, as_keyguard=false) {
+	// as_keyguard: cut from the keyguard's top surface, as a case opening is (see screen_openings_cut)
+	cut_region = (on_frame || as_keyguard) ? "keyguard" : "screen";
 	for(i = [0 : len(s_o)-1]) {
 		r = s_o[i];
 		opening_ID = r[0];
@@ -5360,7 +5408,9 @@ module cut_screen_openings_v2(s_o, depth, hl=false, on_frame=false) {
 		x_mm = (using_px) ? r[5] * mpp : r[5];
 		y_raw = r[6];
 
-		if (r[1] == "vridge" || r[1] == "hridge") {
+		if (r[1] == "support") {
+			// built by keyguard_supports(), which needs the finished keyguard
+		} else if (r[1] == "vridge" || r[1] == "hridge") {
 			// r[7]=ridge_height(cb), r[10]=length, r[11]=thickness, r[13]=sp
 			sp = r[13];
 			h = (r[1] == "vridge") ? r[10] : 0;
@@ -5480,6 +5530,486 @@ module cut_screen_openings_v2(s_o, depth, hl=false, on_frame=false) {
 	}
 }
 
+
+// =============================================================================
+// SCREEN OPENINGS THAT LEAVE THE SCREEN AREA (Ken, 29 Oct 2026)
+//
+// When the keyguard is thicker than its screen area, the screen area is a recess
+// and the border around it stands kt-sat higher. Screen openings and additions
+// used to be cut and built from the recess floor wherever they were, so one placed
+// off the screen area (Custom Openings lets you drag one there) landed inside the
+// thicker border: a ridge buried in it and hanging out of its underside, a hole's
+// top chamfer cut as a hidden groove, a pocket below the plastic. Each now follows
+// the surface it lands on:
+//
+//   - A CUT is split at the recess wall. The part over the screen area is cut as
+//     before; the part over the border is cut from the keyguard's top surface,
+//     exactly as a case opening there is ("keyguard" region, depth kt, kec
+//     chamfer), so its top edge is chamfered on both sides of the wall. The two
+//     parts overlap by sr_overlap at the wall so no two cut faces coincide.
+//   - A BUILD (ridge, bump, raised text/svg/shape) keeps ONE flat top (Ken: anything
+//     raised from the top surface must have a flat top). If any of it is off the
+//     screen area it is built on the keyguard's top surface, and the part over the
+//     screen area is filled down to the screen area's surface (ridges: down to the
+//     underside, as ridges always reach).
+//
+// An item wholly on the screen area is unchanged. _so_near_edge() sends an item that
+// is clearly inside the recess down the old single call; for the rest the split is
+// decided by geometry: the zones below are empty when none of the item's body
+// leaves the recess, which leaves the old result.
+// =============================================================================
+
+follow_surface = is_3d_printed && (kt - sat > 0.01);
+
+// The screen recess's wall: the same footprint keyguard() cuts with hole_cutter2.
+sr_l = max(adj_lec,0);
+sr_r = max(adj_rec,0);
+sr_t = max(adj_tec,0);
+sr_b = max(adj_bec,0);
+sr_w = screen_width + cec*2 - sr_l - sr_r + cell_top_offset*2;
+sr_h = screen_height + cec*2 - sr_t - sr_b + cell_top_offset*2;
+sr_cx = sr_l/2 - sr_r/2;
+sr_cy = sr_b/2 - sr_t/2;
+sr_cr = min(bcr + cec/2, min(sr_w, sr_h)/2);
+sr_tol = 0.02;      // body that leaves the recess by less than this counts as on it
+sr_overlap = 0.05;  // the two parts of a split cut overlap by this at the wall
+
+module screen_recess_2d(grow=0){
+	translate([sr_cx, sr_cy])
+	offset(delta=grow)
+	rounded_rect(sr_w, sr_h, sr_cr);
+}
+
+function _so_mm(v) = (using_px) ? v * mpp : v;
+function _so_y_mm(y) = (starting_corner_for_screen_measurements == "upper-left") ?
+	((using_px) ? (shp - y) * mpp : (ahm - y)) : _so_mm(y);
+function _so_abs(v) = is_num(v) ? abs(v) : 0;
+
+function _so_v2_std(s) = s=="r" || s=="c" || s=="hd" || s=="oa1" || s=="oa2" || s=="oa3" || s=="oa4";
+function _so_v1_std(s) = s=="r" || s=="rr" || s=="cr" || s=="crr" || s=="c" || s=="lc" || s=="hd" || s=="lhd" ||
+                         s=="oa1" || s=="oa2" || s=="oa3" || s=="oa4";
+function _so_ridge(s) = s=="ridge" || s=="hridge" || s=="vridge" || s=="cridge" || s=="rridge" || s=="crridge" ||
+                        s=="hdridge" || s=="aridge1" || s=="aridge2" || s=="aridge3" || s=="aridge4";
+function _so_shape(r, v2) = v2 ? r[1] : r[5];
+function _so_engraving(r, v2) = let(s = _so_shape(r, v2)) s=="text" || s=="ttext" || s=="btext" || s=="svg";
+
+// Where the item is anchored, in keyguard coordinates.
+function _so_anchor(r, v2) = v2 ? [osx0 + _so_mm(r[5]), osy0 + _so_y_mm(r[6])]
+                                : [osx0 + _so_mm(r[1]), osy0 + _so_y_mm(r[2])];
+
+// A distance from the anchor that the item's body cannot reach beyond: twice the
+// sum of its size columns, whatever its anchor or rotation. Text has no size column
+// for its length, so it always takes the geometric test.
+function _so_reach(r, v2) =
+	_so_engraving(r, v2) && _so_shape(r, v2) != "svg" ? 1e6 :
+	v2 ? 2*_so_mm(_so_abs(r[2]) + _so_abs(r[3]) + _so_abs(r[4]) + _so_abs(r[10]) + _so_abs(r[11])) + 1
+	   : 2*_so_mm(_so_abs(r[3]) + _so_abs(r[4]) + _so_abs(r[10]) +
+	              ((_so_ridge(r[5]) || r[5]=="bump") ? _so_abs(r[6]) + _so_abs(r[7]) : 0)) + 1;
+
+// Is a disc of radius R at p inside the recess? (Tests the disc's bounding square.)
+function _so_in_recess(p, R) =
+	let(hw = sr_w/2, hh = sr_h/2,
+	    ex = abs(p[0] - sr_cx) + R, ey = abs(p[1] - sr_cy) + R)
+	is_num(ex) && is_num(ey) && ex <= hw && ey <= hh &&
+	(ex <= hw - sr_cr || ey <= hh - sr_cr || norm([ex - (hw - sr_cr), ey - (hh - sr_cr)]) <= sr_cr);
+
+function _so_near_edge(r, v2) = !_so_in_recess(_so_anchor(r, v2), _so_reach(r, v2));
+
+// How far a cutter can spread past the item's body: its chamfer plus its edge slopes
+// over the keyguard's full thickness.
+function _so_margin(r, v2) =
+	let(s  = _so_shape(r, v2),
+	    sl = v2 ? (_so_v2_std(s) ? [for (k = [0:3]) v2_slope(r[12], k, s)] : [90])
+	            : (_so_v1_std(s) ? [for (k = [6:9]) (r[k] == 0 ? 90 : r[k])] : [90]),
+	    spread = max([for (a = sl) is_num(a) ? abs(tan(90 - a)) : 0]))
+	max(cec, kec) + kt * min(spread, 3) + 0.5;
+
+module _so_cut(one, v2, depth, hl, top){
+	if (v2) cut_screen_openings_v2(one, depth, hl, as_keyguard=top);
+	else    cut_screen_openings   (one, depth, hl, as_keyguard=top);
+}
+
+module _so_build(one, v2, hl, top){
+	if (v2) adding_plastic_v2(one, "screen", hl, on_keyguard_top=top);
+	else    adding_plastic   (one, "screen", hl, on_keyguard_top=top);
+}
+
+// The item's body seen from above, without the chamfer or slope spread of its
+// cutters: the outline a laser-cut keyguard gets for a plain opening, and a slice
+// through anything raised or engraved, just above or below the screen area's surface.
+module _so_outline(r, v2){
+	s = _so_shape(r, v2);
+	oa = s=="oa1" || s=="oa2" || s=="oa3" || s=="oa4";
+	if (v2 && _so_v2_std(s)){
+		sp = r[13];
+		rot = (len(sp) > 0 && is_num(sp[0])) ? sp[0] : 0;
+		anchor = (r[8] == "C" || r[8] == "c") ? "c" : undef;
+		w = (s == "c") ? 0 : r[3];
+		c_r = oa ? r[4] : min(r[4], min(w, r[2])/2);
+		translate(_so_anchor(r, v2))
+		cut_opening_2d_v2(_so_mm(w), _so_mm(r[2]), s, anchor, 90, _so_mm(c_r), rot);
+	}
+	else if (!v2 && _so_v1_std(s)){
+		w = (r[3] == undef) ? 0 : r[3];
+		c_r = oa ? r[10] : min(r[10], min(w, r[4])/2);
+		translate(_so_anchor(r, v2))
+		cut_opening_2d(_so_mm(w), _so_mm(r[4]), s, 90, _so_mm(c_r));
+	}
+}
+
+module _so_build_footprint(r, v2){
+	projection(cut=true)
+	translate([0, 0, kt/2 - sat - 0.05])
+	_so_build([r], v2, false, false);
+}
+
+module _so_footprint(r, v2){
+	_so_outline(r, v2);
+	if (is_3d_printed) _so_build_footprint(r, v2);
+	if (_so_engraving(r, v2)){
+		projection(cut=true)
+		translate([0, 0, kt/2 - sat + 0.05])
+		_so_cut([r], v2, sat, false, false);
+	}
+}
+
+// What of the item lies off the screen area, grown by m and kept outside the
+// recess (grown by `grow`). Empty when the item's body stays on the screen area.
+module _so_off_zone(r, v2, m, grow){
+	linear_extrude(height=1000, center=true)
+	difference(){
+		offset(r=m)
+		difference(){
+			_so_footprint(r, v2);
+			screen_recess_2d(sr_tol);
+		}
+		screen_recess_2d(grow);
+	}
+}
+
+// Everything within `whole` of the part of the item off the screen area: covers the
+// whole item when any of it is off, and is empty when none of it is.
+module _so_off_any(r, v2, whole){
+	linear_extrude(height=1000, center=true)
+	offset(r=whole)
+	difference(){
+		_so_footprint(r, v2);
+		screen_recess_2d(sr_tol);
+	}
+}
+
+// Fills under a build raised to the keyguard's top surface where it is over the
+// screen area: down to that surface, or for a ridge down to the underside.
+module _so_skirt(r, v2){
+	z0 = _so_ridge(_so_shape(r, v2)) ? -kt/2 - ff : -kt/2 + sat - ff;
+	translate([0, 0, z0])
+	linear_extrude(height = kt/2 - z0)
+	intersection(){
+		_so_build_footprint(r, v2);
+		screen_recess_2d(sr_overlap);
+	}
+}
+
+// Screen-opening cuts, each following the surface it lands on.
+// @param s_o    screen_openings vector (V1 or V2)
+// @param depth  screen-area cut depth (sat; 0 for the 2D first layer)
+// @param hl     highlight-only pass (see oa_geom)
+module screen_openings_cut(s_o, depth, hl=false){
+	v2 = is_v2(s_o);
+	if (!follow_surface || depth <= 0) _so_cut(s_o, v2, depth, hl, false);
+	else for (i = [0 : len(s_o)-1]){
+		r = s_o[i];
+		if (v2 && r[1] == "support") {}   // built by keyguard_supports()
+		else if (!_so_near_edge(r, v2)) _so_cut([r], v2, depth, hl, false);
+		else {
+			m = _so_margin(r, v2);
+			difference(){
+				_so_cut([r], v2, depth, hl, false);
+				_so_off_zone(r, v2, m, sr_overlap);
+			}
+			intersection(){
+				_so_cut([r], v2, kt, hl, true);
+				_so_off_zone(r, v2, m, -sr_overlap);
+			}
+		}
+	}
+}
+
+// Screen-opening builds (ridges, bumps, raised text, svg and shapes), each with one
+// flat top set by the highest surface under it.
+// @param s_o  screen_openings vector (V1 or V2)
+// @param hl   highlight-only pass (see oa_geom)
+module screen_openings_build(s_o, hl=false){
+	v2 = is_v2(s_o);
+	if (!follow_surface) _so_build(s_o, v2, hl, false);
+	else for (i = [0 : len(s_o)-1]){
+		r = s_o[i];
+		if (v2 && r[1] == "support") {}   // built by keyguard_supports()
+		else if (!_so_near_edge(r, v2)) _so_build([r], v2, hl, false);
+		else {
+			whole = min(_so_reach(r, v2)*2 + _so_margin(r, v2), 1000);
+			difference(){
+				_so_build([r], v2, hl, false);
+				_so_off_any(r, v2, whole);
+			}
+			intersection(){
+				union(){
+					_so_build([r], v2, hl, true);
+					oa_geom(r[0], hl) _so_skirt(r, v2);
+				}
+				_so_off_any(r, v2, whole);
+			}
+		}
+	}
+}
+
+
+// =============================================================================
+// SUPPORTS (Ken, 20 Nov 2026)
+//
+// A "support" is a flat bar of plastic laid across an opening to stiffen the
+// keyguard. Unlike a ridge it never stands proud: it is exactly as thick as the
+// keyguard where it lies — from the underside up to the screen area's surface
+// over the screen area, and up to the keyguard's top surface over the border.
+// It can be written in screen_openings, case_openings or tablet_openings (V2
+// rows only):
+//
+//   [ID, "support", 0, width, fillet radius, x, y, 0, anchor, "", length, 0, [], [direction]]
+//
+//   width      the bar's width; 0 means 2 mm
+//   corner     the radius of the fillets where it meets plastic (0 = square)
+//   x, y       "L" anchor (default): the middle of the bar's starting end, as a
+//              ridge; "C": the middle of the bar
+//   length     0 means 10 mm
+//   direction  0, 90, 180 or 270 degrees (0 = to the right); a support runs only
+//              across or up and down (Ken, 20 Nov 2026), so any other is skipped
+//
+// The fillets follow the keyguard as actually cut, so the bar can cross a round
+// opening or a slanted wall, cross several openings and the plastic between them,
+// or run on into the plastic, and is filleted wherever it really meets plastic —
+// including another support it crosses, whose bar counts as plastic here. The keyguard, with everything cut but before
+// ridges and other builds, is sliced just below the bevel on its top edges. Near
+// the bar, the openings in that slice, less the bar, have their corners rounded
+// by the radius (shrunk by it, then grown by it), and the plastic that rounding
+// leaves is the fillets. Rounding cannot fit into a part of an opening narrower
+// than twice the radius right beside the bar, so such a sliver is filled in.
+//
+// Its top edges are beveled by the cell edge chamfer (Ken, 20 Nov 2026) over the
+// screen area and by the keyguard edge chamfer over the border — the chamfer the
+// openings there have, so the bevel runs on round the fillets into the opening's
+// own. The bevel follows the new edge of the opening, cut by a cone swept round
+// it (minkowski), and the support reaches a little into the plastic beside it so
+// that the opening's old bevel there is filled and cut again to the new edge.
+//
+// Cost: the slice needs the finished keyguard. A render works it out once and
+// reuses it (OpenSCAD caches identical geometry), but desktop OpenSCAD's quick
+// preview (F5) has to work it out in full, so a design with a support previews
+// about as slowly as it renders.
+// =============================================================================
+
+sup_default_width  = 2;
+sup_default_length = 10;
+
+// A support runs only across or up and down: 0, 90, 180 or 270 degrees (Ken,
+// 20 Nov 2026 — narrower than a ridge). Any other direction is skipped, and says so.
+function _sup_angle(r) = (is_list(r[13]) && len(r[13]) >= 1 && is_num(r[13][0])) ? r[13][0] : 0;
+function _sup_square(r) = (_sup_angle(r) % 90 == 0) ? true :
+	echo(str("WARNING: support '", r[0], "' runs at ", _sup_angle(r),
+	         " degrees; a support must run at 0, 90, 180 or 270 degrees — skipping.")) false;
+
+function _sup_rows(v) = (!is_list(v) || len(v) == 0 || !is_v2(v)) ? [] :
+	[for (r = v) if (is_list(r) && len(r) >= 14 && r[1] == "support" && _sup_square(r)) r];
+
+// One support row, resolved to [ID, [x,y] of its starting end, length, width,
+// angle, fillet radius], all in millimeters in keyguard coordinates.
+// @param where  "screen", "case" or "tablet" — which list it came from
+// @param uo     the unequal-case-opening shift case openings move by
+function _sup_resolve(r, where, uo) =
+	let(k   = (where == "screen" && using_px) ? mpp : 1,
+	    a0  = _sup_angle(r),
+	    w   = (is_num(r[3])  && r[3]  > 0) ? r[3]  * k : sup_default_width,
+	    l   = (is_num(r[10]) && r[10] > 0) ? r[10] * k : sup_default_length,
+	    rad = (is_num(r[4])  && r[4]  > 0) ? r[4]  * k : 0,
+	    p   = (where == "screen") ? [osx0 + _so_mm(r[5]), osy0 + _so_y_mm(r[6])] :
+	          (where == "case")   ? [cox0 + r[5] + uo[0], coy0 + r[6] + uo[1]] :
+	          (is_landscape)      ? [tx0 + r[5], ty0 + r[6]] : [tx0 + r[6], -ty0 - r[5]],
+	    // a portrait tablet's openings are turned a quarter turn (x,y -> y,-x)
+	    a   = (where == "tablet" && !is_landscape) ? a0 - 90 : a0,
+	    st  = (r[8] == "C" || r[8] == "c") ? p - l/2 * [cos(a), sin(a)] : p)
+	[r[0], st, l, w, a, rad];
+
+// Every support the keyguard gets, under the same gates as the additions in its list.
+function _sup_all(cheat, uo) = concat(
+	(type_of_tablet != "blank")
+		? [for (r = concat(is_undef(screen_openings) ? [] : _sup_rows(screen_openings), _sup_rows(m_s_o)))
+		   _sup_resolve(r, "screen", uo)] : [],
+	(has_case && !has_frame && cheat == "no")
+		? [for (r = concat(is_undef(case_openings) ? [] : _sup_rows(case_openings), _sup_rows(m_c_o)))
+		   _sup_resolve(r, "case", uo)] : [],
+	(tablet_height > 0 && tablet_width > 0 && cheat == "no" && !has_frame)
+		? [for (r = concat(is_undef(tablet_openings) ? [] : _sup_rows(tablet_openings), _sup_rows(m_t_o)))
+		   _sup_resolve(r, "tablet", uo)] : []);
+
+module _sup_bar_2d(s){
+	translate(s[1]) rotate([0, 0, s[4]]) translate([0, -s[3]/2]) square([s[2], s[3]]);
+}
+
+// How far round the bar the openings are looked at: well past where any fillet,
+// bevel or rounding near the bar can reach, so the window's own edge never shows.
+function _sup_reach(s) = 4*s[5] + 5;
+
+// Rounds the corners of an opening by R (shrink by R, grow back by R); leaves its
+// inward corners and any part wider than 2R as they were.
+module _sup_round(R){
+	if (R > 0) offset(r=R) offset(r=-R) children();
+	else children();
+}
+
+// The openings near support s once it is in, their new corners rounded.
+// children(): the keyguard's plastic, as a 2D slice.
+module _sup_holes(s){
+	_sup_round(s[5])
+	difference(){
+		offset(delta = _sup_reach(s)) _sup_bar_2d(s);
+		children();
+		_sup_bar_2d(s);
+	}
+}
+
+// The plastic support s adds over the openings: the bar and its fillets.
+// children(): the keyguard's plastic, as a 2D slice.
+module _sup_body(s){
+	_sup_bar_2d(s);
+	if (s[5] > 0)
+	intersection(){
+		offset(delta = 2*s[5] + 0.01) _sup_bar_2d(s);
+		difference(){
+			offset(delta = _sup_reach(s)) _sup_bar_2d(s);
+			children();
+			_sup_holes(s) children();
+		}
+	}
+}
+
+// What support s is built over: its body, reaching c (and a little) into the
+// plastic beside it so it shares no wall with it and fills the opening's old bevel there.
+module _sup_footprint(s, c){
+	_sup_body(s) children();
+	intersection(){
+		// r, not delta: the body has slivers whose sharp points a delta offset
+		// would draw out into long spikes across the plastic
+		offset(r = c + 0.05) _sup_body(s) children();
+		children();
+	}
+}
+
+// The bevel on support s's top edges: everything within c of its openings at the
+// top surface ztop, narrowing at 45 degrees to nothing c below it: a cone swept
+// round the openings (minkowski). Smooth, so where it cuts again the bevel an
+// opening already had beside the support, it cuts the same bevel.
+module _sup_bevel(s, ztop, c){
+	minkowski(){
+		translate([0, 0, ztop])
+		linear_extrude(height = 1)
+		// merges pieces that touch at a point, which CGAL cannot close. delta, not
+		// r: rounding every corner here quadruples the minkowski's work (two
+		// crossing supports took 6.4 s in the web app's engine instead of 3.4).
+		// The openings here are already rounded by the fillet radius, so a
+		// 0.01 mm mitered grow cannot draw out a spike of any size.
+		offset(delta = 0.01)
+		intersection(){
+			offset(delta = 2*s[5] + 2*c + 1) _sup_bar_2d(s);
+			_sup_holes(s) children();
+		}
+		translate([0, 0, -c])
+		cylinder(h = c, r1 = 0, r2 = c, $fn = 32);
+	}
+}
+
+// The screen area seen from above, for splitting a support where it leaves it.
+module _sup_zone(zone){
+	if (zone == "in") intersection(){ children(); screen_recess_2d(sr_overlap); }
+	// what is left off the screen area, less any hair-thin sliver (CGAL cannot close one)
+	else if (zone == "out") offset(r=0.02) offset(r=-0.02)
+		difference(){ children(); screen_recess_2d(max(cec, kec) + 0.1); }
+	else children();
+}
+
+// The plastic every support is filleted against: the keyguard (children) sliced at
+// zs, and every support's bar. With the bars in it, where two supports cross each
+// sees the other as plastic, so the corners where they meet get fillets too (Ken,
+// 20 Nov 2026).
+module _sup_plastic(sups, zs){
+	projection(cut = true) translate([0, 0, -zs]) children();
+	for (t = sups) _sup_bar_2d(t);
+}
+
+// The supports over one zone, up to its top surface ztop and beveled by c.
+// children(): the keyguard with everything cut.
+module _sup_part(sups, zone, ztop, c){
+	zs = max(ztop - c - 0.05, -kt/2 + 0.02);
+	fn0 = $fn;
+	for (s = sups)
+	difference(){
+		translate([0, 0, -kt/2 - ff])
+		linear_extrude(height = ztop + kt/2 + ff)
+		// merges pieces that touch at a point, which CGAL cannot close; 8 sides is
+		// plenty at 0.01 mm and keeps the outline light. $fn is handed back to
+		// what is inside, or the fillets would be drawn with 8 sides too.
+		offset(r = 0.01, $fn = 8)
+		_sup_zone(zone, $fn = fn0)
+		_sup_footprint(s, c)
+		_sup_plastic(sups, zs) children();
+
+		if (c > 0)
+		_sup_bevel(s, ztop, c)
+		_sup_plastic(sups, zs) children();
+	}
+}
+
+// The keyguard with everything cut (its children), plus its supports.
+module keyguard_supports(cheat){
+	uo = (!has_frame) ? [-unequal_left_side_offset, -unequal_bottom_side_offset] : [0, 0];
+	sups = _sup_all(cheat, uo);
+	children();
+	if (len(sups) > 0){
+		keyguard_underside_trim(cheat){
+			if (!is_3d_printed) _sup_part(sups, "all", kt/2, 0) children();
+			// one surface: one piece, beveled as the cells are
+			else if (!follow_surface) _sup_part(sups, "all", kt/2, cec) children();
+			else {
+				_sup_part(sups, "in", follow_surface ? -kt/2 + sat : kt/2, cec) children();
+				_sup_part(sups, "out", kt/2, kec) children();
+			}
+		}
+	}
+}
+
+// The 2D laser-cut keyguard (its children), plus its supports.
+module keyguard_supports_2d(){
+	sups = _sup_all("no", [-unequal_left_side_offset, -unequal_bottom_side_offset]);
+	children();
+	// every bar counts as plastic, so crossing supports fillet each other
+	for (s = sups) _sup_footprint(s, 0) union(){ children(); for (t = sups) _sup_bar_2d(t); }
+}
+
+// The supports' highlight overlays: the bar alone, at its full thickness.
+// @param depth  0 for the 2D first layer
+module keyguard_supports_highlight(depth, cheat){
+	uo = (!has_frame) ? [-unequal_left_side_offset, -unequal_bottom_side_offset] : [0, 0];
+	for (s = _sup_all(cheat, uo))
+	oa_geom(s[0], true){
+		if (depth <= 0) _sup_bar_2d(s);
+		else if (follow_surface){
+			translate([0, 0, -kt/2]) linear_extrude(height = sat)
+			intersection(){ _sup_bar_2d(s); screen_recess_2d(sr_overlap); }
+			translate([0, 0, -kt/2]) linear_extrude(height = kt)
+			difference(){ _sup_bar_2d(s); screen_recess_2d(0); }
+		}
+		else translate([0, 0, -kt/2]) linear_extrude(height = kt) _sup_bar_2d(s);
+	}
+}
+
 // V2 version of cut_case_openings.
 // Iterates over the case_openings vector and cuts each opening at the
 // correct position relative to the case-opening coordinate origin.
@@ -5490,7 +6020,9 @@ module cut_case_openings_v2(c_o, depth, hl=false) {
 		r = c_o[i];
 		opening_ID = r[0];
 
-		if (r[1] == "vridge" || r[1] == "hridge") {
+		if (r[1] == "support") {
+			// built by keyguard_supports()
+		} else if (r[1] == "vridge" || r[1] == "hridge") {
 			sp = r[13];
 			h = (r[1] == "vridge") ? r[10] : 0;
 			w = (r[1] == "hridge") ? r[10] : 0;
@@ -5584,7 +6116,9 @@ module cut_tablet_openings_v2(t_o, depth, hl=false) {
 		r = t_o[i];
 		opening_ID = r[0];
 
-		if (r[1] == "vridge" || r[1] == "hridge") {
+		if (r[1] == "support") {
+			// built by keyguard_supports()
+		} else if (r[1] == "vridge" || r[1] == "hridge") {
 			sp = r[13];
 			h = (r[1] == "vridge") ? r[10] : 0;
 			w = (r[1] == "hridge") ? r[10] : 0;
@@ -5736,10 +6270,12 @@ module place_emboss_v2(shape, anchor, xb, yb, trans, rot_b,
 //                  surface (-kt/2+sat). Used when a slid framed keyguard lets the
 //                  frame cover part of the screen. x/y/unit/starting-corner logic
 //                  (keyed on where=="screen") is unchanged.
-module adding_plastic_v2(additions, where, hl=false, on_frame=false) {
+module adding_plastic_v2(additions, where, hl=false, on_frame=false, on_keyguard_top=false) {
 	x0    = (where == "screen") ? osx0 : cox0;
 	y0    = (where == "screen") ? osy0 : coy0;
+	// on_keyguard_top: build on the keyguard's top surface, as a case addition is (see screen_openings_build)
 	trans = (where == "screen" && on_frame) ? keyguard_frame_thickness/2 :
+	        (where == "screen" && on_keyguard_top) ? kt/2 :
 	        (where == "screen") ? -kt/2+sat :
 	        (where == "case" && generate == "keyguard") ? kt/2 :
 	        keyguard_frame_thickness/2;
@@ -5751,7 +6287,9 @@ module adding_plastic_v2(additions, where, hl=false, on_frame=false) {
 		x_mm = px ? r[5] * mpp : r[5];
 		y_raw = r[6];
 
-		if (r[1] == "bump") {
+		if (r[1] == "support") {
+			// built by keyguard_supports(), which needs the finished keyguard
+		} else if (r[1] == "bump") {
 			// r[2]=diameter; sphere: height=width=diameter
 			diam    = r[2];
 			diam_mm = px ? diam * mpp : diam;
@@ -5865,7 +6403,7 @@ module adding_plastic_v2(additions, where, hl=false, on_frame=false) {
 			bot_sl_b = is_laser_cut ? 90 : v2_slope(es, 1, r[1]);
 			lft_sl_b = is_laser_cut ? 90 : v2_slope(es, 2, r[1]);
 			rgt_sl_b = is_laser_cut ? 90 : v2_slope(es, 3, r[1]);
-			ec_b     = (where == "screen") ? cec : kec;
+			ec_b     = (where == "screen" && !on_keyguard_top) ? cec : kec;
 			has_ch_b = ec_b > 0 && dep_b > ec_b;
 			main_dep_b = has_ch_b ? dep_b - ec_b : dep_b;
 			y_mm = (starting_corner_for_screen_measurements == "upper-left" && where == "screen") ?
@@ -5887,7 +6425,7 @@ module adding_plastic_v2(additions, where, hl=false, on_frame=false) {
 // that have an explicit thickness (flex-height shapes).
 // @param c_a     Case additions vector (V2 format)
 // @param is_sub  false = add positive shapes; true = subtract negative shapes
-module apply_flex_height_shapes_v2(c_a, is_sub, hl=false) {
+module apply_flex_height_shapes_v2(c_a, is_sub, hl=false, grow=0) {
 	if (len(c_a) > 0) {
 		for(i = [0 : len(c_a)-1]) {
 			p = v2_parse_addition(c_a[i]);
@@ -5912,8 +6450,10 @@ module apply_flex_height_shapes_v2(c_a, is_sub, hl=false) {
 			} else if (addition_thickness > 0 && is_sub == is_sub_shape) {
 				oa_geom(addition_ID, hl)
 				translate([0, 0, is_sub ? -kt/2-ff : -kt/2])
-				linear_extrude(height=addition_thickness)
-				build_trimmed_addition(addition_x, addition_y, addition_width, addition_height, addition_shape, addition_trim_above, addition_trim_below, addition_trim_to_right, addition_trim_to_left, addition_corner_radius);
+				linear_extrude(height=addition_thickness+grow)
+				// grow: keyguard_underside_trim() spreads and raises the cut slightly (see there)
+				if (grow == 0) build_trimmed_addition(addition_x, addition_y, addition_width, addition_height, addition_shape, addition_trim_above, addition_trim_below, addition_trim_to_right, addition_trim_to_left, addition_corner_radius);
+				else offset(delta=grow) build_trimmed_addition(addition_x, addition_y, addition_width, addition_height, addition_shape, addition_trim_above, addition_trim_below, addition_trim_to_right, addition_trim_to_left, addition_corner_radius);
 			}
 		}
 	}
@@ -6603,7 +7143,7 @@ module cut_opening_2d_v2(cut_width, cut_height, shape, anchor, top_slope=0, corn
 // @param on_frame  When true with where=="screen", place additions on the keyguard
 //                  FRAME (z-base = keyguard_frame_thickness/2) instead of the
 //                  recessed screen surface. See adding_plastic_v2 for rationale.
-module adding_plastic(additions,where,hl=false,on_frame=false){
+module adding_plastic(additions,where,hl=false,on_frame=false,on_keyguard_top=false){
 	for(i = [0 : len(additions)-1]){
 		addition = additions[i]; //0:ID, 1:x, 2:y, 3:width,  4:height, 5:shape, 6:top slope, 7:bottom slope, 8:left slope, 9:right slope, 10:corner_radius, 11:other
 		
@@ -6624,6 +7164,7 @@ module adding_plastic(additions,where,hl=false,on_frame=false){
 		y0 = (where=="screen") ? osy0 : coy0;
 		
 		trans = (where=="screen" && on_frame) ? keyguard_frame_thickness/2 :
+		        (where=="screen" && on_keyguard_top) ? kt/2 :
 		        (where=="screen") ? -kt/2+sat :
 		        (where=="case" && generate=="keyguard") ? kt/2 :
 				keyguard_frame_thickness/2;
@@ -7334,6 +7875,33 @@ module base_keyguard(wid,hei,crad,thickness,cheat){
 	difference(){
 		case_opening_blank(widt,heig,radi,thickness,cheat);
 		
+		keyguard_underside_carve(wid,hei,crad,thickness,cheat);
+
+		if (is_3d_printed){  //add chamfer
+			for (i = [1:1:chamfer_slices]) { 
+				chamfer_slice(i,widt,heig,radi,thickness,cheat);
+			}
+		}
+	}
+}
+
+// The cuts that shape the keyguard's underside: the sloped-edge carve and the
+// case-to-slope step. base_keyguard() cuts the blank with them; keyguard_underside_trim()
+// cuts raised items with them too.
+// @param wid,hei,crad,thickness,cheat  as base_keyguard()
+// @param lift  0 for the blank. For raised items, the carve is raised by this much and
+//              pulled this far into the keyguard's own footprint, so a trimmed end stays
+//              just inside the plastic instead of landing exactly on its surface.
+module keyguard_underside_carve(wid,hei,crad,thickness,cheat,lift=0){
+	widt = (add_sloped_keyguard_edge=="no") ? wid :
+			(extend_lip_to_edge_of_case=="no") ? cow + hsew*2: case_width;
+	heig = (add_sloped_keyguard_edge=="no") ? hei :
+			(extend_lip_to_edge_of_case=="no") ? coh + vsew*2: case_height;
+	radi = (add_sloped_keyguard_edge=="no") ? crad :
+			(extend_lip_to_edge_of_case=="no") ? [cocr+sew,cocr+sew,cocr+sew,cocr+sew] :
+											  [case_corner_radius,case_corner_radius,case_corner_radius,case_corner_radius];
+
+	translate([0,0,lift]){
 		if (is_3d_printed && add_sloped_keyguard_edge=="yes"){
 			difference(){
 				union(){
@@ -7365,7 +7933,8 @@ module base_keyguard(wid,hei,crad,thickness,cheat){
 				}
 				
 				translate([0,0,-5])
-				case_opening_blank(wid,hei,crad,thickness+10,cheat);
+				if (lift == 0) case_opening_blank(wid,hei,crad,thickness+10,cheat);
+				else linear_extrude(height=thickness+10) offset(delta=-lift) case_opening_blank_2d(wid,hei,crad,cheat);
 			}
 		}
 		
@@ -7379,10 +7948,41 @@ module base_keyguard(wid,hei,crad,thickness,cheat){
 
 			}
 		}
+	}
+}
 
-		if (is_3d_printed){  //add chamfer
-			for (i = [1:1:chamfer_slices]) { 
-				chamfer_slice(i,widt,heig,radi,thickness,cheat);
+// Raised items (ridges, bumps, raised text and shapes, from the screen and the case
+// openings) are added after the keyguard has been cut, so the cuts that shape its
+// underside never reached them: a ridge on the case lip hung out below the sloped
+// edge. Ken (29 Oct 2026): cuts on the underside also cut any additive shape that
+// extends into that area. So the sloped-edge carve, the case-to-slope step and the
+// subtractive case additions that thin the keyguard from below cut the children too.
+// Through-cuts are deliberately not applied: a ridge over an opening still reaches
+// down through it, as ridges always have.
+// @param cheat  as keyguard()
+module keyguard_underside_trim(cheat){
+	unequal_opening = (!has_frame) ? [-unequal_left_side_offset,-unequal_bottom_side_offset,0] : [0,0,0];
+	// the same gate keyguard() applies to subtractive case additions
+	flex = has_case && (!has_frame || (has_frame && generate=="keyguard frame" && cheat=="no"));
+	has_flex = flex && (len(m_c_a)>0 || (!is_undef(case_additions) && len(case_additions)>0));
+	if (!is_3d_printed || !(add_sloped_keyguard_edge=="yes" || case_to_slope_depth>0 || has_flex)){
+		children();
+	}
+	else{
+		difference(){
+			children();
+
+			translate(unequal_opening){
+				translate(kg_slide)
+				translate([0,0,-kt/2])
+				keyguard_underside_carve(kw,kh,kcr,kt,cheat,lift=ff);
+
+				if(flex && !is_undef(case_additions) && len(case_additions)>0){
+					if(is_v2(case_additions)) apply_flex_height_shapes_v2(case_additions, true, grow=ff); else apply_flex_height_shapes(case_additions, true, grow=ff);
+				}
+				if(flex && len(m_c_a)>0){
+					if(is_v2(m_c_a)) apply_flex_height_shapes_v2(m_c_a, true, grow=ff); else apply_flex_height_shapes(m_c_a, true, grow=ff);
+				}
 			}
 		}
 	}
@@ -7479,8 +8079,7 @@ module case_opening_blank_2d(shape_x,shape_y,c_r,cheat){
 		}
 
 		if(has_case && m_m=="Posts"){
-			translate([0,coh/2+25-mount_to_top_of_opening_distance,0])
-			square([cow+1,50],center=true);
+			above_posts_2d();
 		}
 	}
 }
@@ -7870,7 +8469,7 @@ module build_addition(addition_width, addition_height, addition_shape, addition_
 // (shapes with a leading "-", extruded slightly oversized to ensure clean cuts).
 // @param c_a     Case additions vector (rows of addition definitions)
 // @param is_sub  false = add positive shapes; true = subtract negative shapes
-module apply_flex_height_shapes(c_a, is_sub, hl=false){
+module apply_flex_height_shapes(c_a, is_sub, hl=false, grow=0){
 	if (len(c_a)>0){
 		for(i = [0 : len(c_a)-1]){
 			addition = c_a[i]; //0:ID, 1:x, 2:y, 3:width,  4:height, 5:shape, 6:thickness, 7:trim_above, 8:trim_below, 9:trim_to_right, 10:trim_to_left, 11:corner_radius, 12:other
@@ -7893,8 +8492,10 @@ module apply_flex_height_shapes(c_a, is_sub, hl=false){
 			if(addition_thickness>0 && is_sub==is_negative){
 				oa_geom(addition_ID, hl)
 				translate([0, 0, is_sub ? -kt/2-ff : -kt/2])
-				linear_extrude(height=addition_thickness)
-				build_trimmed_addition(addition_x,addition_y,addition_width, addition_height, addition_shape, addition_trim_above, addition_trim_below, addition_trim_to_right, addition_trim_to_left,addition_corner_radius);
+				linear_extrude(height=addition_thickness+grow)
+				// grow: keyguard_underside_trim() spreads and raises the cut slightly (see there)
+				if (grow == 0) build_trimmed_addition(addition_x,addition_y,addition_width, addition_height, addition_shape, addition_trim_above, addition_trim_below, addition_trim_to_right, addition_trim_to_left,addition_corner_radius);
+				else offset(delta=grow) build_trimmed_addition(addition_x,addition_y,addition_width, addition_height, addition_shape, addition_trim_above, addition_trim_below, addition_trim_to_right, addition_trim_to_left,addition_corner_radius);
 			}
 		}
 	}
@@ -8254,20 +8855,12 @@ module render_oa_highlights(depth, sat_d, cheat="no", on_frame=false) {
 	else {
 	// Screen openings — cuts and positive plastic (bumps/ridges/text/svg)
 	if(!is_undef(screen_openings) && len(screen_openings)>0 && type_of_tablet!="blank"){
-		if(is_v2(screen_openings)) cut_screen_openings_v2(screen_openings, sat_d, hl=true);
-		else                       cut_screen_openings   (screen_openings, sat_d, hl=true);
-		if(is_3d_printed){
-			if(is_v2(screen_openings)) adding_plastic_v2(screen_openings, "screen", hl=true);
-			else                       adding_plastic   (screen_openings, "screen", hl=true);
-		}
+		screen_openings_cut(screen_openings, sat_d, hl=true);
+		if(is_3d_printed) keyguard_underside_trim(cheat) screen_openings_build(screen_openings, hl=true);
 	}
 	if(len(m_s_o)>0 && type_of_tablet!="blank"){
-		if(is_v2(m_s_o)) cut_screen_openings_v2(m_s_o, sat_d, hl=true);
-		else             cut_screen_openings   (m_s_o, sat_d, hl=true);
-		if(is_3d_printed){
-			if(is_v2(m_s_o)) adding_plastic_v2(m_s_o, "screen", hl=true);
-			else             adding_plastic   (m_s_o, "screen", hl=true);
-		}
+		screen_openings_cut(m_s_o, sat_d, hl=true);
+		if(is_3d_printed) keyguard_underside_trim(cheat) screen_openings_build(m_s_o, hl=true);
 	}
 
 	// Case openings — cuts (translated by unequal_opening to match keyguard())
@@ -8286,13 +8879,13 @@ module render_oa_highlights(depth, sat_d, cheat="no", on_frame=false) {
 		}
 	}
 	if(!is_undef(case_openings) && len(case_openings)>0 && is_3d_printed && has_case && !has_frame && cheat=="no"){
-		translate(unequal_opening) {
+		keyguard_underside_trim(cheat) translate(unequal_opening) {
 			if(is_v2(case_openings)) adding_plastic_v2(case_openings, "case", hl=true);
 			else                     adding_plastic   (case_openings, "case", hl=true);
 		}
 	}
 	if(len(m_c_o)>0 && is_3d_printed && has_case && !has_frame && cheat=="no"){
-		translate(unequal_opening) {
+		keyguard_underside_trim(cheat) translate(unequal_opening) {
 			if(is_v2(m_c_o)) adding_plastic_v2(m_c_o, "case", hl=true);
 			else             adding_plastic   (m_c_o, "case", hl=true);
 		}
@@ -8308,6 +8901,9 @@ module render_oa_highlights(depth, sat_d, cheat="no", on_frame=false) {
 		if(is_v2(m_t_o)) cut_tablet_openings_v2(m_t_o, depth, hl=true);
 		else             cut_tablet_openings   (m_t_o, depth, hl=true);
 	}
+
+	// Supports — the bar alone; its fillets need the finished keyguard
+	keyguard_supports_highlight(depth, cheat);
 
 	// Case additions — both positive (add) and negative (sub) entries,
 	// flex-height and full-height variants, plus manual-mount pedestals/slots.

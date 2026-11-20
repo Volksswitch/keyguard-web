@@ -2,7 +2,7 @@
   "videos": {
     "1.1-what-for": {
       "signature": "346982144a118139cf8acf7bca9b8bdd0c605f91500b1d56c5a3c2adbdd31ac5",
-      "published": "2026-10-30"
+      "published": "2026-11-20"
     },
     "1.2-open-and-start": {
       "signature": "a5a3e9f6a299a73ceb1a77cd4c928db2da3b27781340fa927a8ec45a391401d2",
@@ -46,27 +46,27 @@
     },
     "3.2-by-eye": {
       "signature": "db952470bdacd4f05de5720159adc16048931109d667f464afd60faba999907a",
-      "published": "2026-10-30"
+      "published": "2026-11-20"
     },
     "3.3-typing-openings": {
-      "signature": "fb85f9bdaa563c2107ddd8ee55ff9ed03a236c420cbb7a36ea90d5b762adc76a",
-      "published": "2026-10-30"
+      "signature": "ee35b3f3549a8300604dd3132f7bd48ee53f3521c2612bac056fe9c8ea938db7",
+      "published": "2026-11-20"
     },
     "3.4-ridges-corners": {
       "signature": "75d3c7881df7d5a660419bb7eb2c5ed9d1cdf66cc6ba305b963d7e93e7a46ba0",
-      "published": "2026-10-30"
+      "published": "2026-11-20"
     },
     "3.5-slopes-bars": {
-      "signature": "45b7711570e0ae34c3f50fbb6a89fb19bf776e589440decbfdd58dd2a76907b9",
-      "published": "2026-10-27"
+      "signature": "d0689f19a84660708fa5837663601e4f5a48ebfcd0ce920411c3660c78fc1761",
+      "published": "2026-11-20"
     },
     "3.6-free-form": {
       "signature": "efe04a59b4b2237db30e5036578568850a6ec170588c7bfe831b0e5335eac406",
-      "published": "2026-10-30"
+      "published": "2026-11-20"
     },
     "3.7-splitting": {
-      "signature": "b4265614677f14dc12e20f8029591f74713f9664a1918c86f2fc21b542252eef",
-      "published": "2026-11-02"
+      "signature": "340736753f82616538226abb493c180cc7af45b5494f2c2ba7f10bcd6ccecd83",
+      "published": "2026-11-20"
     },
     "3.8-text-braille": {
       "signature": "95c24d9ba22546ccb4d6d2bb51e1ab10ecc1b4622e0e77dec78b24c7121737e5",
@@ -82,7 +82,7 @@
     },
     "4.2-update-offered": {
       "signature": "8fe91ceedb49066fc706a92618f43538c5545ad2e8092b6accbcffe8b0514e85",
-      "published": "2026-11-02"
+      "published": "2026-11-20"
     },
     "4.3-skill-levels": {
       "signature": "93df803d9d16fa6afe4a057d4742c2c103762abdbd3d4e6745304a172fdcde0b",
@@ -105,12 +105,64 @@
       "published": "2026-11-02"
     },
     "6.3-it-on-board": {
-      "signature": "020c3c3db23bc9409787d538ca8546ba4a39668fb2a4c8942842f4a2c8a75ea4",
-      "published": "2026-11-02"
+      "signature": "f80adee35b62c33d1f42229a4e8d143f40475d5ab8793b3a8fff860384107d32",
+      "published": "2026-11-20"
     },
     "2.5-pixels-or-millimeters": {
-      "signature": "ae6a9e9254ce30d94df93476169ed6107b922c13cd56136e10e80b404a17b848",
-      "published": "2026-10-30"
+      "signature": "06767f40ea95e1430010088b25c2921ab917edf67412e82b949de36cc5a9c4d0",
+      "published": "2026-11-20"
+    },
+    "7.1-padding": {
+      "signature": "d2e5bc03099cc2ce497977662ea49591decbdf701a35bfe2e69c53bfdd11d18d",
+      "published": "2026-11-20"
+    },
+    "7.2-inset": {
+      "signature": "daafc34a66fad6f728862f6c5794ff43934d8eeab19f0fb7882f120897a968c5",
+      "published": "2026-11-20"
+    },
+    "7.3-openings-off": {
+      "signature": "0c0ccf6b93882055f5f2430dc9b0e5273e9125990e5c23b1b73d377a87aeac2f",
+      "published": "2026-11-20"
+    },
+    "7.4-bar-edge-slope": {
+      "signature": "2c012411859f3c5d789132f2f85ff06238cd769af654188025848e2207074c2d",
+      "published": "2026-11-20"
+    },
+    "7.5-unequal-case-openings": {
+      "signature": "0090048c6fb1adac37f7bc712c73fdeef5c7f7eab9870f303b30768dd373468e",
+      "published": "2026-11-20"
+    },
+    "7.6-tight-cases": {
+      "signature": "9c36dbed10db731a0df4d333808638a6fad46f89607d1342287701ee6bfacc59",
+      "published": "2026-11-20"
+    },
+    "7.7-posts": {
+      "signature": "eec517e70cd609008f3efd70dabf3eb2aa40ea16927852dec92bd610c322bcd8",
+      "published": "2026-11-20"
+    },
+    "7.8-frame": {
+      "signature": "72d988492df5a3a1d967a043d9a0fbe60792f488516c5ce0f010e28f6bfa2079",
+      "published": "2026-11-20"
+    },
+    "7.9-clip-on-straps": {
+      "signature": "31bfa34c1e643cad77244c41b47559c4c988fe2394dd9f3b34633e47e8297279",
+      "published": "2026-11-20"
+    },
+    "7.10-dovetails": {
+      "signature": "ae543008f2de03cf1384fa72b8df61905d83b27f2112575924d37054b6162f4e",
+      "published": "2026-11-20"
+    },
+    "7.11-oa-variables": {
+      "signature": "a8e82907da0937662cb7329cbe02d28420ef74f85f6e493938dbe63dd3ffe738",
+      "published": "2026-11-20"
+    },
+    "7.12-my-boxes": {
+      "signature": "684a41803ebcfed02514c32d94efbf6d2496b4bc39b0dbcea4398e5159590844",
+      "published": "2026-11-20"
+    },
+    "7.13-settings-text-or-json": {
+      "signature": "2246c158f157973ae6742f8580d39a5506abf38e1662129fe11b5a9b8f19104d",
+      "published": "2026-11-20"
     }
   }
 }
