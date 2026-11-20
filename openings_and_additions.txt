@@ -38,12 +38,30 @@ tablet_openings=[
   cridge       x                         x                                    x
   rridge       x       x      x          x         x                          x
   aridge1-4                              x                                    x
+  support              x      x                    x                x                                      x
 
   [special params]  Contents
   r, c, hd          [direction]
   text              ["text value", direction, font style, h-align, v-align]
   svg               ["filename", direction]
   ridge             [direction]
+  support           [direction] - 0, 90, 180 or 270 only
+
+
+/***********SUPPORTS
+A support is a flat bar that stiffens the keyguard across an opening. It never stands
+above the keyguard: it is exactly as thick as the keyguard where it lies. Where it meets
+plastic - the wall of each opening it crosses, any plastic between them, and any other
+support it crosses - it gets fillets, rounded corners whose radius is the support's
+corner value (0 for square).
+Its top edges are beveled like the openings around it.
+  width     how wide the bar is; 0 means 2 mm
+  length    how long it is; 0 means 10 mm
+  x, y      the middle of its starting end, or its middle with anchor "C"
+  [direction] it runs across or up and down only: 0, 90, 180 or 270
+For example, a support 2 mm wide and 30 mm long, running up from x=50, y=20, with
+fillets of 3 mm:
+[   1, "support",      0,     2,      3,   50,   20,           0,    "L",      "",     30,         0,            [],            [90] ],
 
 ** Case Additions
   Shape   height  width  corner  cut | build  [trim]
@@ -112,6 +130,9 @@ These special variables can be used to locate screen openings relative to the (0
 	ucbh	upper command bar height
 	lmbh	lower message bar height
 	lcbh	lower command bar height
+	bw	bar width - the width the bars are actually cut at: the app width, less
+		any left or right edge compensation for tight cases that reaches past the
+		case border
 
 	sbb	status bar bottom
 	umbb	upper message bar bottom
@@ -125,6 +146,8 @@ These special variables can be used to locate screen openings relative to the (0
 	gh	grid height
 	gt 	grid top
 	gb	grid bottom
+	gl	grid left
+	gr	grid right
 
 	tp	top padding - specified in Grid Special Settings
 	bp	bottom padding - specified in Grid Special Settings
