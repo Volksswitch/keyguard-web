@@ -392,6 +392,7 @@
   #oge-bar button { padding: 3px 10px; font-size: 12px; cursor: pointer; }
   #oge-bar button:disabled { color: #aaa; cursor: default; }
   #oge-bar button.on { background: #cfe0f5; border-color: #6a8fc0; }
+  #oge-bar label { display: flex; align-items: center; gap: 3px; font-size: 12px; cursor: pointer; margin-left: 4px; }
   #viewport.oge-drawing, #viewport.oge-drawing canvas { cursor: crosshair; }
   #oge-blocked { display: none; padding: 10px; line-height: 1.5; color: #555; }
   #openings-panel.eye.oge-blocked #oge-blocked { display: block; }
@@ -415,6 +416,8 @@
      pointer is tested against the corners in code, not by hitting the rings. */
   #oge-overlay .oge-corner { fill: none; stroke: #06c; stroke-width: 1.5; }
   #oge-overlay .oge-corner.hot { fill: #06c; fill-opacity: 0.35; stroke-width: 2.5; }
+  /* Snap: the line a shape has just lined up with, while the drag lasts. */
+  #oge-overlay .oge-guide { stroke: #e0007a; stroke-width: 1.2; stroke-dasharray: 6 4; }
 
   #openings-footer { padding: 8px 12px; border-top: 1px solid #ccc; background: #f0f0f0;
                      display: flex; align-items: center; gap: 8px; }
@@ -970,6 +973,7 @@
       <button id="oge-add-support" type="button" title="Then click on the keyguard for a 10 mm support, or drag to draw one across an opening">+ Support</button>
       <button id="oge-add-arc" type="button" title="Then click one of the ringed square corners to round it, or drag from it to set how much">+ Rounded corner</button>
       <button id="oge-del" type="button" title="Delete the selected opening(s)">Delete</button>
+      <label id="oge-snap-label" title="Line shapes up with the middle of the keyguard, the screen and the grid as you move or size them. Hold Alt to place one freely."><input type="checkbox" id="oge-snap"> Snap</label>
     </div>
     <div id="oge-blocked"></div>
    </div>
@@ -1768,7 +1772,8 @@ const RELEASE_NOTES = {
     "Changing the starting corner no longer moves your custom openings. Switching starting corner for screen measurements between upper-left and lower-left used to leave the numbers as they were and measure them from the other corner, so every opening you placed with Custom Openings jumped to the opposite end of the keyguard, top to bottom. Now each opening is re-measured from the new corner, so it stays exactly where it was, just as it does when you change the unit of measure. One Undo takes back the corner and the conversion together. Screen openings typed into your openings-and-additions file are still yours to change."
   ],
   "126": [
-    "You can now add a support by eye. A support is a flat bar that stiffens the keyguard across an opening without standing above it. The “by eye” tab of Custom Openings has a new + Support button. Press it, then click on the keyguard for a 10 mm support starting where you clicked, or press and drag to draw one across an opening, either across or up and down. A support starts 2 mm wide. Where it meets the keyguard it gets fillets that round off the corners it makes, and they start with the corner radius of the opening you drew it across: a cell's corner radius, or the corner radius of the custom opening it lies in. On the “pixels or millimeters” tab you can change a support's width (under height / width), its length and its fillet radius (under corner radius), and turn it between 0° and 90°. Supports need version 99 or later of the keyguard designer file; until you have it, the + Support button is greyed out."
+    "You can now add a support by eye. A support is a flat bar that stiffens the keyguard across an opening without standing above it. The “by eye” tab of Custom Openings has a new + Support button. Press it, then click on the keyguard for a 10 mm support starting where you clicked, or press and drag to draw one across an opening, either across or up and down. A support starts 2 mm wide. Where it meets the keyguard it gets fillets that round off the corners it makes, and they start with the corner radius of the opening you drew it across: a cell's corner radius, or the corner radius of the custom opening it lies in. On the “pixels or millimeters” tab you can change a support's width (under height / width), its length and its fillet radius (under corner radius), and turn it between 0° and 90°. Supports need version 99 or later of the keyguard designer file; until you have it, the + Support button is greyed out.",
+    "Shapes can now snap into line on the “by eye” tab. Tick the new Snap box and, as you move or size an opening, ridge or support, its middle lines up with the middle of the keyguard, the middle of the screen or the middle of the grid, across and up and down, once it comes close; a dashed line shows what it lined up with. A ridge or support lines up by its ends as well as its middle. Hold Alt while you drag to place a shape freely. Nudging with the arrow keys never snaps, and the box stays as you left it. Lining up with the grid needs version 99 or later of the keyguard designer file; with an older one, shapes snap to the keyguard and the screen."
   ]
 };
 const RELEASE_DATES = {
@@ -4254,6 +4259,13 @@ async function doRender() {
         const ma = line.match(/(?:^|[\s,])awm\s*=\s*(-?\d+(?:\.\d+)?)/);
         const mb = line.match(/(?:^|[\s,])ahm\s*=\s*(-?\d+(?:\.\d+)?)/);
         if (ma && mb) { project.dims.awm = +ma[1]; project.dims.ahm = +mb[1]; }
+        // The grid's middle on the model, in millimetres, which the by-eye tab's
+        // Snap lines shapes up with. Keyguard file v99 and later; absent (or undef,
+        // which doesn't match) when there is no grid, and then there is no grid
+        // line to snap to.
+        const gx = line.match(/(?:^|[\s,])gcx\s*=\s*(-?\d+(?:\.\d+)?(?:e-?\d+)?)/);
+        const gy = line.match(/(?:^|[\s,])gcy\s*=\s*(-?\d+(?:\.\d+)?(?:e-?\d+)?)/);
+        if (gx && gy) { project.dims.gcx = +gx[1]; project.dims.gcy = +gy[1]; }
         // The by-eye openings canvas is drawn from these numbers, so a panel
         // waiting on the first render can now show itself.
         ogeRefresh();
@@ -7788,6 +7800,8 @@ function movesHTML() {
     <h4>Moving and shaping</h4><table>
       ${row('Drag', 'Moves what you drag. Dragging anywhere else turns the keyguard.')}
       ${row('Shift + drag', 'Keeps to a straight line.')}
+      ${row('Snap', 'With Snap ticked, a shape lines its middle up with the middle of the keyguard, the screen or the grid as you move or size it, and a dashed line shows which. A ridge or support lines up by its ends too.')}
+      ${row('Alt + drag', 'Places the shape freely, without snapping.')}
       ${row(`${k} + drag`, 'Leaves a copy behind and drags the copy.')}
       ${row('Arrow keys', 'Nudge the selection 1 mm. Hold Shift for 10 mm.')}
       ${row('Handles', 'Drag one to resize an opening, or drag a ridge’s or support’s end to lengthen, shorten or swing it.')}
@@ -9104,6 +9118,140 @@ function ogeSetDrawing(kind) {
   if (ogeBooted) ogeSyncHandles();
 }
 
+// ---- Snap ------------------------------------------------------------------
+// With Snap ticked (Ken, 20 Nov 2026), a shape being moved or sized lines its
+// middle up with the middle of the keyguard, of the screen and of the grid,
+// across and up and down, once it comes within OGE_GUIDE_PX screen pixels of
+// one — measured on screen, so it feels the same at any zoom. A dashed line
+// shows what it lined up with while the drag lasts. Ridges and supports line up
+// by their middle and by their ends. Holding Alt places a shape freely for that
+// drag, as in PowerPoint; arrow-key nudges never snap; the box is remembered.
+const OGE_GUIDE_PX = 8;
+const OGE_SNAP_KEY = 'keyguard:oge-snap';
+const ogeSnapBox = document.getElementById('oge-snap');
+try { ogeSnapBox.checked = localStorage.getItem(OGE_SNAP_KEY) === '1'; } catch (e) { /* no storage: starts off */ }
+ogeSnapBox.addEventListener('change', () => {
+  try { localStorage.setItem(OGE_SNAP_KEY, ogeSnapBox.checked ? '1' : '0'); } catch (e) { /* not remembered */ }
+});
+let ogeGuides = [];   // [{axis: 'x' | 'y', at}] lined up with in the drag under way
+
+const ogeSnapOn = ev => ogeSnapBox.checked && !(ev && ev.altKey);
+
+// The lines a shape can line up with, in model millimetres: `xs` are the
+// up-and-down lines, `ys` the across ones. The model is centred on the screen,
+// so the screen's middle is 0; the keyguard's is read off the model itself, so
+// a keyguard off-centre in its case is honoured; the grid's is reported by the
+// keyguard file (v99 and later — an older one simply offers no grid line).
+let ogeSnapCache = { mesh: null, box: null };
+function ogeSnapLines() {
+  const kg = currentMesh && currentMesh.children
+    ? currentMesh.children.find(o => o.isMesh && o.userData.kgBody) : null;
+  if (kg !== ogeSnapCache.mesh) {
+    const b = kg ? new THREE.Box3().setFromObject(kg) : null;
+    ogeSnapCache = { mesh: kg, box: (b && Number.isFinite(b.min.x)) ? b : null };
+  }
+  const xs = [0], ys = [0];
+  const b = ogeSnapCache.box;
+  if (b) { xs.push((b.min.x + b.max.x) / 2); ys.push((b.min.y + b.max.y) / 2); }
+  const d = (project && project.dims) || {};
+  if (Number.isFinite(d.gcx) && Number.isFinite(d.gcy)) { xs.push(d.gcx); ys.push(d.gcy); }
+  return { xs, ys, box: b };
+}
+
+// OGE_GUIDE_PX screen pixels, in model millimetres, near model point `at`.
+function ogeSnapTol(g, at) {
+  const rect = canvas.getBoundingClientRect();
+  const a = ogeProject(at.x, at.y, g.topZ, rect);
+  const bx = ogeProject(at.x + 1, at.y, g.topZ, rect);
+  const by = ogeProject(at.x, at.y + 1, g.topZ, rect);
+  const pxPerMM = Math.max(Math.hypot(bx.x - a.x, bx.y - a.y), Math.hypot(by.x - a.x, by.y - a.y));
+  return pxPerMM > 0 ? OGE_GUIDE_PX / pxPerMM : 0;
+}
+
+// The smallest shift that puts one of `vals` on one of `lines`, if it is within
+// `tol`: {d, at}, or null.
+function ogeSnapShift(vals, lines, tol) {
+  let best = null;
+  for (const v of vals) for (const at of lines) {
+    const d = at - v;
+    if (Math.abs(d) <= tol && (!best || Math.abs(d) < Math.abs(best.d))) best = { d, at };
+  }
+  return best;
+}
+
+// The points of a shape that line up: its middle, and a ridge's or support's
+// ends. A rounded corner already sits on its corner, so it has none.
+function ogeSnapPoints(m) {
+  if (m.isArc) return [];
+  if (m.isRidge) {
+    const [a, b] = ogeRidgeEnds(m);
+    return [{ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }, a, b];
+  }
+  return [{ x: m.cx, y: m.cy }];
+}
+
+// Moving: how far to move instead of (dx, dy). Lines up the shape that was
+// pressed; anything else selected travels with it. An axis Shift has locked
+// stays locked.
+function ogeSnapMove(drag, dx, dy, g, ev, lockX, lockY) {
+  const f = drag.from.find(o => o.i === drag.hit) || drag.from[0];
+  const pts = f ? ogeSnapPoints(f.model) : [];
+  if (!pts.length) return { dx, dy };
+  const L = ogeSnapLines();
+  const tol = ogeSnapTol(g, { x: pts[0].x + dx, y: pts[0].y + dy });
+  const sx = lockX ? null : ogeSnapShift(pts.map(q => q.x + dx), L.xs, tol);
+  const sy = lockY ? null : ogeSnapShift(pts.map(q => q.y + dy), L.ys, tol);
+  if (sx) { dx += sx.d; ogeGuides.push({ axis: 'x', at: sx.at }); }
+  if (sy) { dy += sy.d; ogeGuides.push({ axis: 'y', at: sy.at }); }
+  return { dx, dy };
+}
+
+// Sizing by a handle: where to treat the pointer as being, so that the shape's
+// middle lands on a line. The side not dragged stays put, so the middle moves at
+// half the handle's pace. Not when Ctrl sizes about the middle (it stays where
+// it is), nor on a corner whose proportions are held, where one side is worked
+// out from the other.
+function ogeSnapResize(row, drag, p, g, ev) {
+  if (ev.ctrlKey || ev.metaKey) return p;
+  const pos = drag.pos, b = drag.model;
+  const hasW = pos.indexOf('w') >= 0, hasE = pos.indexOf('e') >= 0;
+  const hasS = pos.indexOf('s') >= 0, hasN = pos.indexOf('n') >= 0;
+  const horiz = hasE || hasW, vert = hasN || hasS;
+  if (horiz && vert && (ev.shiftKey || row.shape === 'c')) return p;
+  const L = ogeSnapLines(), tol = ogeSnapTol(g, p), q = { ...p };
+  if (horiz) {
+    const fixed = hasE ? b.cx - b.w / 2 : b.cx + b.w / 2;
+    const s = ogeSnapShift([(p.x + fixed) / 2], L.xs, tol);
+    if (s) { q.x = p.x + 2 * s.d; ogeGuides.push({ axis: 'x', at: s.at }); }
+  }
+  if (vert) {
+    const fixed = hasN ? b.cy - b.h / 2 : b.cy + b.h / 2;
+    const s = ogeSnapShift([(p.y + fixed) / 2], L.ys, tol);
+    if (s) { q.y = p.y + 2 * s.d; ogeGuides.push({ axis: 'y', at: s.at }); }
+  }
+  return q;
+}
+
+// Dragging a ridge's or support's end: where to treat the pointer as being, so
+// that the dragged end, or the middle, lands on a line along the way it runs.
+// `row` has already been drawn to the pointer once, which settles that way.
+// Only across or up and down; Ctrl, which holds the middle, is left alone.
+function ogeSnapLineEnd(row, drag, p, g, ev) {
+  if (ev.ctrlKey || ev.metaKey) return p;
+  const m = ogeToModel(row, g);
+  const axis = (m.ang === 0) ? 'x' : (m.ang === 90) ? 'y' : null;
+  if (!axis) return p;
+  const L = ogeSnapLines(), lines = axis === 'x' ? L.xs : L.ys, tol = ogeSnapTol(g, p);
+  const v = p[axis], f = drag.fixed[axis];
+  const end = ogeSnapShift([v], lines, tol);
+  const mid = ogeSnapShift([(v + f) / 2], lines, tol);
+  const pick = (end && (!mid || Math.abs(end.d) <= Math.abs(mid.d))) ? { to: v + end.d, at: end.at }
+             : mid ? { to: v + 2 * mid.d, at: mid.at } : null;
+  if (!pick) return p;
+  ogeGuides.push({ axis, at: pick.at });
+  return { ...p, [axis]: pick.to };
+}
+
 // ---- Finding square corners ---------------------------------------------
 // An outer arc rounds a square corner of the plastic, and only the keyguard as
 // actually built knows where those are: its outside edge, every screen and case
@@ -9636,6 +9784,20 @@ function ogeSyncHandles() {
     ogeOverlay.appendChild(ogeEl('polygon', { class: 'oge-outline', points: pts.join(' ') }));
   }
 
+  // Snap: the lines lined up with, drawn right across the keyguard.
+  if (ogeDrag && ogeGuides.length) {
+    const b = ogeSnapLines().box;
+    const x0 = b ? b.min.x : -g.owm / 2 - 20, x1 = b ? b.max.x : g.owm / 2 + 20;
+    const y0 = b ? b.min.y : -g.ohm / 2 - 20, y1 = b ? b.max.y : g.ohm / 2 + 20;
+    for (const gd of ogeGuides) {
+      const [a, c] = gd.axis === 'x'
+        ? [ogeProject(gd.at, y0, g.topZ, rect), ogeProject(gd.at, y1, g.topZ, rect)]
+        : [ogeProject(x0, gd.at, g.topZ, rect), ogeProject(x1, gd.at, g.topZ, rect)];
+      ogeOverlay.appendChild(ogeEl('line', { class: 'oge-guide',
+        x1: a.x + ox, y1: a.y + oy, x2: c.x + ox, y2: c.y + oy }));
+    }
+  }
+
   for (const def of ogeHandleDefs) {
     const q = ogeProject(def.x, def.y, g.topZ, rect);
     const p = { x: q.x + ox, y: q.y + oy };
@@ -10096,9 +10258,13 @@ viewport.addEventListener('pointermove', ev => {
 
 // Pressing or letting go of Shift or Ctrl mid-drag changes the shape at once,
 // as in PowerPoint, without waiting for the mouse to move again.
+// Alt too, which lets go of Snap for as long as it is held; it is kept from the
+// browser, which would otherwise move to its own menu when Alt is let go.
 function ogeDragKeys(e) {
-  if (!ogeDrag || !ogeDrag.last || !['Shift', 'Control', 'Meta'].includes(e.key)) return;
-  ogeDragMove({ ...ogeDrag.last, shiftKey: e.shiftKey, ctrlKey: e.ctrlKey, metaKey: e.metaKey });
+  if (!ogeDrag || !ogeDrag.last || !['Shift', 'Control', 'Meta', 'Alt'].includes(e.key)) return;
+  if (e.key === 'Alt') e.preventDefault();
+  ogeDragMove({ ...ogeDrag.last, shiftKey: e.shiftKey, ctrlKey: e.ctrlKey, metaKey: e.metaKey,
+                altKey: e.altKey });
 }
 document.addEventListener('keydown', ogeDragKeys);
 document.addEventListener('keyup', ogeDragKeys);
@@ -10123,15 +10289,27 @@ function ogeDragMove(ev) {
     if (!ogeDrag.pushed) { ogePush(); ogeDrag.pushed = true; }
   }
 
+  ogeGuides = [];
+  const snap = ogeSnapOn(ev);
   if (ogeDrag.kind === 'move') {
-    if (ev.shiftKey) { if (Math.abs(dx) >= Math.abs(dy)) dy = 0; else dx = 0; }
+    let lockX = false, lockY = false;
+    if (ev.shiftKey) {
+      if (Math.abs(dx) >= Math.abs(dy)) { dy = 0; lockY = true; } else { dx = 0; lockX = true; }
+    }
+    if (snap) ({ dx, dy } = ogeSnapMove(ogeDrag, dx, dy, g, ev, lockX, lockY));
     for (const f of ogeDrag.from) {
       const row = ogState.screen.rows[f.i];
       if (row) ogeFromModel(row, { ...f.model, cx: f.model.cx + dx, cy: f.model.cy + dy }, g);
     }
   } else if (ogeDrag.kind === 'ridge-end') {
     const row = ogState.screen.rows[ogeDrag.idx];
-    if (row) ogeRidgeEnd(row, ogeDrag, p, g, ev);
+    if (row) {
+      ogeRidgeEnd(row, ogeDrag, p, g, ev);
+      if (snap) {
+        const q = ogeSnapLineEnd(row, ogeDrag, p, g, ev);
+        if (q !== p) ogeRidgeEnd(row, ogeDrag, q, g, ev);
+      }
+    }
   } else if (ogeDrag.kind === 'arc-radius') {
     // The radius is however far the pointer has gone into the plastic along
     // either edge, so dragging along an edge puts the start of the curve
@@ -10151,7 +10329,7 @@ function ogeDragMove(ev) {
     }
   } else {
     const row = ogState.screen.rows[ogeDrag.idx];
-    if (row) ogeResize(row, ogeDrag, p, g, ev);
+    if (row) ogeResize(row, ogeDrag, snap ? ogeSnapResize(row, ogeDrag, p, g, ev) : p, g, ev);
   }
   // Redrawn, not re-rendered: the pink shape follows the mouse while the hole
   // it stands for waits for the drag to finish.
@@ -10162,6 +10340,7 @@ function ogeEndDrag(ev) {
   if (!ogeDrag) { ogeDragPendingDrop = null; return; }
   const { g, moved, kind, pushed, hit, idx, draw } = ogeDrag;
   ogeDrag = null;
+  ogeGuides = [];
   // A support just drawn out takes its fillets from the opening it now crosses.
   if (moved && draw && kind === 'ridge-end') {
     const row = ogState.screen.rows[idx];
