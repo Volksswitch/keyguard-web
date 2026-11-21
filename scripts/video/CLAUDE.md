@@ -54,7 +54,8 @@ replaced and deleted at the end of a successful publish, once the pages point at
 files. Each is checked first (its address matches the record; the site isn't using it);
 one that fails stays on the list and is tried next run, so report any "NOT DELETED" line to
 Ken. Report what was deleted. (Until that date they were only listed, for Ken to delete by
-hand.) Replaced *documents* from "sync docs" are still only listed. `--only 1.` limits it
+hand.) "sync docs" does the same for replaced documents, through the same check
+(`delete_old_copies` in `scripts/wordpress/wp.py`). `--only 1.` limits it
 to a group; without `--publish` it only re-makes and reports.
 
 ## The User Manual's video links (Ken, 27 Oct 2026)

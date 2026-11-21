@@ -57,8 +57,12 @@ step backs a document up to `Documents/Doc Backups/` before changing it.
    end the sign-in. Ken chose to keep the file at its address and sign in the few times a
    year it changes. Don't re-propose it.)
 7. `python scripts/wordpress/check-links.py`.
-8. Tell Ken which documents went up, and list the old copies left in the media library
-   (the script prints them) for him to delete.
+8. Tell Ken which documents went up, and which old copies step 5 deleted. **Old copies are
+   deleted, not left for Ken (20 Nov 2026: "do the same for old document copies").** Every
+   PDF or Word copy step 5 replaces is recorded in `documents.json`'s `oldCopies` and
+   deleted at the end of the run, once the page points at the new files; each is checked
+   first (the id still holds the recorded address, and the page isn't using it). Report any
+   "NOT DELETED" line to Ken: that copy stays on the list and is tried again next run.
 
 ## ⚠ Give OneDrive a few minutes before Word opens a .docx you just saved (30 Oct 2026)
 

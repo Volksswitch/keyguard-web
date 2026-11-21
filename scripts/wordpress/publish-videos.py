@@ -55,7 +55,7 @@ so the next sync reports only what changed since.
 """
 import hashlib, html, json, os, subprocess, sys
 
-from wp import ROOT, call, media_folder, upload
+from wp import ROOT, call, delete_old_copies, media_folder, upload
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'video'))
 from guide_book import BOOK, make_book  # noqa: E402
@@ -352,7 +352,7 @@ def main():
         save(cfg)
         for vid in ids:
             subprocess.run(['node', SYNC, '--published', vid], check=True, cwd=ROOT)
-    delete_old_copies(cfg, apply)
+    delete_old_copies(cfg.get('oldCopies') or [], live_addresses(cfg), lambda: save(cfg), apply)
 
 
 def live_addresses(cfg):
@@ -364,45 +364,6 @@ def live_addresses(cfg):
         if cfg.get(k):
             live.add(cfg[k]['url'])
     return live
-
-
-def delete_old_copies(cfg, apply):
-    old = cfg.get('oldCopies') or []
-    if not old:
-        return
-    if not apply:
-        for m in old:
-            print(f'  OLD COPY TO DELETE: id {m["id"]} {m["url"]}  (run with --apply)')
-        return
-    live = live_addresses(cfg)
-    for m in list(old):
-        if m['url'] in live:
-            print(f'  NOT DELETED, the site is using it: id {m["id"]} {m["url"]}')
-            old.remove(m)                 # it is current, so it is not an old copy at all
-            save(cfg)
-            continue
-        try:
-            found = call('GET', f'/wp/v2/media/{m["id"]}?context=edit')
-        except SystemExit as e:
-            if ' 404 ' in str(e) or 'rest_post_invalid_id' in str(e):
-                print(f'  ALREADY GONE: id {m["id"]} {m["url"]}')
-                old.remove(m)
-                save(cfg)
-            else:
-                print(f'  NOT DELETED, could not look it up ({e}); kept for next run: id {m["id"]}')
-            continue
-        if found.get('source_url') != m['url']:
-            print(f'  NOT DELETED, id {m["id"]} is now {found.get("source_url")}, not {m["url"]}; '
-                  'kept on the list for Ken to look at')
-            continue
-        try:
-            call('DELETE', f'/wp/v2/media/{m["id"]}?force=true')
-        except SystemExit as e:
-            print(f'  NOT DELETED ({e}); kept for next run: id {m["id"]} {m["url"]}')
-            continue
-        print(f'  DELETED OLD COPY: id {m["id"]} {m["url"]}')
-        old.remove(m)
-        save(cfg)
 
 
 main()

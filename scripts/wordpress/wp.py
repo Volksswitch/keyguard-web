@@ -57,3 +57,47 @@ def media_folder(name, parent):
         if f['name'] == name and f.get('parent', 0) == parent:
             return f['id']
     return call('POST', '/wp/v2/media_folder', {'name': name, 'parent': parent})['id']
+
+
+def delete_old_copies(old, live, save, apply):
+    """Delete media a publish has replaced (Ken, 20 Nov 2026: old copies are deleted, not
+    left for him). `old` is the list kept in the script's own .json ({'id', 'url'} and
+    maybe 'title'); `live` every address the site uses now; `save()` writes the list after
+    each change. Deleting media is permanent - WordPress has no trash for it - so each is
+    checked first: never one in `live`, and the id must still hold the recorded address.
+    One that fails a check or the delete stays on the list for the next run."""
+    if not old:
+        return
+    name = lambda m: (m.get('title') + ' ' if m.get('title') else '') + f'(id {m["id"]}) {m["url"]}'
+    if not apply:
+        for m in old:
+            print(f'  OLD COPY TO DELETE: {name(m)}  (run with --apply)')
+        return
+    for m in list(old):
+        if m['url'] in live:
+            print(f'  NOT DELETED, the site is using it: {name(m)}')
+            old.remove(m)                 # current, so not an old copy at all
+            save()
+            continue
+        try:
+            found = call('GET', f'/wp/v2/media/{m["id"]}?context=edit')
+        except SystemExit as e:
+            if ' 404 ' in str(e) or 'rest_post_invalid_id' in str(e):
+                print(f'  ALREADY GONE: {name(m)}')
+                old.remove(m)
+                save()
+            else:
+                print(f'  NOT DELETED, could not look it up ({e}); kept for next run: {name(m)}')
+            continue
+        if found.get('source_url') != m['url']:
+            print(f'  NOT DELETED, id {m["id"]} now holds {found.get("source_url")}, not {m["url"]}; '
+                  'kept on the list for Ken to look at')
+            continue
+        try:
+            call('DELETE', f'/wp/v2/media/{m["id"]}?force=true')
+        except SystemExit as e:
+            print(f'  NOT DELETED ({e}); kept for next run: {name(m)}')
+            continue
+        print(f'  DELETED OLD COPY: {name(m)}')
+        old.remove(m)
+        save()

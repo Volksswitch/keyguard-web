@@ -38,8 +38,14 @@ document listed with "fillable": true has typing boxes and checkboxes added to i
 .docx uploaded too, linked as "Word" beside the PDF; its address is kept as wordMediaId and
 wordUrl. The Keyguard Data Form is both.
 
-WHY OLD PDFS ARE NOT DELETED. Deleting media is permanent. Replaced files are listed at
-the end so Ken can delete them in WordPress.
+OLD COPIES ARE DELETED (Ken, 20 Nov 2026: "do the same for old document copies", after
+the same for videos). Every PDF or Word copy a run replaces is written into
+documents.json's "oldCopies" the moment it is replaced, and deleted at the end of a
+successful --apply run, after the page points at the new files - through wp.py's
+delete_old_copies, which never deletes an address the page uses and checks each id still
+holds the recorded address. A failure stays on the list for the next run. The security
+overview is replaced in place, so it never has an old copy. Until that date they were
+only listed, for Ken to delete by hand.
 
 ORDER: every upload first, the page once at the end, the local list after each upload.
 """
@@ -51,7 +57,7 @@ import fitz
 # The console on Windows is not UTF-8, and the messages carry ⚠ and →.
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
-from wp import ROOT, UA, call, media_folder, upload
+from wp import ROOT, UA, call, delete_old_copies, media_folder, upload
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'doc-generators'))
 from fillable_form import make_fillable  # noqa: E402
@@ -192,7 +198,9 @@ def main():
             for o in sys.argv[i + 1].split(',') if o.strip()]
     cfg = json.load(open(LIST, encoding='utf-8'))
     docs = cfg['documents']
-    replaced, plan, in_place = [], [], []
+    # Kept in documents.json, so an old copy is never forgotten if a run stops part-way.
+    replaced = cfg.setdefault('oldCopies', [])
+    plan, in_place = [], []
 
     for d in docs:
         if d.get('replaceInPlace'):
@@ -254,14 +262,14 @@ def main():
                 wmedia = upload(path, pdf_name(d['file'])[:-4] + '.docx', DOCX_MIME,
                                 'Keyguard Designer ' + d['title'] + ' (Word)', cfg['mediaFolder'])
                 if d.get('wordMediaId'):
-                    replaced.append((d['title'] + ' (Word)', d['wordMediaId'], d['wordUrl']))
+                    replaced.append({'title': d['title'] + ' (Word)', 'id': d['wordMediaId'], 'url': d['wordUrl']})
                 d.update(wordMediaId=wmedia['id'], wordUrl=wmedia['url'])
                 save(cfg)
                 print(f'  UPLOADED {wmedia["url"]}')
             media = upload(pdf, pdf_name(d['file']), 'application/pdf',
                            'Keyguard Designer ' + d['title'], cfg['mediaFolder'])
             if d.get('mediaId'):
-                replaced.append((d['title'], d['mediaId'], d['url']))
+                replaced.append({'title': d['title'], 'id': d['mediaId'], 'url': d['url']})
             d.update(date=said.isoformat(), mediaId=media['id'], url=media['url'])
             save(cfg)
             print(f'  UPLOADED {media["url"]}')
@@ -290,8 +298,9 @@ def main():
 
     if apply:
         save(cfg)
-    for title, mid, url in replaced:
-        print(f'  OLD COPY LEFT IN MEDIA LIBRARY: {title} (id {mid}) {url}')
+    # Every address the documents page or a document uses now is kept, whatever the list says.
+    live = {u for d in docs for u in (d.get('url'), d.get('wordUrl')) if u}
+    delete_old_copies(replaced, live, lambda: save(cfg), apply)
     if not plan and not in_place:
         print('No documents changed.')
 
