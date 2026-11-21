@@ -22,44 +22,19 @@ quietly waits forever.
 
 ## Open
 
-### Deliver the Snap work: release 127, then keyguard version 100
-- **Raised:** 2026-11-20 - Snap Parts 1-3 (labels; screen and grid edges; named lines that
-  stay put when the tablet, padding or bars change) are done in code: app release 127 and
-  keyguard v100, both committed locally, neither pushed.
-- **What's wanted:** "bump keyguard web app" for 127 first, then "bump keyguard designer"
-  for v100. In that order: release-designer refuses while the app has unreleased work.
-  Until v100 reaches a clinician's folder, the app snaps to the grid's middle but not its
-  edges, and remembers only the screen's lines (sw, sh) — the grid's names need the
-  positions v100 reports (gx0, gx1, gy0, gy1, gty, gby).
-- **Why not now:** releasing is Ken's call.
-
-### Sync docs: Snap no longer lines up with the keyguard's middle
-- **Raised:** 2026-11-20 - Part 1 of the Snap work above.
-- **What's wanted:** the User Manual's by-eye table and the Quick Reference Card both say
-  Snap lines shapes up with the middle of the keyguard. After release 127, say the screen
-  and the grid (middles and edges), mention the labels, and that a shape lined up with the
-  screen or grid stays on its line when the tablet, padding or bars change.
-- **Why not now:** documents follow the released app; "sync docs" after release 127.
-
-### After release 127: publish the manual's "Pick a different folder…" changes and post the Known Issues entry
+### Post the Known Issues entry for "couldn't open your project folder"
 - **Raised:** 2026-11-20 - Ken, after a second clinician's Open Project stopped doing anything
-  in one browser (the browser's memory of her folder had gone bad). The fix is in release 127.
-- **Already done, not published:** the User Manual's .docx (and its generator) now mention
-  **Pick a different folder…** in "Opening a project you already have" and have a
-  Troubleshooting row "The app says it couldn't open your project folder". Backup taken
-  20 Nov 2026.
-- **What's left, once 127 is live:** in the manual, set "Last updated", update the table of
-  contents, publish it (`--only manual --force` if it is the second change that day), check
-  links, report the old copies. Do this in the same "sync docs" as the Snap item above.
-  Then add to the Known Issues page (WordPress page 24563), under "Things that look like
-  faults but aren't", after "The browser asks again…", and update its "Last updated" date:
+  in one browser (the browser's memory of her folder had gone bad). The fix is in release 127,
+  now live, and the User Manual describing it was published the same day.
+- **What's wanted:** add to the Known Issues page (WordPress page 24563), under "Things that
+  look like faults but aren't", after "The browser asks again…", and update its "Last
+  updated" date:
   **The app says it couldn't open your project folder.** Now and then the browser's
   memory of your project folder goes bad, most often after the browser updates itself.
   Click **Pick a different folder…** in the message and choose the same folder again. Your
   designs are safe in the folder itself.
   Show Ken the wording before posting; posting needs his yes.
-- **Why not now:** the documents and the page must describe the released app; Ken is
-  releasing 127 in another session.
+- **Why not now:** waiting on Ken's yes to the wording.
 
 ### After release 116: pictures that still show versioned file names
 - **Raised:** 2026-10-26 - the plain file names change (`keyguard.scad`, `keyguard.json`),
