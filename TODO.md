@@ -22,34 +22,23 @@ quietly waits forever.
 
 ## Open
 
-### Snap lines that remember what they meant (Parts 2 and 3)
-- **Raised:** 2026-11-20 - Ken, after a support he placed by eye in a CODi case design
-  turned out to sit left of center. Part 1 (labels on the dashed lines, no "middle of the
-  keyguard" line, a drawn ridge or support snapping where it starts) is done in release 127.
-- **What's wanted:** when a shape snaps to one of the major lines, the instruction names
-  the line instead of a number, so a later change to the screen, padding or bars keeps it
-  there. Major lines only (Ken): the screen's edges and middle (0, sw/2, sw; the same for
-  sh) and the grid's edges and middle — the grid's middle written as left edge plus half
-  its width (gl + gw/2), since the grid doesn't start at the screen's corner. Not `cow`/`coh`
-  or the keyguard's middle: everything on the by-eye tab is measured from the screen. A
-  support stretched across the grid becomes start gl, length gw. Snaps to openings and
-  other shapes stay plain numbers.
-  - **Part 2, a keyguard delivery — code done 20 Nov 2026, not yet delivered:** keyguard
-    v100 (dev) reports the grid's edges as gx0/gx1/gy0/gy1, and the app already snaps to
-    them (release 127). Reaches clinicians with "bump keyguard designer" for v100. The
-    names themselves (gw, gh, gl, gr, gt, gb) are already in v99.
-  - **Part 3, the app:** both tabs read and show a named position as its number with a note
-    ("= middle of grid"); today a row with any formula is set aside unshown. Dragging off the
-    line, nudging or typing a number drops the name for that direction only. Write a name
-    only when the clinician's own keyguard file defines it. Undo keeps names.
-- **Why not now:** Ken asked for Part 1 first (20 Nov 2026); Part 3 is the larger piece and
-  needs Part 2 delivered.
+### Deliver the Snap work: release 127, then keyguard version 100
+- **Raised:** 2026-11-20 - Snap Parts 1-3 (labels; screen and grid edges; named lines that
+  stay put when the tablet, padding or bars change) are done in code: app release 127 and
+  keyguard v100, both committed locally, neither pushed.
+- **What's wanted:** "bump keyguard web app" for 127 first, then "bump keyguard designer"
+  for v100. In that order: release-designer refuses while the app has unreleased work.
+  Until v100 reaches a clinician's folder, the app snaps to the grid's middle but not its
+  edges, and remembers only the screen's lines (sw, sh) — the grid's names need the
+  positions v100 reports (gx0, gx1, gy0, gy1, gty, gby).
+- **Why not now:** releasing is Ken's call.
 
 ### Sync docs: Snap no longer lines up with the keyguard's middle
 - **Raised:** 2026-11-20 - Part 1 of the Snap work above.
 - **What's wanted:** the User Manual's by-eye table and the Quick Reference Card both say
   Snap lines shapes up with the middle of the keyguard. After release 127, say the screen
-  and the grid, and mention the labels.
+  and the grid (middles and edges), mention the labels, and that a shape lined up with the
+  screen or grid stays on its line when the tablet, padding or bars change.
 - **Why not now:** documents follow the released app; "sync docs" after release 127.
 
 ### After release 127: publish the manual's "Pick a different folder…" changes and post the Known Issues entry

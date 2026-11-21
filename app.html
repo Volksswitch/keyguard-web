@@ -352,6 +352,10 @@
                  padding: 2px 4px; border-bottom: 1px solid #ddd; white-space: nowrap; }
   .og-table td { padding: 2px 4px; }
   .og-table input[type=number] { width: 74px; font-size: 12px; padding: 2px 4px; }
+  /* A number lined up with a named line, and which line: kept there when the
+     screen, padding or bars change. */
+  .og-table .og-named { font-size: 10px; line-height: 1.2; color: #a3005a; max-width: 86px;
+                        white-space: normal; margin-top: 1px; }
   .og-table select { font-size: 12px; padding: 1px 2px; }
   .og-table input:disabled { background: #eee; color: #aaa; }
   /* Tinted = typed or stepped, but not yet applied to the viewport. Cleared by
@@ -1785,6 +1789,7 @@ const RELEASE_NOTES = {
     "Recent projects now ends with Pick a different folder…. With no project open, the Recent projects list under Open Project… has the same Pick a different folder… choice that Change Project… has. It always goes straight to the folder picker, skipping the folder the app remembers.",
     "Snap's dashed lines now say what they are. On the “by eye” tab of Custom Openings, each dashed line that appears as a shape lines up carries a label, such as “middle of the screen”, “middle of the grid”, “edge of an opening” or “middle of a support”, so you know exactly what your shape has lined up with. Where two lines fall in the same place, both are named: “middle of the screen and the grid”. The label stays in view however you turn or zoom the keyguard, and moves along its line rather than hide behind the Custom Openings window.",
     "Snap now lines shapes up with the edges of the screen and the grid. As you move or size a shape on the “by eye” tab, its left, right, top or bottom edge lines up with the matching edge of the screen or of the grid, and a ridge or support lines up by its ends, so you can, for example, stop a support exactly at the top of the grid. The label names the edge: “top edge of the grid”, or “left edge of the screen and the grid” where they fall together. Lining up with the grid's edges needs version 100 or later of the keyguard designer file; with an older one, shapes line up with the screen's edges and the grid's middle.",
+    "A shape you line up with the screen or the grid now stays lined up. On the “by eye” tab, when Snap lines a shape up with the middle or an edge of the screen or of the grid, the app remembers the line, not just the number. If you later change the tablet, the padding or the bars, the shape moves with its line instead of staying a fixed distance from the screen's corner. A support drawn from the grid's left edge to its right edge stays exactly as long as the grid is wide. On the “pixels or millimeters” tab, a number that is lined up says so underneath, for example “= middle of grid” or “starts on left edge of grid”. Dragging the shape off its line, nudging it with the arrow keys or typing a number in its place lets go of the line. Lining up with the middle or edges of something else, such as another opening, still saves a plain number. This needs version 100 or later of the keyguard designer file for the grid; with an older one, only the screen's lines are remembered.",
     "Snap no longer lines shapes up with the middle of the keyguard. Everything on the “by eye” tab is measured from the screen, so a shape lined up with the middle of the keyguard was really placed at a distance from the screen's corner, and changing the case opening could leave it off center. When the sides of your case opening are unequal, the two middles are close enough to mistake for each other. Line shapes up with the middle of the screen or the grid instead.",
     "A ridge or support you draw now snaps where it starts. With Snap ticked, the spot where you press to draw a ridge or support lines up with a nearby middle or edge, across and up and down, so a support drawn up from the middle of the screen really sits on that middle. Until now only its length lined up as you drew it, and the bar itself stayed wherever you pressed."
   ]
@@ -4369,11 +4374,14 @@ async function doRender() {
         const gx = line.match(/(?:^|[\s,])gcx\s*=\s*(-?\d+(?:\.\d+)?(?:e-?\d+)?)/);
         const gy = line.match(/(?:^|[\s,])gcy\s*=\s*(-?\d+(?:\.\d+)?(?:e-?\d+)?)/);
         if (gx && gy) { project.dims.gcx = +gx[1]; project.dims.gcy = +gy[1]; }
-        // The grid's edges (keyguard file v100 and later): left, right, bottom, top.
-        for (const k of ['gx0', 'gx1', 'gy0', 'gy1']) {
+        // The grid's edges (keyguard file v100 and later): left, right, bottom, top;
+        // and the lines the keyguard file's gt and gb name, for named positions.
+        for (const k of ['gx0', 'gx1', 'gy0', 'gy1', 'gty', 'gby']) {
           const mk = line.match(new RegExp(`(?:^|[\\s,])${k}\\s*=\\s*(-?\\d+(?:\\.\\d+)?(?:e-?\\d+)?)`));
           if (mk) project.dims[k] = +mk[1];
         }
+        // Openings placed on a named line follow it to wherever this render put it.
+        ogReapplyNames();
         // The by-eye openings canvas is drawn from these numbers, so a panel
         // waiting on the first render can now show itself.
         ogeRefresh();
@@ -7908,7 +7916,7 @@ function movesHTML() {
     <h4>Moving and shaping</h4><table>
       ${row('Drag', 'Moves what you drag. Dragging anywhere else turns the keyguard.')}
       ${row('Shift + drag', 'Keeps to a straight line.')}
-      ${row('Snap', 'With Snap ticked, a shape lines its middle up with the middle of the screen, the grid or another opening, and its edges up with the edges of the screen, the grid and other openings, as you draw, move or size it; a dashed line shows which, labeled with what it is. A ridge or support lines up by its ends too.')}
+      ${row('Snap', 'With Snap ticked, a shape lines its middle up with the middle of the screen, the grid or another opening, and its edges up with the edges of the screen, the grid and other openings, as you draw, move or size it; a dashed line shows which, labeled with what it is. A ridge or support lines up by its ends too. A shape lined up with the screen or the grid stays on that line if you later change the tablet, the padding or the bars; on the pixels or millimeters tab its number says which line. Dragging it off the line, nudging it or typing a number lets go.')}
       ${row('Alt + drag', 'Places the shape freely, without snapping.')}
       ${row(`${k} + drag`, 'Leaves a copy behind and drags the copy.')}
       ${row('Arrow keys', 'Nudge the selection 1 mm. Hold Shift for 10 mm.')}
@@ -8464,10 +8472,11 @@ function ogScreenPerMM() {
 // A ridge row the panel can manage, or null. Only the ridges this panel itself
 // makes qualify; a thicker one, a centre-anchored one or one at another angle
 // is somebody's hand-typed design and is kept exactly as written.
-function ogSimplifyRidge(row, perMM) {
+function ogSimplifyRidge(row, perMM, origin, vals) {
   if (!perMM || row.length < 14) return null;
-  const x = ogNum(row[5]), y = ogNum(row[6]), rh = ogNum(row[7]);
-  const len = ogNum(row[10]), th = ogNum(row[11]);
+  const R = ogReader(vals);
+  const x = R.num(row[5], 'x'), y = R.num(row[6], 'y'), rh = ogNum(row[7]);
+  const len = R.num(row[10], 'len'), th = ogNum(row[11]);
   if ([x, y, rh, len, th].some(v => v === null) || !(len > 0)) return null;
   const anchor = ogStr(row[8]), surface = ogStr(row[9]);
   if (anchor === null || !['', 'L', 'l'].includes(anchor)) return null;
@@ -8483,17 +8492,19 @@ function ogSimplifyRidge(row, perMM) {
   if (!OG_RIDGE_ANGLES.includes(ang)) return null;
   const id = ogStr(row[0]) !== null ? ogStr(row[0]) : ogNum(row[0]);
   if (id === null) return null;
-  return { id, shape: 'ridge', h: 0, w: 0, cr: 0, x, y, len, ang, th, rh };
+  return ogTakeNames({ id, shape: 'ridge', h: 0, w: 0, cr: 0, x, y, len, ang, th, rh },
+                     R.raw, origin, vals);
 }
 
 // A support row the panel can manage, or null: one written as the panel writes
 // it, left-anchored, across or up. Its width is held in `th`, as a ridge's
 // thickness is, and its fillet radius in `cr`. A 0 width or length means the
 // keyguard file's 2 mm or 10 mm, so it is read as that.
-function ogSimplifySupport(row, perMM) {
+function ogSimplifySupport(row, perMM, origin, vals) {
   if (!perMM || row.length < 14) return null;
-  const x = ogNum(row[5]), y = ogNum(row[6]), w = ogNum(row[3]), cr = ogNum(row[4]);
-  const len = ogNum(row[10]);
+  const R = ogReader(vals);
+  const x = R.num(row[5], 'x'), y = R.num(row[6], 'y'), w = ogNum(row[3]), cr = ogNum(row[4]);
+  const len = R.num(row[10], 'len');
   if ([x, y, w, cr, len].some(v => v === null) || w < 0 || cr < 0 || len < 0) return null;
   // Columns a support doesn't use must be empty, or Save would lose what is in them.
   if (ogNum(row[2]) !== 0 || ogNum(row[7]) !== 0 || ogNum(row[11]) !== 0) return null;
@@ -8507,9 +8518,9 @@ function ogSimplifySupport(row, perMM) {
   if (!OG_SUPPORT_ANGLES.includes(ang)) return null;
   const id = ogStr(row[0]) !== null ? ogStr(row[0]) : ogNum(row[0]);
   if (id === null) return null;
-  return { id, shape: 'support', h: 0, w: 0, cr, x, y,
-           len: len > 0 ? len : OG_SUPPORT_LEN_MM * perMM, ang,
-           th: w > 0 ? w : OG_SUPPORT_W_MM * perMM, rh: 0 };
+  return ogTakeNames({ id, shape: 'support', h: 0, w: 0, cr, x, y,
+                       len: len > 0 ? len : OG_SUPPORT_LEN_MM * perMM, ang,
+                       th: w > 0 ? w : OG_SUPPORT_W_MM * perMM, rh: 0 }, R.raw, origin, vals);
 }
 
 // The fillet radius a new support takes, in the clinician's unit: the corner
@@ -8579,17 +8590,21 @@ function ogHotDogToCircle(row) {
 
 // Reduce one parsed row to the simple {shape,h,w,cr,x,y} the grid can edit, or
 // null if the row uses anything the panel doesn't model.
-function ogSimplify(row, grid, screenOrigin, perMM) {
+// `vals` (screen grid only) are the values of the names a row lined up by eye may
+// be written with (ogNameVals); without them such a row is kept as typed.
+function ogSimplify(row, grid, screenOrigin, perMM, vals = null) {
   if (!row || !row.isList || row.length < 7) return null;
   const shape = ogStr(row[1]);
-  if (shape === 'ridge') return grid === 'screen' ? ogSimplifyRidge(row, perMM) : null;
-  if (shape === 'support') return grid === 'screen' ? ogSimplifySupport(row, perMM) : null;
+  if (grid !== 'screen') vals = null;
+  if (shape === 'ridge') return grid === 'screen' ? ogSimplifyRidge(row, perMM, screenOrigin, vals) : null;
+  if (shape === 'support') return grid === 'screen' ? ogSimplifySupport(row, perMM, screenOrigin, vals) : null;
   const isArc = ogIsArc(shape);
   if (isArc && grid !== 'screen') return null;
   if (shape !== 'r' && shape !== 'c' && !isArc) return null;
 
-  const h = ogNum(row[2]), w = ogNum(row[3]), cr = ogNum(row[4]);
-  let x = ogNum(row[5]), y = ogNum(row[6]);
+  const R = ogReader(vals);
+  const h = R.num(row[2], 'h'), w = R.num(row[3], 'w'), cr = ogNum(row[4]);
+  let x = R.num(row[5], 'x'), y = R.num(row[6], 'y');
   if ([h, w, cr, x, y].some(v => v === null)) return null;   // expression-valued → leave alone
 
   const at = k => (row.length > k ? row[k] : null);
@@ -8616,7 +8631,7 @@ function ogSimplify(row, grid, screenOrigin, perMM) {
   // An outer arc is placed by its corner point whatever the anchor column says
   // (the keyguard file ignores it), and its height and width go unused.
   if (isArc) {
-    if (!(cr > 0)) return null;
+    if (!(cr > 0) || Object.keys(R.raw).length) return null;   // a corner takes no names
     return { id, shape, h: 0, w: 0, cr, x, y, converted: false };
   }
 
@@ -8629,6 +8644,8 @@ function ogSimplify(row, grid, screenOrigin, perMM) {
   // origin, y grows downward, so the centre is half a height *up* the axis.
   let converted = false;
   const centred = anchor === 'c' || anchor === 'C';
+  // The panel writes names only into openings measured from their middle.
+  if (!centred && Object.keys(R.raw).length) return null;
   if (!centred) {
     x += ew / 2;
     y += (grid === 'screen' && screenOrigin === 'upper-left') ? -eh / 2 : eh / 2;
@@ -8637,8 +8654,8 @@ function ogSimplify(row, grid, screenOrigin, perMM) {
   // Fully rounded ends on unequal sides: a hot dog. (A square one is a circle
   // drawn as a rectangle, and is left as the rectangle it was typed as.)
   const hotDog = shape === 'r' && w !== h && w > 0 && h > 0 && cr >= Math.min(w, h) / 2 - 0.001;
-  return { id, shape: hotDog ? 'hd' : shape, h, w: shape === 'c' ? 0 : w,
-           cr: shape === 'c' ? 0 : cr, x, y, converted };
+  return ogTakeNames({ id, shape: hotDog ? 'hd' : shape, h, w: shape === 'c' ? 0 : w,
+                       cr: shape === 'c' ? 0 : cr, x, y, converted }, R.raw, screenOrigin, vals);
 }
 
 // ---- Serialising ---------------------------------------------------------
@@ -8648,21 +8665,29 @@ const ogFmt = v => String(Number(v.toFixed(4)));   // 2.5000000001 → 2.5
 // shape a clinician writes by hand. No outer vector. `highlighted` is the set of
 // row indexes to mark with a "#" ID; any number of them may be highlighted.
 // `kept` is the rows the panel can't edit, as typed, written back after its own.
-function ogSerialize(rows, highlighted, kept = []) {
+// Screen rows lined up with a named line are written with its name (ogRowTexts),
+// which depends on the corner they are measured from: `origin`, by default the
+// panel's.
+function ogSerialize(rows, highlighted, kept = [], origin = null) {
+  const org = origin || (ogState && ogState.screenOrigin) ||
+    (currentFormValues().starting_corner_for_screen_measurements === 'lower-left' ? 'lower-left' : 'upper-left');
   return rows.map((r, idx) => {
     const rawId = highlighted.has(idx) ? '#' : r.id;
     const id = typeof rawId === 'string' ? `"${rawId.replace(/"/g, '\\"')}"` : String(rawId);
+    const T = ogRowTexts(r, org);
+    const tx = T.x !== undefined ? T.x : ogFmt(r.x);
+    const ty = T.y !== undefined ? T.y : ogFmt(r.y);
     if (r.shape === 'ridge') {
       // The keyguard file's straight ridge: height in the cut/build column,
       // then length, thickness and the angle as its one special parameter.
-      return `[${id},"ridge",0,0,0,${ogFmt(r.x)},${ogFmt(r.y)},${ogFmt(r.rh)},"L","",` +
-             `${ogFmt(r.len)},${ogFmt(r.th)},[],[${r.ang}]],`;
+      return `[${id},"ridge",0,0,0,${tx},${ty},${ogFmt(r.rh)},"L","",` +
+             `${T.len !== undefined ? T.len : ogFmt(r.len)},${ogFmt(r.th)},[],[${r.ang}]],`;
     }
     if (r.shape === 'support') {
       // The keyguard file's support: width, fillet radius, then its length and
       // its direction as its one special parameter.
-      return `[${id},"support",0,${ogFmt(r.th)},${ogFmt(r.cr)},${ogFmt(r.x)},${ogFmt(r.y)},0,"L","",` +
-             `${ogFmt(r.len)},0,[],[${r.ang}]],`;
+      return `[${id},"support",0,${ogFmt(r.th)},${ogFmt(r.cr)},${tx},${ty},0,"L","",` +
+             `${T.len !== undefined ? T.len : ogFmt(r.len)},0,[],[${r.ang}]],`;
     }
     if (ogIsArc(r.shape)) {
       return `[${id},"${r.shape}",0,0,${ogFmt(r.cr)},${ogFmt(r.x)},${ogFmt(r.y)},0,"","",0,0,[],[]],`;
@@ -8670,8 +8695,8 @@ function ogSerialize(rows, highlighted, kept = []) {
     const w  = r.shape === 'c' ? 0 : r.w;
     const cr = r.shape === 'c' ? 0 : r.shape === 'hd' ? ogHotDogCr(r) : r.cr;
     const shape = r.shape === 'hd' ? 'r' : r.shape;
-    return `[${id},"${shape}",${ogFmt(r.h)},${ogFmt(w)},${ogFmt(cr)},` +
-           `${ogFmt(r.x)},${ogFmt(r.y)},0,"c","",0,0,[],[]],`;
+    return `[${id},"${shape}",${T.h !== undefined ? T.h : ogFmt(r.h)},${T.w !== undefined ? T.w : ogFmt(w)},` +
+           `${ogFmt(cr)},${tx},${ty},0,"c","",0,0,[],[]],`;
   }).join('') + kept.map(raw => `${raw},`).join('');
 }
 
@@ -8739,6 +8764,9 @@ function ogRenderGrid(grid) {
       const snap = ogeSnapshot();
       if (sel.value === row.shape || !ogChangeShape(row, sel.value)) { sel.value = row.shape; return; }
       ogePush(snap);
+      // A circle or hot dog can't have a named size; what is still on its line stays.
+      const ng = ogNameGeom();
+      if (ng && row.named) ogNameRow(row, ng);
       ogRenderGrid(grid);        // which boxes are live follows the shape
       ogPreview();
     });
@@ -8776,7 +8804,11 @@ function ogRenderGrid(grid) {
           a.appendChild(o);
         }
         if (!disabled) a.value = String(row.ang);
-        a.addEventListener('change', () => { ogePush(); row.ang = Number(a.value); ogPreview(); });
+        // Turned, it runs along the other axis: whatever it was lined up with no longer applies.
+        a.addEventListener('change', () => {
+          ogePush(); row.ang = Number(a.value); row.named = undefined;
+          ogRenderGrid(grid); ogPreview();
+        });
         td.appendChild(a);
         tr.appendChild(td);
         continue;
@@ -8826,12 +8858,17 @@ function ogRenderGrid(grid) {
         // A support of no width would be read by the keyguard file as 2 mm.
         if (key === 'th') v = Math.max(v, decimals ? 0.1 : 1);
         inp.value = v.toFixed(decimals);
-        row[key] = v;
         inp.classList.remove('pending');
-        if (v === applied) return;         // nothing actually changed → no render
+        // A named number shows rounded: leaving its box unchanged keeps the name
+        // and the exact value behind it.
+        if (v === parseFloat(applied.toFixed(decimals))) { row[key] = applied; return; }
+        row[key] = v;
         applied = v;
         if (before) { ogePush(before); before = null; }
-        if (ogHotDogToCircle(row)) ogRenderGrid(grid);
+        // A typed number replaces the name in that box (Ken, 20 Nov 2026).
+        const hadName = !!row.named;
+        if (isScreen) ogTypedOver(row, key);
+        if (ogHotDogToCircle(row) || hadName) ogRenderGrid(grid);
         ogPreview();
       });
 
@@ -8842,6 +8879,15 @@ function ogRenderGrid(grid) {
         inp.blur();
       });
       td.appendChild(inp);
+      // Lined up with a named line: say which, under the number.
+      const note = isScreen ? ogNamedNote(row, key, ogState.screenOrigin) : '';
+      if (note) {
+        const nd = document.createElement('div');
+        nd.className = 'og-named';
+        nd.textContent = note;
+        nd.title = 'Kept on this line when the screen, padding or bars change. Type a number to let go of it.';
+        td.appendChild(nd);
+      }
       tr.appendChild(td);
     }
 
@@ -9017,11 +9063,23 @@ function ogScreenSpan(unit) {
 // points are all the same from either corner.
 function ogFlipRows(rows, span, unit) {
   const dp = unit === 'px' ? 0 : 1;
+  const flip = t => (t in OG_TPL_FLIP ? OG_TPL_FLIP[t] : t);
   for (const row of rows) {
     // A rounded corner's point stays exactly on its corner, unrounded — see
     // ogeRoundRow. Everything else is written at the panel's own precision.
     row.y = ogIsArc(row.shape) ? span - (row.y || 0)
                                : parseFloat((span - (row.y || 0)).toFixed(dp));
+    // A name stays on the same line, which from the other corner may have
+    // another name: the bottom of the screen is "sh" from the top and 0 from the
+    // bottom. Which part sits on it — top or bottom edge — doesn't change.
+    const n = row.named;
+    if (n && (n.y || n.sy)) {
+      const m = { ...n };
+      if (n.y) m.y = { t: flip(n.y.t), part: n.y.part };
+      if (n.sy) m.sy = { lo: flip(n.sy.lo), hi: flip(n.sy.hi) };
+      if (m.y && m.y.t === '0' && !m.sy) delete m.y;      // 0 needs no name
+      row.named = Object.keys(m).length ? m : undefined;
+    }
   }
 }
 
@@ -9035,6 +9093,7 @@ function ogFlipScreenCorner(unit) {
   if (!span) return;
   ogFlipRows(ogState.screen.rows, span, unit);
   for (const snap of [...ogeUndo, ...ogeRedo]) ogFlipRows(snap.rows, span, unit);
+  ogReapplyNames();
   ogPreview();
 }
 
@@ -9057,6 +9116,7 @@ function ogConvertScreenUnits(from, to) {
   // Customizer's Undo takes it back. The history is converted with it instead,
   // so an Undo here never brings back numbers meant for the other unit.
   for (const snap of [...ogeUndo, ...ogeRedo]) ogConvertRows(snap.rows, to);
+  ogReapplyNames();
   // The field the .scad reads is now in the new unit too, so the keyguard is
   // cut in the same places it was before the switch.
   ogPreview();
@@ -9089,8 +9149,9 @@ function ogConvertScreenField(fromUnit, toUnit, fromOrigin, toOrigin) {
   const d = project.dims;
   const perMM = fromUnit === 'mm' ? 1 : (d.swp > 0 && d.swm > 0 ? d.swp / d.swm : null);
   const rows = [], kept = [], hl = new Set();
+  const nameVals = ogNameVals(fromUnit, fromOrigin);
   for (const row of parsed.rows) {
-    const simple = ogSimplify(row, 'screen', fromOrigin, perMM);
+    const simple = ogSimplify(row, 'screen', fromOrigin, perMM, nameVals);
     if (!simple) { kept.push(row.raw); continue; }
     if (simple.id === '#') { simple.id = 0; hl.add(rows.length); }
     rows.push(simple);
@@ -9098,7 +9159,7 @@ function ogConvertScreenField(fromUnit, toUnit, fromOrigin, toOrigin) {
   if (!rows.length) return;
   if (unitChanged) ogConvertRows(rows, toUnit);
   if (flipSpan) ogFlipRows(rows, flipSpan, toUnit);
-  el.value = ogSerialize(rows, hl, kept);
+  el.value = ogSerialize(rows, hl, kept, toOrigin);
 }
 
 function ogConvertRows(rows, to) {
@@ -9120,7 +9181,22 @@ function ogConvertRows(rows, to) {
   const rp = (v, inset) => parseFloat((to === 'mm'
     ? (v || 0) / perMM - inset
     : ((v || 0) + inset) * perMM).toFixed(dp));
+  // A name means the same line in either unit, except in keyguard inset mode,
+  // where the screen's own edges (0, sw, sh) are the screen's in pixels but the
+  // app's in millimetres: those let go and keep their numbers.
+  const inset = Math.abs(insetX) > 0.01 || Math.abs(insetY) > 0.01;
+  const edge = t => t === '0' || t === 'sw' || t === 'sh';
   for (const row of rows) {
+    const n = row.named;
+    if (n && inset) {
+      const m = {};
+      for (const A of ['x', 'y']) {
+        const sz = n['s' + A], p = n[A];
+        if (sz && !edge(sz.lo) && !edge(sz.hi)) m['s' + A] = sz;
+        if (p && !edge(p.t) && (!sz || m['s' + A])) m[A] = p;
+      }
+      row.named = Object.keys(m).length ? m : undefined;
+    }
     if (ogIsArc(row.shape)) {
       // Its point stays exactly on its corner, unrounded — see ogeRoundRow.
       const ex = (v, inset) => to === 'mm' ? (v || 0) / perMM - inset : ((v || 0) + inset) * perMM;
@@ -9148,6 +9224,449 @@ function ogConvertRows(rows, to) {
     if (row.shape === 'hd') { if (!ogHotDogToCircle(row)) row.cr = ogHotDogCr(row); continue; }
     row.cr = Math.min(Math.max(0, r(row.cr)), Math.min(row.w, row.h) / 2);
   }
+}
+
+// ---- Named positions (Ken, 20 Nov 2026) -----------------------------------
+// A screen opening lined up by eye with a major line — the screen's edges or
+// middle, the grid's edges or middle — is written with that line's NAME rather
+// than its number: x = "sw/2", or "gl+gw/2" (the grid's left edge plus half its
+// width, since the grid doesn't start at the screen's corner), or "gt+6.5" for an
+// opening whose top edge is on gt. The keyguard file works the name out on every
+// render, so changing the tablet, the padding or the bars keeps the opening on
+// its line instead of leaving it a fixed distance from the screen's corner.
+//
+// Only major lines, measured from the screen (Ken): never the case (cow) or the
+// keyguard's middle, and never another opening, whose line has no name. Sizes
+// can be named too: a rectangle or support from one named line to another gets
+// its width or length written as the distance between them ("gw").
+//
+// ⚠ The keyguard file reads the "my … openings" settings strictly: one name it
+// doesn't know stops the whole keyguard from building. So a name is only ever
+// written when the clinician's own keyguard file reported the numbers behind it
+// — the grid's names need keyguard file v100, which reports them. And a name is
+// only written when it equals the line it stands for in this design: gt and gb
+// are the edges of the bars, which are the grid's top and bottom only when there
+// is no top or bottom padding.
+//
+// The shape of the record: row.named = { x: {t, part}, y: {t, part},
+// sx: {lo, hi}, sy: {lo, hi} }, any of them absent. t is the name ("template")
+// as written; part is which part of the shape sits on it — lo (left or bottom),
+// mid, hi (right or top), or for a ridge's or support's run, its start, middle
+// or end. sx/sy name the size along that axis as the distance from line lo to
+// line hi. The numbers in the row are kept current (ogApplyNames) so the shape
+// can be drawn and its numbers shown; the names are what get written.
+// Records are replaced, never changed in place, because undo copies rows shallowly.
+const OG_TPL = {
+  x: ['0', 'sw/2', 'sw', 'gl+gw/2', 'gl', 'gr'],
+  y: ['0', 'sh/2', 'sh', 'gt+gh/2', 'gb-gh/2', 'gt-gh/2', 'gb+gh/2', '(gt+gb)/2',
+      'gt', 'gb', 'gb-gh', 'gb+gh', 'gt+gh', 'gt-gh'],
+};
+// The same line, measured from the other starting corner (ogFlipRows).
+const OG_TPL_FLIP = {
+  '0': 'sh', 'sh': '0', 'gt+gh/2': 'gt-gh/2', 'gt-gh/2': 'gt+gh/2',
+  'gb-gh/2': 'gb+gh/2', 'gb+gh/2': 'gb-gh/2', 'gb-gh': 'gb+gh', 'gb+gh': 'gb-gh',
+  'gt+gh': 'gt-gh', 'gt-gh': 'gt+gh',
+};
+
+// The values of the names, in the clinician's unit and from her corner, worked
+// out from where the keyguard file reported the lines on the model — so they are
+// right for the unit and corner chosen now, even before the next render. Null
+// when the screen's size isn't known yet. The grid's names are present only when
+// the keyguard file reported the grid (v100 and later).
+function ogNameVals(unit, origin) {
+  const d = project && project.dims;
+  if (!d || !(d.swm > 0) || !(d.shm > 0)) return null;
+  const px = unit === 'px';
+  if (px && !(d.swp > 0 && d.shp > 0)) return null;
+  const awm = d.awm > 0 ? d.awm : d.swm, ahm = d.ahm > 0 ? d.ahm : d.shm;
+  const owm = px ? d.swm : awm, ohm = px ? d.shm : ahm;   // as ogeGeom measures
+  const perMM = px ? d.swp / d.swm : 1;
+  const X = m => (m + owm / 2) * perMM;
+  const Y = m => (origin === 'upper-left' ? ohm / 2 - m : m + ohm / 2) * perMM;
+  const v = Object.create(null);
+  v.sw = px ? d.swp : awm;
+  v.sh = px ? d.shp : ahm;
+  if ([d.gx0, d.gx1, d.gy0, d.gy1, d.gty, d.gby].every(Number.isFinite)) {
+    v.gl = X(d.gx0); v.gr = X(d.gx1); v.gw = (d.gx1 - d.gx0) * perMM;
+    v.gt = Y(d.gty); v.gb = Y(d.gby); v.gh = (d.gy1 - d.gy0) * perMM;
+  }
+  return v;
+}
+
+// The keyguard file's own arithmetic, as far as the names need it: numbers,
+// names, + - * /, brackets and a leading sign. Null for anything else, or for a
+// name it has no value for.
+function ogEval(expr, vals) {
+  if (!vals) return null;
+  const s = String(expr).replace(/\s+/g, '');
+  let i = 0;
+  const factor = () => {
+    if (s[i] === '+' || s[i] === '-') {
+      const sg = s[i++] === '-' ? -1 : 1;
+      const v = factor();
+      return v === null ? null : sg * v;
+    }
+    if (s[i] === '(') {
+      i++;
+      const v = sum();
+      if (v === null || s[i] !== ')') return null;
+      i++;
+      return v;
+    }
+    const id = /^[A-Za-z_]\w*/.exec(s.slice(i));
+    if (id) { i += id[0].length; const v = vals[id[0]]; return Number.isFinite(v) ? v : null; }
+    const n = /^(\d+\.?\d*|\.\d+)([eE][-+]?\d+)?/.exec(s.slice(i));
+    if (!n) return null;
+    i += n[0].length;
+    return parseFloat(n[0]);
+  };
+  const term = () => {
+    let v = factor();
+    while (v !== null && (s[i] === '*' || s[i] === '/')) {
+      const op = s[i++], r = factor();
+      if (r === null) return null;
+      v = op === '*' ? v * r : v / r;
+    }
+    return v;
+  };
+  const sum = () => {
+    let v = term();
+    while (v !== null && (s[i] === '+' || s[i] === '-')) {
+      const op = s[i++], r = term();
+      if (r === null) return null;
+      v = op === '+' ? v + r : v - r;
+    }
+    return v;
+  };
+  const v = sum();
+  return (v !== null && i === s.length && Number.isFinite(v)) ? v : null;
+}
+
+// The names this design can use along one axis: those the keyguard file reported.
+const ogTemplates = (axis, vals) => OG_TPL[axis].filter(t => ogEval(t, vals) !== null);
+
+// +1 where the clinician's numbers grow to the right or up, -1 where they grow
+// down (y from the upper-left corner).
+const ogDir = (axis, origin) => (axis === 'x' || origin === 'lower-left') ? 1 : -1;
+
+// How a row lies along one axis: 'box' (an opening, measured from its middle),
+// 'along' (a ridge's or support's run, measured from its start — its left or
+// bottom end) or 'across' (the width of one, measured from its middle line).
+// Null for what can't be named: a rounded corner, a ridge on the slant.
+function ogAxisRole(row, axis) {
+  if (ogIsArc(row.shape)) return null;
+  if (ogIsLine(row.shape)) {
+    if (row.ang !== 0 && row.ang !== 90) return null;
+    return axis === (row.ang === 0 ? 'x' : 'y') ? 'along' : 'across';
+  }
+  return 'box';
+}
+// The field holding the size that can be named along an axis, if any: a plain
+// rectangle's width or height, a ridge's or support's length. (A circle has one
+// size for both; a hot dog's ends are worked out from its size.)
+function ogSizeKey(row, axis) {
+  const role = ogAxisRole(row, axis);
+  if (role === 'along') return 'len';
+  if (role === 'box' && row.shape === 'r') return axis === 'x' ? 'w' : 'h';
+  return null;
+}
+function ogAxisSpan(row, axis) {
+  const role = ogAxisRole(row, axis);
+  if (role === 'along') return row.len;
+  if (role === 'across') return row.th;
+  if (row.shape === 'c') return row.h;
+  return axis === 'x' ? row.w : row.h;
+}
+// Where each part of the row lies along the axis, in the clinician's unit.
+function ogParts(row, axis, origin) {
+  const role = ogAxisRole(row, axis);
+  if (!role) return null;
+  const s = ogDir(axis, origin), p = row[axis], n = ogAxisSpan(row, axis);
+  if (role === 'along') return { lo: p, mid: p + s * n / 2, hi: p + s * n };
+  return { lo: p - s * n / 2, mid: p, hi: p + s * n / 2 };
+}
+
+// ---- Writing the names ----
+const ogIsIdent = s => /^[A-Za-z_]\w*$/.test(s);
+const ogIsNumText = s => /^-?(\d+\.?\d*|\.\d+)$/.test(s);
+const ogWrap = s => (ogIsIdent(s) || ogIsNumText(s)) ? s : `(${s})`;
+// A size written as text, whole or halved.
+function ogTerm(S, half) {
+  if (ogIsNumText(S)) return ogFmt(half ? Number(S) / 2 : Number(S));
+  return half ? `${ogWrap(S)}/2` : ogWrap(S);
+}
+// base ± term, written as plainly as it can be: on the "0" line it is just the
+// term, which for a number is a plain number.
+function ogJoin(base, sign, term) {
+  if (base === '0') {
+    if (ogIsNumText(term)) return ogFmt(sign * Number(term));
+    return sign > 0 ? term : `-${term}`;
+  }
+  if (ogIsNumText(term) && Number(term) === 0) return base;
+  return `${base}${sign > 0 ? '+' : '-'}${term}`;
+}
+// The size from line lo to line hi (lo left or below hi), or null if it can't
+// be written. gr-gl is written gw, which it is by definition.
+function ogSizeExpr(axis, origin, lo, hi) {
+  const [a, b] = ogDir(axis, origin) > 0 ? [hi, lo] : [lo, hi];   // a - b
+  if (a === b || a === '0') return null;
+  if (b === '0') return a;
+  if (a === 'gr' && b === 'gl') return 'gw';
+  return `${ogWrap(a)}-${ogWrap(b)}`;
+}
+// The position text that puts `part` of the row on line t; S is the row's size
+// along the axis as text.
+function ogPosExpr(row, axis, origin, t, part, S) {
+  const s = ogDir(axis, origin);
+  if (ogAxisRole(row, axis) === 'along') {
+    if (part === 'lo') return t;
+    return ogJoin(t, -s, ogTerm(S, part === 'mid'));
+  }
+  if (part === 'mid') return t;
+  return ogJoin(t, part === 'lo' ? s : -s, ogTerm(S, true));
+}
+// The texts a row is written with: {x, y, w, h, len} for the fields named, each
+// absent when the field is a plain number.
+function ogRowTexts(row, origin) {
+  const out = {};
+  const n = row.named;
+  if (!n) return out;
+  for (const A of ['x', 'y']) {
+    if (!ogAxisRole(row, A)) continue;
+    const sk = ogSizeKey(row, A), sz = n['s' + A];
+    let S = ogFmt(ogAxisSpan(row, A) || 0);
+    if (sk && sz) {
+      const e = ogSizeExpr(A, origin, sz.lo, sz.hi);
+      if (e) { out[sk] = e; S = e; }
+    }
+    const p = n[A];
+    if (p) out[A] = ogPosExpr(row, A, origin, p.t, p.part, S);
+  }
+  return out;
+}
+
+// ---- Reading them back ----
+// A row read from the field whose numbers were names: the names are recognised
+// by writing every candidate the way this panel writes them and comparing, so
+// only a row this panel could have written is taken on. Anything else — a
+// clinician's own expression — returns null and the row is kept as typed.
+// `raw` holds the text of each field that was an expression.
+function ogDecodeNames(row, raw, origin, vals) {
+  // Only position and nameable-size fields can hold a name; one anywhere else
+  // (a circle's diameter, a support's width, a corner radius) is not this
+  // panel's, and the row must be kept as typed.
+  const nameable = new Set(['x', 'y', ogSizeKey(row, 'x'), ogSizeKey(row, 'y')]);
+  if (Object.keys(raw).some(k => !nameable.has(k))) return null;
+  const named = {};
+  for (const A of ['x', 'y']) {
+    const role = ogAxisRole(row, A);
+    const sk = ogSizeKey(row, A);
+    if (!role) { if (raw[A] !== undefined) return null; continue; }
+    const tpls = ogTemplates(A, vals);
+    let sizeOpts = [null];
+    if (sk && raw[sk] !== undefined) {
+      sizeOpts = [];
+      for (const lo of tpls) for (const hi of tpls) {
+        if (ogSizeExpr(A, origin, lo, hi) === raw[sk]) sizeOpts.push({ lo, hi });
+      }
+      if (!sizeOpts.length) return null;
+    }
+    let found = false;
+    for (const so of sizeOpts) {
+      const S = so ? ogSizeExpr(A, origin, so.lo, so.hi) : ogFmt(ogAxisSpan(row, A) || 0);
+      if (raw[A] === undefined) {
+        if (so) named['s' + A] = so;
+        found = true;
+        break;
+      }
+      for (const t of tpls) {
+        for (const part of ['mid', 'lo', 'hi']) {
+          if (ogPosExpr(row, A, origin, t, part, S) !== raw[A]) continue;
+          named[A] = { t, part };
+          if (so) named['s' + A] = so;
+          found = true;
+          break;
+        }
+        if (found) break;
+      }
+      if (found) break;
+    }
+    if (!found) return null;
+  }
+  return Object.keys(named).length ? named : null;
+}
+// A reader for the numbers of one row: plain numbers as they are, and names
+// worked out with `vals`, their text kept in `raw` for ogDecodeNames.
+function ogReader(vals) {
+  const raw = {};
+  const num = (tok, key) => {
+    const n = ogNum(tok);
+    if (n !== null) return n;
+    if (!vals || !tok || typeof tok.e !== 'string') return null;
+    const v = ogEval(tok.e, vals);
+    if (v === null) return null;
+    raw[key] = tok.e.replace(/\s+/g, '');
+    return v;
+  };
+  return { num, raw };
+}
+// The last step of reading a row: take on its names, or refuse the row.
+function ogTakeNames(simple, raw, origin, vals) {
+  if (!simple || !Object.keys(raw).length) return simple;
+  const named = ogDecodeNames(simple, raw, origin, vals);
+  if (!named) return null;
+  simple.named = named;
+  return simple;
+}
+
+// ---- Keeping them current ----
+// Puts every named part back exactly on its line, and every named size back to
+// the distance between its lines, as the names stand in this design now.
+function ogApplyNames(row, origin, vals) {
+  const n = row.named;
+  if (!n || !vals) return false;
+  let moved = false;
+  for (const A of ['x', 'y']) {
+    if (!ogAxisRole(row, A)) continue;
+    const sk = ogSizeKey(row, A), sz = n['s' + A];
+    if (sk && sz) {
+      const v = ogEval(ogSizeExpr(A, origin, sz.lo, sz.hi) || '', vals);
+      if (v !== null && v > 0 && Math.abs(v - row[sk]) > 1e-9) { row[sk] = v; moved = true; }
+    }
+    const p = n[A];
+    if (p) {
+      const line = ogEval(p.t, vals);
+      const parts = ogParts(row, A, origin);
+      if (line === null || !parts) continue;
+      const d = line - parts[p.part];
+      if (Math.abs(d) > 1e-9) { row[A] += d; moved = true; }
+    }
+  }
+  return moved;
+}
+
+// After a change to a row — a drag, a nudge, a typed number — which of its parts
+// sit on a named line. A line counts if the row was already named on it, or if
+// this drag lined the row up along that axis (`guides`), in which case every
+// named line counts; a part merely passing over a line takes no name. A part
+// that has left its line loses the name; with both edges or both ends on lines,
+// the size is named as well. `g` needs only unit, origin and step.
+function ogNameRow(row, g, guides = []) {
+  const vals = ogNameVals(g.unit, g.origin);
+  if (!vals) return;
+  const tol = g.step * 0.51 + 1e-6;
+  const old = row.named || {};
+  const named = {};
+  for (const A of ['x', 'y']) {
+    if (!ogAxisRole(row, A)) continue;
+    const tpls = ogTemplates(A, vals);
+    const eligible = [];
+    const add = t => { if (t && !eligible.includes(t) && ogEval(t, vals) !== null) eligible.push(t); };
+    if (old[A]) add(old[A].t);
+    if (old['s' + A]) { add(old['s' + A].lo); add(old['s' + A].hi); }
+    // A drag that lined the row up along this axis makes every named line count
+    // for every part: a support whose end reaches the grid's right edge has its
+    // middle on the screen's middle at that same moment, and only one of the two
+    // can be the line shown — but both are true, and the end is what was meant.
+    if (guides.some(gd => gd.axis === A)) tpls.forEach(add);
+    if (!eligible.length) continue;
+    const parts = ogParts(row, A, g.origin);
+    const on = {};
+    for (const part of ['lo', 'mid', 'hi']) {
+      on[part] = eligible.find(t => Math.abs(ogEval(t, vals) - parts[part]) <= tol);
+    }
+    const sk = ogSizeKey(row, A);
+    if (sk && on.lo && on.hi && ogSizeExpr(A, g.origin, on.lo, on.hi)) {
+      // The position goes with the size even from the 0 line: an opening's
+      // middle is half the (named) size away from it, which changes with it.
+      named['s' + A] = { lo: on.lo, hi: on.hi };
+      named[A] = { t: on.lo, part: 'lo' };
+      continue;
+    }
+    const prev = old[A];
+    const part = (prev && on[prev.part] === prev.t) ? prev.part
+               : on.mid ? 'mid' : on.lo ? 'lo' : on.hi ? 'hi' : null;
+    // The screen's left edge, or its top from the upper-left corner, is 0 in
+    // every design: a plain number stays there already.
+    if (part && on[part] !== '0') named[A] = { t: on[part], part };
+  }
+  row.named = Object.keys(named).length ? named : undefined;
+  ogApplyNames(row, g.origin, vals);
+}
+// What ogNameRow needs to know about the screen, for the panel as it is now.
+function ogNameGeom() {
+  if (!ogState) return null;
+  const g = ogeGeom();
+  if (g) return g;
+  const unit = ogState.screenUnit;
+  return { unit, origin: ogState.screenOrigin, step: unit === 'px' ? 1 : 0.1 };
+}
+// A number typed into the grid tab: the field typed into lets go of its name,
+// and the rest of the row keeps what is still on its line.
+function ogTypedOver(row, key) {
+  if (row.named) {
+    const n = { ...row.named };
+    if (key === 'x' || key === 'y') delete n[key];
+    if (key === 'w' || (key === 'len' && row.ang === 0)) delete n.sx;
+    if (key === 'h' || (key === 'len' && row.ang === 90)) delete n.sy;
+    row.named = Object.keys(n).length ? n : undefined;
+  }
+  const g = ogNameGeom();
+  if (g && row.named) ogNameRow(row, g);
+}
+// A new render can move the lines — the tablet, the padding or the bars may have
+// changed — so every named opening on the open panel is moved to where its line
+// now is. Only the drawing and the numbers shown need this: the keyguard itself
+// is cut from the names.
+function ogReapplyNames() {
+  if (!ogState || ogState.screen.error) return;
+  const vals = ogNameVals(ogState.screenUnit, ogState.screenOrigin);
+  if (!vals) return;
+  let moved = false;
+  for (const row of ogState.screen.rows) {
+    if (row.named && ogApplyNames(row, ogState.screenOrigin, vals)) moved = true;
+  }
+  if (moved && !(document.activeElement && document.activeElement.closest &&
+                 document.activeElement.closest('#og-screen'))) {
+    ogRenderGrid('screen');
+  }
+}
+
+// ---- Saying it in words ----
+// What a name stands for, for the note beside its number on the grid tab.
+function ogLineWords(t, axis, origin) {
+  if (axis === 'x') {
+    return { '0': 'left edge of screen', 'sw/2': 'middle of screen', 'sw': 'right edge of screen',
+             'gl+gw/2': 'middle of grid', 'gl': 'left edge of grid', 'gr': 'right edge of grid' }[t] || t;
+  }
+  const ul = origin === 'upper-left';
+  if (t === '0') return ul ? 'top of screen' : 'bottom of screen';
+  if (t === 'sh') return ul ? 'bottom of screen' : 'top of screen';
+  if (t === 'sh/2') return 'middle of screen';
+  if (['gt', 'gb-gh', 'gb+gh'].includes(t)) return 'top of grid';
+  if (['gb', 'gt+gh', 'gt-gh'].includes(t)) return 'bottom of grid';
+  return 'middle of grid';
+}
+function ogNamedNote(row, key, origin) {
+  const n = row.named;
+  if (!n) return '';
+  if (key === 'x' || key === 'y') {
+    const p = n[key];
+    if (!p) return '';
+    const line = ogLineWords(p.t, key, origin);
+    if (p.part === 'mid') return `= ${line}`;
+    const role = ogAxisRole(row, key);
+    if (role === 'along') return `${p.part === 'lo' ? 'starts' : 'ends'} on ${line}`;
+    const side = key === 'x' ? (p.part === 'lo' ? 'left' : 'right') : (p.part === 'lo' ? 'bottom' : 'top');
+    return `${side} edge on ${line}`;
+  }
+  const A = (key === 'w') ? 'x' : (key === 'h') ? 'y' : (key === 'len') ? (row.ang === 0 ? 'x' : 'y') : null;
+  const sz = A && n['s' + A];
+  if (!sz || ogSizeKey(row, A) !== key) return '';
+  const lo = ogLineWords(sz.lo, A, origin), hi = ogLineWords(sz.hi, A, origin);
+  const of = s => s.replace(/^.* of /, '');
+  if (of(lo) === of(hi)) return `= ${A === 'x' ? 'width' : 'height'} of ${of(lo)}`;
+  return `= ${lo} to ${hi}`;
 }
 
 function ogPreview() {
@@ -9932,6 +10451,7 @@ function ogeRestore(snap) {
   ogState.case.rows   = snap.caseRows;
   ogState.case.hl     = new Set(snap.caseHl);
   ogeSel = new Set(snap.sel.filter(i => i < snap.rows.length));
+  ogReapplyNames();     // the lines may have moved since that state was recorded
   if (ogeLive()) ogeRender();
   ogRenderGrid('screen');
   ogRenderGrid('case');
@@ -10413,10 +10933,14 @@ function ogePick(ev, g) {
 }
 
 // ---- Gestures ------------------------------------------------------------
-function ogeCommit(g) {
+// `guides` are the lines the gesture lined the shapes up with: on a named line,
+// a shape takes its name (ogNameRow); off one it lets go of it.
+function ogeCommit(g, guides = []) {
   for (const idx of ogeSel) {
     const row = ogState.screen.rows[idx];
-    if (row) ogeRoundRow(row, g);
+    if (!row) continue;
+    ogeRoundRow(row, g);
+    ogNameRow(row, g, guides);
   }
   ogeRender();
   ogRenderGrid('screen');
@@ -10779,6 +11303,7 @@ function ogeEndDrag(ev) {
   if (!ogeDrag) { ogeDragPendingDrop = null; return; }
   const { g, moved, kind, pushed, hit, idx, draw } = ogeDrag;
   ogeDrag = null;
+  const guides = ogeGuides;     // what it ended lined up with, for the names
   ogeGuides = [];
   // A support just drawn out takes its fillets from the opening it now crosses.
   if (moved && draw && kind === 'ridge-end') {
@@ -10814,7 +11339,7 @@ function ogeEndDrag(ev) {
     return;
   }
   ogeDragPendingDrop = null;
-  ogeCommit(g);
+  ogeCommit(g, guides);
 }
 viewport.addEventListener('pointerup', ogeEndDrag);
 viewport.addEventListener('pointercancel', ogeEndDrag);
@@ -11047,6 +11572,7 @@ function openOpenings() {
   };
 
   const perMM = ogScreenPerMM();
+  const nameVals = ogNameVals(unit, origin);
   for (const grid of ['screen', 'case']) {
     const name = grid === 'screen' ? 'my_screen_openings' : 'my_case_openings';
     const el = ogFieldInput(name);
@@ -11055,7 +11581,7 @@ function openOpenings() {
     const st = ogState[grid];
     if (!parsed.ok) { st.error = parsed.error; continue; }
     for (const row of parsed.rows) {
-      const simple = ogSimplify(row, grid, origin, perMM);
+      const simple = ogSimplify(row, grid, origin, perMM, nameVals);
       if (!simple) { st.kept.push(row.raw); continue; }
       if (simple.converted) st.converted++;
       // A saved "#" ID is a highlighted opening — reopen it highlighted. The
