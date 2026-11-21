@@ -13,6 +13,8 @@ notes, because nothing at this address could have been missed yet.
 
 ## Unreleased (next release)
 
+## Release 127
+
 - **If the app can't open the folder it remembered for you, it now says so and helps you pick it again.** The browser keeps its own memory of your project folder, and once in a while that memory goes bad, most often after a browser update. Until now, clicking **Open Project…** or your folder in **Recent projects** then did nothing at all, and the only cure was to clear the site's data in the browser's settings. Now a message tells you the folder couldn't be opened, the app forgets it, and the message's **Pick a different folder…** button opens the folder picker so you can choose the same folder again. Your designs are safe the whole time: they live in the folder, not in the browser.
 - **Recent projects now ends with Pick a different folder….** With no project open, the **Recent projects** list under **Open Project…** has the same **Pick a different folder…** choice that **Change Project…** has. It always goes straight to the folder picker, skipping the folder the app remembers.
 - **Snap's dashed lines now say what they are.** On the “by eye” tab of Custom Openings, each dashed line that appears as a shape lines up carries a label, such as “middle of the screen”, “middle of the grid”, “edge of an opening” or “middle of a support”, so you know exactly what your shape has lined up with. Where two lines fall in the same place, both are named: “middle of the screen and the grid”. The label stays in view however you turn or zoom the keyguard, and moves along its line rather than hide behind the Custom Openings window.
