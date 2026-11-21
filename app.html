@@ -978,7 +978,7 @@
       <button id="oge-add-support" type="button" title="Then click on the keyguard for a 10 mm support, or drag to draw one across an opening">+ Support</button>
       <button id="oge-add-arc" type="button" title="Then click one of the ringed square corners to round it, or drag from it to set how much">+ Rounded corner</button>
       <button id="oge-del" type="button" title="Delete the selected opening(s)">Delete</button>
-      <label id="oge-snap-label" title="Line shapes up with the middle of the screen, the grid or another opening, and their edges with the edges of other openings, as you draw, move or size them. A dashed line shows which, and says what it is. Hold Alt to place one freely."><input type="checkbox" id="oge-snap"> Snap</label>
+      <label id="oge-snap-label" title="Line shapes up with the middle of the screen, the grid or another opening, and their edges with the edges of the screen, the grid and other openings, as you draw, move or size them. A dashed line shows which, and says what it is. Hold Alt to place one freely."><input type="checkbox" id="oge-snap"> Snap</label>
     </div>
     <div id="oge-blocked"></div>
    </div>
@@ -1784,6 +1784,7 @@ const RELEASE_NOTES = {
     "If the app can't open the folder it remembered for you, it now says so and helps you pick it again. The browser keeps its own memory of your project folder, and once in a while that memory goes bad, most often after a browser update. Until now, clicking Open Project… or your folder in Recent projects then did nothing at all, and the only cure was to clear the site's data in the browser's settings. Now a message tells you the folder couldn't be opened, the app forgets it, and the message's Pick a different folder… button opens the folder picker so you can choose the same folder again. Your designs are safe the whole time: they live in the folder, not in the browser.",
     "Recent projects now ends with Pick a different folder…. With no project open, the Recent projects list under Open Project… has the same Pick a different folder… choice that Change Project… has. It always goes straight to the folder picker, skipping the folder the app remembers.",
     "Snap's dashed lines now say what they are. On the “by eye” tab of Custom Openings, each dashed line that appears as a shape lines up carries a label, such as “middle of the screen”, “middle of the grid”, “edge of an opening” or “middle of a support”, so you know exactly what your shape has lined up with. Where two lines fall in the same place, both are named: “middle of the screen and the grid”. The label stays in view however you turn or zoom the keyguard, and moves along its line rather than hide behind the Custom Openings window.",
+    "Snap now lines shapes up with the edges of the screen and the grid. As you move or size a shape on the “by eye” tab, its left, right, top or bottom edge lines up with the matching edge of the screen or of the grid, and a ridge or support lines up by its ends, so you can, for example, stop a support exactly at the top of the grid. The label names the edge: “top edge of the grid”, or “left edge of the screen and the grid” where they fall together. Lining up with the grid's edges needs version 100 or later of the keyguard designer file; with an older one, shapes line up with the screen's edges and the grid's middle.",
     "Snap no longer lines shapes up with the middle of the keyguard. Everything on the “by eye” tab is measured from the screen, so a shape lined up with the middle of the keyguard was really placed at a distance from the screen's corner, and changing the case opening could leave it off center. When the sides of your case opening are unequal, the two middles are close enough to mistake for each other. Line shapes up with the middle of the screen or the grid instead.",
     "A ridge or support you draw now snaps where it starts. With Snap ticked, the spot where you press to draw a ridge or support lines up with a nearby middle or edge, across and up and down, so a support drawn up from the middle of the screen really sits on that middle. Until now only its length lined up as you drew it, and the bar itself stayed wherever you pressed."
   ]
@@ -4368,6 +4369,11 @@ async function doRender() {
         const gx = line.match(/(?:^|[\s,])gcx\s*=\s*(-?\d+(?:\.\d+)?(?:e-?\d+)?)/);
         const gy = line.match(/(?:^|[\s,])gcy\s*=\s*(-?\d+(?:\.\d+)?(?:e-?\d+)?)/);
         if (gx && gy) { project.dims.gcx = +gx[1]; project.dims.gcy = +gy[1]; }
+        // The grid's edges (keyguard file v100 and later): left, right, bottom, top.
+        for (const k of ['gx0', 'gx1', 'gy0', 'gy1']) {
+          const mk = line.match(new RegExp(`(?:^|[\\s,])${k}\\s*=\\s*(-?\\d+(?:\\.\\d+)?(?:e-?\\d+)?)`));
+          if (mk) project.dims[k] = +mk[1];
+        }
         // The by-eye openings canvas is drawn from these numbers, so a panel
         // waiting on the first render can now show itself.
         ogeRefresh();
@@ -7902,7 +7908,7 @@ function movesHTML() {
     <h4>Moving and shaping</h4><table>
       ${row('Drag', 'Moves what you drag. Dragging anywhere else turns the keyguard.')}
       ${row('Shift + drag', 'Keeps to a straight line.')}
-      ${row('Snap', 'With Snap ticked, a shape lines its middle up with the middle of the screen, the grid or another opening, and its edges up with the edges of other openings, as you draw, move or size it; a dashed line shows which, labeled with what it is. A ridge or support lines up by its ends too.')}
+      ${row('Snap', 'With Snap ticked, a shape lines its middle up with the middle of the screen, the grid or another opening, and its edges up with the edges of the screen, the grid and other openings, as you draw, move or size it; a dashed line shows which, labeled with what it is. A ridge or support lines up by its ends too.')}
       ${row('Alt + drag', 'Places the shape freely, without snapping.')}
       ${row(`${k} + drag`, 'Leaves a copy behind and drags the copy.')}
       ${row('Arrow keys', 'Nudge the selection 1 mm. Hold Shift for 10 mm.')}
@@ -9222,8 +9228,8 @@ function ogeSetDrawing(kind) {
 
 // ---- Snap ------------------------------------------------------------------
 // With Snap ticked (Ken, 20 Nov 2026), a shape being drawn, moved or sized lines
-// its middle up with the middle of the screen and of the grid, across and up
-// and down, once it comes within OGE_GUIDE_PX screen pixels of one — measured on
+// its middle up with the middle of the screen and of the grid, and its edges up
+// with their edges, across and up and down, once it comes within OGE_GUIDE_PX screen pixels of one — measured on
 // screen, so it feels the same at any zoom. A dashed line shows what it lined up
 // with while the drag lasts, labeled with what that line is. Ridges and supports
 // line up by their middle and by their ends. Holding Alt places a shape freely
@@ -9262,18 +9268,36 @@ function ogeSnapLines() {
     const b = kg ? new THREE.Box3().setFromObject(kg) : null;
     ogeSnapCache = { mesh: kg, box: (b && Number.isFinite(b.min.x)) ? b : null };
   }
-  const xs = [0], ys = [0];
+  const xs = [0], ys = [0], ex = [], ey = [];
   const names = [
     { axis: 'x', at: 0, what: 'middle', of: 'the screen', rank: 0 },
     { axis: 'y', at: 0, what: 'middle', of: 'the screen', rank: 0 },
   ];
+  // Edges (Ken, 20 Nov 2026): a shape's edge, or a ridge's or support's end,
+  // lines up with the edges of the screen and the grid. On the model, up is the
+  // top of the screen.
+  const edges = (of, x0, x1, y0, y1) => {
+    ex.push(x0, x1); ey.push(y0, y1);
+    names.push({ axis: 'x', at: x0, what: 'edge', word: 'left edge',   of, rank: 0 },
+               { axis: 'x', at: x1, what: 'edge', word: 'right edge',  of, rank: 0 },
+               { axis: 'y', at: y0, what: 'edge', word: 'bottom edge', of, rank: 0 },
+               { axis: 'y', at: y1, what: 'edge', word: 'top edge',    of, rank: 0 });
+  };
   const d = (project && project.dims) || {};
+  if (d.swm > 0 && d.shm > 0) edges('the screen', -d.swm / 2, d.swm / 2, -d.shm / 2, d.shm / 2);
+  // In keyguard inset mode the app sits inside a border on the screen, and its
+  // edges are lines of their own.
+  if (d.awm > 0 && d.ahm > 0 && (Math.abs(d.awm - d.swm) > 0.01 || Math.abs(d.ahm - d.shm) > 0.01)) {
+    edges('the app', -d.awm / 2, d.awm / 2, -d.ahm / 2, d.ahm / 2);
+  }
   if (Number.isFinite(d.gcx) && Number.isFinite(d.gcy)) {
     xs.push(d.gcx); ys.push(d.gcy);
     names.push({ axis: 'x', at: d.gcx, what: 'middle', of: 'the grid', rank: 0 },
                { axis: 'y', at: d.gcy, what: 'middle', of: 'the grid', rank: 0 });
   }
-  return { xs, ys, names, box: ogeSnapCache.box };
+  // The grid's edges are reported by keyguard file v100 and later.
+  if ([d.gx0, d.gx1, d.gy0, d.gy1].every(Number.isFinite)) edges('the grid', d.gx0, d.gx1, d.gy0, d.gy1);
+  return { xs, ys, ex, ey, names, box: ogeSnapCache.box };
 }
 
 // The words on a dashed line: what it is the middle or edge of. `kind` is which
@@ -9285,8 +9309,16 @@ function ogeGuideLabel(names, axis, at, kind) {
   const here = (names || []).filter(n => n.axis === axis && n.what === kind && Math.abs(n.at - at) < 0.01);
   if (!here.length) return '';
   const best = Math.min(...here.map(n => n.rank));
-  const ofs = [...new Set(here.filter(n => n.rank === best).map(n => n.of))];
-  return `${kind} of ${ofs.length > 1 ? ofs.slice(0, -1).join(', ') + ' and ' + ofs[ofs.length - 1] : ofs[0]}`;
+  // Grouped by the word — "left edge of the screen and the grid" — keeping the
+  // order the lines were listed in.
+  const groups = new Map();
+  for (const n of here.filter(n => n.rank === best)) {
+    const w = n.word || n.what;
+    if (!groups.has(w)) groups.set(w, []);
+    if (!groups.get(w).includes(n.of)) groups.get(w).push(n.of);
+  }
+  const and = list => list.length > 1 ? list.slice(0, -1).join(', ') + ' and ' + list[list.length - 1] : list[0];
+  return and([...groups].map(([w, ofs]) => `${w} of ${and(ofs)}`));
 }
 
 // OGE_GUIDE_PX screen pixels, in model millimetres, near model point `at`.
@@ -9541,7 +9573,7 @@ function ogeDragLines(drag, g) {
   // is read off the model at the same place.
   const names = [...base.names];
   const name = (axis, at, what, of, rank) => names.push({ axis, at, what, of, rank });
-  const ex = [], ey = [];
+  const ex = [...base.ex], ey = [...base.ey];
   for (const b of loops) {
     const mx = (b.x0 + b.x1) / 2, my = (b.y0 + b.y1) / 2;
     xs.push(mx); ys.push(my);
