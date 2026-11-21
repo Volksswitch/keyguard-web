@@ -90,8 +90,8 @@ d.table(['Move', 'What it does'], [
     ['Drag', 'Move what you drag. Dragging anywhere else turns the keyguard.'],
     ['Shift + drag', 'Keep to a straight line.'],
     ['Ctrl + drag', 'Leave a copy behind and drag the copy.'],
-    ['Snap, Alt + drag', 'Tick Snap to line shapes up with the middles and edges of the keyguard, '
-     'screen, grid and other openings. Alt places one freely.'],
+    ['Snap, Alt + drag', 'Tick Snap to line shapes up with the screen, grid and other openings; '
+     'a label names the line. Alt places one freely.'],
     ['Arrow keys', 'Nudge 1 mm. Hold Shift for 10 mm.'],
     ['Handles, yellow dot', "Resize (Shift keeps the shape, Ctrl the center; a circle's side "
      'handle makes a hot dog); round corners.'],

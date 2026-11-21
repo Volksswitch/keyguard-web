@@ -305,11 +305,14 @@ d.table(['Move', 'What it does'], [
     ['Shift + drag', 'Keeps to a straight line.'],
     ['Ctrl + drag', 'Leaves a copy behind and drags the copy.'],
     ['Shift + Ctrl + drag', 'Makes a copy and moves the copy in a straight line'],
-    ['Snap', "Tick Snap and, as you move or size a shape, its middle lines up with the middle of "
-     "the keyguard, the screen, the grid or another opening, and its edges with the edges of "
-     "other openings. A dashed line shows what it lined up with, and the nearest line wins. A "
-     "ridge or support lines up by its ends too, so a support can stop exactly at an opening's "
-     "wall. Lining up with the grid needs version 99 or later of the keyguard designer file."],
+    ['Snap', "Tick Snap and, as you draw, move or size a shape, its middle lines up with the middle of "
+     "the screen, the grid or another opening, and its edges with the edges of the screen, the "
+     "grid and other openings. A dashed line shows what it lined up with, and its label says what "
+     "that line is; the nearest line wins. A ridge or support lines up by its ends too, so a "
+     "support can stop exactly at an opening's wall. A shape lined up with the screen or the grid "
+     "stays on that line if you later change the tablet, the padding or the bars. Dragging it off "
+     "the line, nudging it or typing a number lets go. Lining up with the grid needs version 99 or "
+     "later of the keyguard designer file, and with its edges version 100."],
     ['Alt + drag', 'Places the shape freely, without snapping.'],
     ['Arrow keys', 'Nudge the selection 1 mm. Hold Shift for 10 mm.'],
     ['Handles', "Drag one to resize an opening, or drag a ridge's or support's end to lengthen, shorten or "
@@ -341,6 +344,10 @@ d.b("**Case openings** are measured in millimeters from the lower-left corner of
     "opening. They're for openings outside the screen, and they exist only on this tab.")
 d.b("Each opening is positioned by its center. For a circle, the height is the diameter. A hot "
     "dog takes only a height and a width. Every change on this tab can be undone.")
+d.b("A number lined up by eye with the screen or the grid says so underneath, for example "
+    "“= middle of grid” or “starts on left edge of grid”. It moves with that "
+    "line when the tablet, the padding or the bars change. Typing a number in its place lets go "
+    "of the line.")
 d.b("A tinted box holds a number you've changed but not applied. Press Enter, or click another "
     "box, to update the keyguard.")
 d.b("**+ Add opening** adds a row. Ridges are listed here too, with their angle; a ridge's x and "
