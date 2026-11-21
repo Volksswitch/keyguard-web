@@ -419,6 +419,10 @@
   #oge-overlay .oge-corner.hot { fill: #06c; fill-opacity: 0.35; stroke-width: 2.5; }
   /* Snap: the line a shape has just lined up with, while the drag lasts. */
   #oge-overlay .oge-guide { stroke: #e0007a; stroke-width: 1.2; stroke-dasharray: 6 4; }
+  /* …and what that line is, on a white halo so it reads over the keyguard. */
+  #oge-overlay .oge-guide-tag { font: 600 12px system-ui, sans-serif; fill: #a3005a;
+                                stroke: #fff; stroke-width: 4px; stroke-linejoin: round;
+                                paint-order: stroke; }
 
   #openings-footer { padding: 8px 12px; border-top: 1px solid #ccc; background: #f0f0f0;
                      display: flex; align-items: center; gap: 8px; }
@@ -974,7 +978,7 @@
       <button id="oge-add-support" type="button" title="Then click on the keyguard for a 10 mm support, or drag to draw one across an opening">+ Support</button>
       <button id="oge-add-arc" type="button" title="Then click one of the ringed square corners to round it, or drag from it to set how much">+ Rounded corner</button>
       <button id="oge-del" type="button" title="Delete the selected opening(s)">Delete</button>
-      <label id="oge-snap-label" title="Line shapes up with the middle of the keyguard, the screen, the grid or another opening, and their edges with the edges of other openings, as you move or size them. Hold Alt to place one freely."><input type="checkbox" id="oge-snap"> Snap</label>
+      <label id="oge-snap-label" title="Line shapes up with the middle of the screen, the grid or another opening, and their edges with the edges of other openings, as you draw, move or size them. A dashed line shows which, and says what it is. Hold Alt to place one freely."><input type="checkbox" id="oge-snap"> Snap</label>
     </div>
     <div id="oge-blocked"></div>
    </div>
@@ -1778,7 +1782,10 @@ const RELEASE_NOTES = {
   ],
   "127": [
     "If the app can't open the folder it remembered for you, it now says so and helps you pick it again. The browser keeps its own memory of your project folder, and once in a while that memory goes bad, most often after a browser update. Until now, clicking Open Project… or your folder in Recent projects then did nothing at all, and the only cure was to clear the site's data in the browser's settings. Now a message tells you the folder couldn't be opened, the app forgets it, and the message's Pick a different folder… button opens the folder picker so you can choose the same folder again. Your designs are safe the whole time: they live in the folder, not in the browser.",
-    "Recent projects now ends with Pick a different folder…. With no project open, the Recent projects list under Open Project… has the same Pick a different folder… choice that Change Project… has. It always goes straight to the folder picker, skipping the folder the app remembers."
+    "Recent projects now ends with Pick a different folder…. With no project open, the Recent projects list under Open Project… has the same Pick a different folder… choice that Change Project… has. It always goes straight to the folder picker, skipping the folder the app remembers.",
+    "Snap's dashed lines now say what they are. On the “by eye” tab of Custom Openings, each dashed line that appears as a shape lines up carries a label, such as “middle of the screen”, “middle of the grid”, “edge of an opening” or “middle of a support”, so you know exactly what your shape has lined up with. Where two lines fall in the same place, both are named: “middle of the screen and the grid”. The label stays in view however you turn or zoom the keyguard, and moves along its line rather than hide behind the Custom Openings window.",
+    "Snap no longer lines shapes up with the middle of the keyguard. Everything on the “by eye” tab is measured from the screen, so a shape lined up with the middle of the keyguard was really placed at a distance from the screen's corner, and changing the case opening could leave it off center. When the sides of your case opening are unequal, the two middles are close enough to mistake for each other. Line shapes up with the middle of the screen or the grid instead.",
+    "A ridge or support you draw now snaps where it starts. With Snap ticked, the spot where you press to draw a ridge or support lines up with a nearby middle or edge, across and up and down, so a support drawn up from the middle of the screen really sits on that middle. Until now only its length lined up as you drew it, and the bar itself stayed wherever you pressed."
   ]
 };
 const RELEASE_DATES = {
@@ -7895,7 +7902,7 @@ function movesHTML() {
     <h4>Moving and shaping</h4><table>
       ${row('Drag', 'Moves what you drag. Dragging anywhere else turns the keyguard.')}
       ${row('Shift + drag', 'Keeps to a straight line.')}
-      ${row('Snap', 'With Snap ticked, a shape lines its middle up with the middle of the keyguard, the screen, the grid or another opening, and its edges up with the edges of other openings, as you move or size it; a dashed line shows which. A ridge or support lines up by its ends too.')}
+      ${row('Snap', 'With Snap ticked, a shape lines its middle up with the middle of the screen, the grid or another opening, and its edges up with the edges of other openings, as you draw, move or size it; a dashed line shows which, labeled with what it is. A ridge or support lines up by its ends too.')}
       ${row('Alt + drag', 'Places the shape freely, without snapping.')}
       ${row(`${k} + drag`, 'Leaves a copy behind and drags the copy.')}
       ${row('Arrow keys', 'Nudge the selection 1 mm. Hold Shift for 10 mm.')}
@@ -9214,13 +9221,14 @@ function ogeSetDrawing(kind) {
 }
 
 // ---- Snap ------------------------------------------------------------------
-// With Snap ticked (Ken, 20 Nov 2026), a shape being moved or sized lines its
-// middle up with the middle of the keyguard, of the screen and of the grid,
-// across and up and down, once it comes within OGE_GUIDE_PX screen pixels of
-// one — measured on screen, so it feels the same at any zoom. A dashed line
-// shows what it lined up with while the drag lasts. Ridges and supports line up
-// by their middle and by their ends. Holding Alt places a shape freely for that
-// drag, as in PowerPoint; arrow-key nudges never snap; the box is remembered.
+// With Snap ticked (Ken, 20 Nov 2026), a shape being drawn, moved or sized lines
+// its middle up with the middle of the screen and of the grid, across and up
+// and down, once it comes within OGE_GUIDE_PX screen pixels of one — measured on
+// screen, so it feels the same at any zoom. A dashed line shows what it lined up
+// with while the drag lasts, labeled with what that line is. Ridges and supports
+// line up by their middle and by their ends. Holding Alt places a shape freely
+// for that drag, as in PowerPoint; arrow-key nudges never snap; the box is
+// remembered.
 const OGE_GUIDE_PX = 8;
 const OGE_SNAP_KEY = 'keyguard:oge-snap';
 const ogeSnapBox = document.getElementById('oge-snap');
@@ -9234,9 +9242,18 @@ const ogeSnapOn = ev => ogeSnapBox.checked && !(ev && ev.altKey);
 
 // The lines a shape can line up with, in model millimetres: `xs` are the
 // up-and-down lines, `ys` the across ones. The model is centred on the screen,
-// so the screen's middle is 0; the keyguard's is read off the model itself, so
-// a keyguard off-centre in its case is honoured; the grid's is reported by the
-// keyguard file (v99 and later — an older one simply offers no grid line).
+// so the screen's middle is 0; the grid's is reported by the keyguard file (v99
+// and later — an older one simply offers no grid line).
+//
+// The keyguard's own middle is NOT a line (Ken, 20 Nov 2026). Everything on this
+// tab is measured from the screen, so the keyguard's middle means nothing to a
+// screen shape — and in a case with unequal sides it lay a hair from the
+// screen's, close enough to be caught in its place. The keyguard's box is still
+// kept: the dashed lines are drawn across it.
+//
+// `names` says what each line is, for the label on its dashed line:
+// {axis, at, what: 'middle' | 'edge', of, rank}. Where lines coincide, the label
+// names those of the best (lowest) rank.
 let ogeSnapCache = { mesh: null, box: null };
 function ogeSnapLines() {
   const kg = currentMesh && currentMesh.children
@@ -9246,11 +9263,30 @@ function ogeSnapLines() {
     ogeSnapCache = { mesh: kg, box: (b && Number.isFinite(b.min.x)) ? b : null };
   }
   const xs = [0], ys = [0];
-  const b = ogeSnapCache.box;
-  if (b) { xs.push((b.min.x + b.max.x) / 2); ys.push((b.min.y + b.max.y) / 2); }
+  const names = [
+    { axis: 'x', at: 0, what: 'middle', of: 'the screen', rank: 0 },
+    { axis: 'y', at: 0, what: 'middle', of: 'the screen', rank: 0 },
+  ];
   const d = (project && project.dims) || {};
-  if (Number.isFinite(d.gcx) && Number.isFinite(d.gcy)) { xs.push(d.gcx); ys.push(d.gcy); }
-  return { xs, ys, box: b };
+  if (Number.isFinite(d.gcx) && Number.isFinite(d.gcy)) {
+    xs.push(d.gcx); ys.push(d.gcy);
+    names.push({ axis: 'x', at: d.gcx, what: 'middle', of: 'the grid', rank: 0 },
+               { axis: 'y', at: d.gcy, what: 'middle', of: 'the grid', rank: 0 });
+  }
+  return { xs, ys, names, box: ogeSnapCache.box };
+}
+
+// The words on a dashed line: what it is the middle or edge of. `kind` is which
+// list the line was found in — the middle lines or the edge lines — not which
+// part of the shape met it (a support's end can meet either). Lines that
+// coincide are all named when they are of the same rank: "middle of the screen
+// and the grid".
+function ogeGuideLabel(names, axis, at, kind) {
+  const here = (names || []).filter(n => n.axis === axis && n.what === kind && Math.abs(n.at - at) < 0.01);
+  if (!here.length) return '';
+  const best = Math.min(...here.map(n => n.rank));
+  const ofs = [...new Set(here.filter(n => n.rank === best).map(n => n.of))];
+  return `${kind} of ${ofs.length > 1 ? ofs.slice(0, -1).join(', ') + ' and ' + ofs[ofs.length - 1] : ofs[0]}`;
 }
 
 // OGE_GUIDE_PX screen pixels, in model millimetres, near model point `at`.
@@ -9264,12 +9300,13 @@ function ogeSnapTol(g, at) {
 }
 
 // The smallest shift that puts one of `vals` on one of `lines`, if it is within
-// `tol`: {d, at}, or null.
-function ogeSnapShift(vals, lines, tol) {
+// `tol`: {d, at, kind}, or null. `kind` ('middle' or 'edge') says which list
+// `lines` is, for the dashed line's label.
+function ogeSnapShift(vals, lines, tol, kind) {
   let best = null;
   for (const v of vals) for (const at of lines) {
     const d = at - v;
-    if (Math.abs(d) <= tol && (!best || Math.abs(d) < Math.abs(best.d))) best = { d, at };
+    if (Math.abs(d) <= tol && (!best || Math.abs(d) < Math.abs(best.d))) best = { d, at, kind };
   }
   return best;
 }
@@ -9313,11 +9350,11 @@ function ogeSnapMove(drag, dx, dy, g, ev, lockX, lockY) {
   const L = ogeDragLines(drag, g);
   const tol = ogeSnapTol(g, { x: pts[0].x + dx, y: pts[0].y + dy });
   const pick = (mids, edges, lines, elines) =>
-    ogeNearer(ogeSnapShift(mids, lines, tol), ogeSnapShift(edges, elines, tol));
+    ogeNearer(ogeSnapShift(mids, lines, tol, 'middle'), ogeSnapShift(edges, elines, tol, 'edge'));
   const sx = lockX ? null : pick(pts.map(q => q.x + dx), E.xs.concat(ends.map(q => q.x)).map(v => v + dx), L.xs, L.ex);
   const sy = lockY ? null : pick(pts.map(q => q.y + dy), E.ys.concat(ends.map(q => q.y)).map(v => v + dy), L.ys, L.ey);
-  if (sx) { dx += sx.d; ogeGuides.push({ axis: 'x', at: sx.at }); }
-  if (sy) { dy += sy.d; ogeGuides.push({ axis: 'y', at: sy.at }); }
+  if (sx) { dx += sx.d; ogeGuides.push({ axis: 'x', at: sx.at, kind: sx.kind }); }
+  if (sy) { dy += sy.d; ogeGuides.push({ axis: 'y', at: sy.at, kind: sy.kind }); }
   return { dx, dy };
 }
 
@@ -9336,18 +9373,18 @@ function ogeSnapResize(row, drag, p, g, ev) {
   if (horiz && vert && (ev.shiftKey || row.shape === 'c')) return p;
   const L = ogeDragLines(drag, g), tol = ogeSnapTol(g, p), q = { ...p };
   const side = (v, fixed, lines, elines) => {
-    const mid = ogeSnapShift([(v + fixed) / 2], lines, tol);
-    const edge = ogeSnapShift([v], elines, tol);
+    const mid = ogeSnapShift([(v + fixed) / 2], lines, tol, 'middle');
+    const edge = ogeSnapShift([v], elines, tol, 'edge');
     const s = ogeNearer(mid, edge);
-    return !s ? null : { to: v + (s === mid ? 2 * s.d : s.d), at: s.at };
+    return !s ? null : { to: v + (s === mid ? 2 * s.d : s.d), at: s.at, kind: s.kind };
   };
   if (horiz) {
     const s = side(p.x, hasE ? b.cx - b.w / 2 : b.cx + b.w / 2, L.xs, L.ex);
-    if (s) { q.x = s.to; ogeGuides.push({ axis: 'x', at: s.at }); }
+    if (s) { q.x = s.to; ogeGuides.push({ axis: 'x', at: s.at, kind: s.kind }); }
   }
   if (vert) {
     const s = side(p.y, hasN ? b.cy - b.h / 2 : b.cy + b.h / 2, L.ys, L.ey);
-    if (s) { q.y = s.to; ogeGuides.push({ axis: 'y', at: s.at }); }
+    if (s) { q.y = s.to; ogeGuides.push({ axis: 'y', at: s.at, kind: s.kind }); }
   }
   return q;
 }
@@ -9366,13 +9403,34 @@ function ogeSnapLineEnd(row, drag, p, g, ev) {
   const L = ogeDragLines(drag, g), tol = ogeSnapTol(g, p);
   const lines = axis === 'x' ? L.xs : L.ys, elines = axis === 'x' ? L.ex : L.ey;
   const v = p[axis], f = drag.fixed[axis];
-  const end = ogeNearer(ogeSnapShift([v], lines, tol), ogeSnapShift([v], elines, tol));
-  const mid = ogeSnapShift([(v + f) / 2], lines, tol);
-  const pick = (end && (!mid || Math.abs(end.d) <= Math.abs(mid.d))) ? { to: v + end.d, at: end.at }
-             : mid ? { to: v + 2 * mid.d, at: mid.at } : null;
+  const end = ogeNearer(ogeSnapShift([v], lines, tol, 'middle'), ogeSnapShift([v], elines, tol, 'edge'));
+  const mid = ogeSnapShift([(v + f) / 2], lines, tol, 'middle');
+  const pick = (end && (!mid || Math.abs(end.d) <= Math.abs(mid.d))) ? { to: v + end.d, at: end.at, kind: end.kind }
+             : mid ? { to: v + 2 * mid.d, at: mid.at, kind: mid.kind } : null;
   if (!pick) return p;
-  ogeGuides.push({ axis, at: pick.at });
+  ogeGuides.push({ axis, at: pick.at, kind: pick.kind });
   return { ...p, [axis]: pick.to };
+}
+
+// Drawing a ridge or support: where its first end goes. The point pressed lines
+// up, across and up and down, with a middle line or an edge — so a support drawn
+// up from the middle of the screen really starts on that middle (Ken, 20 Nov
+// 2026: until then only its length lined up while it was drawn, and a dashed
+// line could appear while the bar itself sat wherever the mouse went down).
+// Worked out before the new shape exists, so it can't line up with itself.
+// Returns the point and the dashed lines that go with it, which stay up for the
+// whole of the drawing gesture.
+function ogeSnapDrawStart(p, g, ev) {
+  if (!ogeSnapOn(ev)) return { p, guides: [] };
+  const L = ogeDragLines({ snapFrom: [] }, g), tol = ogeSnapTol(g, p);
+  const q = { ...p }, guides = [];
+  for (const axis of ['x', 'y']) {
+    const lines = axis === 'x' ? L.xs : L.ys, elines = axis === 'x' ? L.ex : L.ey;
+    const s = ogeNearer(ogeSnapShift([p[axis]], lines, tol, 'middle'),
+                        ogeSnapShift([p[axis]], elines, tol, 'edge'));
+    if (s) { q[axis] += s.d; guides.push({ axis, at: s.at, kind: s.kind }); }
+  }
+  return { p: q, guides, names: L.names };
 }
 
 // ---- Snap: the middles of other shapes and openings (stage 2) ---------------
@@ -9478,11 +9536,19 @@ function ogeDragLines(drag, g) {
     }
     loops.push(...groups);
   }
-  // Middles go to xs/ys; edges (stage 3) to ex/ey.
+  // Middles go to xs/ys; edges (stage 3) to ex/ey. Each is named for its label:
+  // a shape on this tab outranks the opening the keyguard cuts for it, which
+  // is read off the model at the same place.
+  const names = [...base.names];
+  const name = (axis, at, what, of, rank) => names.push({ axis, at, what, of, rank });
   const ex = [], ey = [];
   for (const b of loops) {
-    xs.push((b.x0 + b.x1) / 2); ys.push((b.y0 + b.y1) / 2);
+    const mx = (b.x0 + b.x1) / 2, my = (b.y0 + b.y1) / 2;
+    xs.push(mx); ys.push(my);
     ex.push(b.x0, b.x1); ey.push(b.y0, b.y1);
+    name('x', mx, 'middle', 'an opening', 2); name('y', my, 'middle', 'an opening', 2);
+    for (const v of [b.x0, b.x1]) name('x', v, 'edge', 'an opening', 2);
+    for (const v of [b.y0, b.y1]) name('y', v, 'edge', 'an opening', 2);
   }
   // The other shapes on this tab, by their middles — kept current, so one moved
   // a moment ago counts where it is now, not where the keyguard last showed it.
@@ -9490,12 +9556,19 @@ function ogeDragLines(drag, g) {
   ogState.screen.rows.forEach((row, i) => {
     if (still.has(i)) return;
     const m = ogeToModel(row, g);
+    const of = row.shape === 'support' ? 'a support' : row.shape === 'ridge' ? 'a ridge'
+             : 'a custom opening';
     const pt = ogeSnapPoints(m)[0];
-    if (pt) { xs.push(pt.x); ys.push(pt.y); }
+    if (pt) {
+      xs.push(pt.x); ys.push(pt.y);
+      name('x', pt.x, 'middle', of, 1); name('y', pt.y, 'middle', of, 1);
+    }
     const e = ogeShapeEdges(m);
     ex.push(...e.xs); ey.push(...e.ys);
+    for (const v of e.xs) name('x', v, 'edge', of, 1);
+    for (const v of e.ys) name('y', v, 'edge', of, 1);
   });
-  drag.lines = { xs, ys, ex, ey, box: base.box };
+  drag.lines = { xs, ys, ex, ey, names, box: base.box };
   return drag.lines;
 }
 
@@ -9988,6 +10061,71 @@ function ogeProject(x, y, z, rect) {
   return { x: (v.x * 0.5 + 0.5) * rect.width, y: (-v.y * 0.5 + 0.5) * rect.height };
 }
 
+// The label on a dashed line, A to C in overlay pixels (W x H). It must always
+// be readable however the model is turned or zoomed (Ken, 20 Nov 2026), so it is
+// put on the part of the line that is actually in view — at its top end for a
+// line that runs up and down on screen, its left end for one that runs across —
+// kept inside the view, and moved along the line if the Custom Openings window,
+// which floats over the view, would cover it. A line wholly out of view (it
+// can't be in practice: the shape on it is under the pointer) still gets its
+// label, at the nearest edge.
+const OGE_TAG_PAD = 6;
+function ogeGuideTag(text, A, C, W, H) {
+  const m = OGE_TAG_PAD;
+  const t = ogeEl('text', { class: 'oge-guide-tag', x: 0, y: 0 });
+  t.textContent = text;
+  ogeOverlay.appendChild(t);
+  let tw = 0;
+  try { tw = t.getComputedTextLength(); } catch (e) { /* not laid out */ }
+  if (!(tw > 0)) tw = text.length * 6.5;
+  const th = 13;
+
+  // The part of A-C inside the view (Liang-Barsky).
+  const dx = C.x - A.x, dy = C.y - A.y;
+  let t0 = 0, t1 = 1;
+  for (const [p, q] of [[-dx, A.x - m], [dx, W - m - A.x], [-dy, A.y - m], [dy, H - m - A.y]]) {
+    if (p === 0) { if (q < 0) { t0 = 1; t1 = 0; } continue; }
+    const r = q / p;
+    if (p < 0) t0 = Math.max(t0, r); else t1 = Math.min(t1, r);
+  }
+  const steep = Math.abs(dy) > Math.abs(dx);
+  let P, Q;
+  if (t0 <= t1) {
+    P = { x: A.x + t0 * dx, y: A.y + t0 * dy };
+    Q = { x: A.x + t1 * dx, y: A.y + t1 * dy };
+    if (steep ? Q.y < P.y : Q.x < P.x) [P, Q] = [Q, P];   // P: the top or left end
+  } else {
+    const mid = { x: Math.min(Math.max((A.x + C.x) / 2, m), W - m),
+                  y: Math.min(Math.max((A.y + C.y) / 2, m), H - m) };
+    P = Q = mid;
+  }
+
+  // The floating window, in overlay pixels, if it is over the view.
+  const vr = viewport.getBoundingClientRect();
+  const pr = ogPanel.classList.contains('open') ? ogPanel.getBoundingClientRect() : null;
+  const hide = pr ? { x0: pr.left - vr.left - 4, x1: pr.right - vr.left + 4,
+                      y0: pr.top - vr.top - 4, y1: pr.bottom - vr.top + 4 } : null;
+
+  // The text's box with its baseline-left at a spot by the line, kept in view.
+  const place = S => {
+    let x, y;
+    if (steep) { x = S.x + 5; y = S.y + th + 2; if (x + tw > W - m) x = S.x - 5 - tw; }
+    else       { x = S.x + 4; y = S.y - 5;      if (y - th < m) y = S.y + th + 4; }
+    x = Math.min(Math.max(x, m), W - m - tw);
+    y = Math.min(Math.max(y, m + th), H - m);
+    return { x, y };
+  };
+  const covered = s => hide && s.x < hide.x1 && s.x + tw > hide.x0 && s.y > hide.y0 && s.y - th < hide.y1;
+  let spot = null;
+  for (const f of [0, 0.15, 0.3, 0.5, 0.7, 0.85, 1]) {
+    const s = place({ x: P.x + f * (Q.x - P.x), y: P.y + f * (Q.y - P.y) });
+    if (!covered(s)) { spot = s; break; }
+  }
+  if (!spot) spot = place(P);
+  t.setAttribute('x', spot.x);
+  t.setAttribute('y', spot.y);
+}
+
 // Rebuilt when the selection changes; repositioned every frame, because the
 // model can be turned and zoomed while the panel is open.
 let ogeHandleDefs = [];      // {pos|'radius', model {x,y}} for the selected shape
@@ -10031,17 +10169,26 @@ function ogeSyncHandles() {
     ogeOverlay.appendChild(ogeEl('polygon', { class: 'oge-outline', points: pts.join(' ') }));
   }
 
-  // Snap: the lines lined up with, drawn right across the keyguard.
+  // Snap: the lines lined up with, drawn right across the keyguard, each with
+  // a label saying what it is.
   if (ogeDrag && ogeGuides.length) {
     const b = ogeSnapLines().box;
     const x0 = b ? b.min.x : -g.owm / 2 - 20, x1 = b ? b.max.x : g.owm / 2 + 20;
     const y0 = b ? b.min.y : -g.ohm / 2 - 20, y1 = b ? b.max.y : g.ohm / 2 + 20;
+    const names = (ogeDrag.lines && ogeDrag.lines.names) || ogeSnapLines().names;
+    const seen = new Set();
     for (const gd of ogeGuides) {
+      const key = `${gd.axis}|${gd.at.toFixed(3)}`;
+      if (seen.has(key)) continue;          // the same line, met twice
+      seen.add(key);
       const [a, c] = gd.axis === 'x'
         ? [ogeProject(gd.at, y0, g.topZ, rect), ogeProject(gd.at, y1, g.topZ, rect)]
         : [ogeProject(x0, gd.at, g.topZ, rect), ogeProject(x1, gd.at, g.topZ, rect)];
+      const A = { x: a.x + ox, y: a.y + oy }, C = { x: c.x + ox, y: c.y + oy };
       ogeOverlay.appendChild(ogeEl('line', { class: 'oge-guide',
-        x1: a.x + ox, y1: a.y + oy, x2: c.x + ox, y2: c.y + oy }));
+        x1: A.x, y1: A.y, x2: C.x, y2: C.y }));
+      const text = gd.label || ogeGuideLabel(names, gd.axis, gd.at, gd.kind);
+      if (text) ogeGuideTag(text, A, C, vrect.width, vrect.height);
     }
   }
 
@@ -10344,7 +10491,7 @@ viewport.addEventListener('pointerdown', ev => {
   if (!g) return;
 
   const what = (ev.target && ev.target.dataset) ? ev.target.dataset.oge : null;
-  const p = ogePlanePoint(ev, g);
+  let p = ogePlanePoint(ev, g);   // let: drawing a ridge or support lines it up
   if (!p) return;
 
   // + Ridge was pressed: this press draws one, wherever it lands — even on top
@@ -10382,6 +10529,9 @@ viewport.addEventListener('pointerdown', ev => {
   if (ogeDrawing === 'ridge' || ogeDrawing === 'support') {
     const kind = ogeDrawing;
     ogeSetDrawing(null);
+    // The first end lines up before the shape exists (see ogeSnapDrawStart).
+    const first = ogeSnapDrawStart(p, g, ev);
+    p = first.p;
     ogePush();
     const row = kind === 'ridge'
       ? ogRidgeSize({ id: 0, shape: 'ridge', h: 0, w: 0, cr: 0, x: 0, y: 0, len: 0, ang: 0 }, g.perMM)
@@ -10394,10 +10544,16 @@ viewport.addEventListener('pointerdown', ev => {
     const idx = ogState.screen.rows.length - 1;
     ogeSel = new Set([idx]);
     ogeRender();
+    // The first end's dashed lines stay up for the whole gesture: they are what
+    // says the bar itself is on the line, not just its far end.
+    const startGuides = first.guides.map(gd =>
+      ({ ...gd, label: ogeGuideLabel(first.names, gd.axis, gd.at, gd.kind) }));
     ogeStart(ev, {
       kind: 'ridge-end', idx, g, start: p, fixed: { x: p.x, y: p.y }, mid: { x: p.x, y: p.y },
-      moved: false, pushed: true, draw: { x: ev.clientX, y: ev.clientY },
+      moved: false, pushed: true, draw: { x: ev.clientX, y: ev.clientY }, startGuides,
     });
+    ogeGuides = [...startGuides];
+    ogeSyncHandles();
     return;
   }
 
@@ -10540,7 +10696,7 @@ function ogeDragMove(ev) {
     if (!ogeDrag.pushed) { ogePush(); ogeDrag.pushed = true; }
   }
 
-  ogeGuides = [];
+  ogeGuides = [...(ogeDrag.startGuides || [])];
   const snap = ogeSnapOn(ev);
   if (ogeDrag.kind === 'move') {
     let lockX = false, lockY = false;

@@ -22,6 +22,35 @@ quietly waits forever.
 
 ## Open
 
+### Snap lines that remember what they meant (Parts 2 and 3)
+- **Raised:** 2026-11-20 - Ken, after a support he placed by eye in a CODi case design
+  turned out to sit left of center. Part 1 (labels on the dashed lines, no "middle of the
+  keyguard" line, a drawn ridge or support snapping where it starts) is done in release 127.
+- **What's wanted:** when a shape snaps to one of the major lines, the instruction names
+  the line instead of a number, so a later change to the screen, padding or bars keeps it
+  there. Major lines only (Ken): the screen's edges and middle (0, sw/2, sw; the same for
+  sh) and the grid's edges and middle — the grid's middle written as left edge plus half
+  its width (gl + gw/2), since the grid doesn't start at the screen's corner. Not `cow`/`coh`
+  or the keyguard's middle: everything on the by-eye tab is measured from the screen. A
+  support stretched across the grid becomes start gl, length gw. Snaps to openings and
+  other shapes stay plain numbers.
+  - **Part 2, a keyguard delivery:** the `__KG_DIMS__` report gives the app only the grid's
+    middle (gcx/gcy). Add its edges so the app can draw a shape whose instruction names
+    them. The names themselves (gw, gh, gl, gr, gt, gb) are already in v99.
+  - **Part 3, the app:** both tabs read and show a named position as its number with a note
+    ("= middle of grid"); today a row with any formula is set aside unshown. Dragging off the
+    line, nudging or typing a number drops the name for that direction only. Write a name
+    only when the clinician's own keyguard file defines it. Undo keeps names.
+- **Why not now:** Ken asked for Part 1 first (20 Nov 2026); Part 3 is the larger piece and
+  needs Part 2 delivered.
+
+### Sync docs: Snap no longer lines up with the keyguard's middle
+- **Raised:** 2026-11-20 - Part 1 of the Snap work above.
+- **What's wanted:** the User Manual's by-eye table and the Quick Reference Card both say
+  Snap lines shapes up with the middle of the keyguard. After release 127, say the screen
+  and the grid, and mention the labels.
+- **Why not now:** documents follow the released app; "sync docs" after release 127.
+
 ### After release 116: pictures that still show versioned file names
 - **Raised:** 2026-10-26 - the plain file names change (`keyguard.scad`, `keyguard.json`),
   unreleased at the time of writing.
