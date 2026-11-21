@@ -34,9 +34,10 @@ quietly waits forever.
   or the keyguard's middle: everything on the by-eye tab is measured from the screen. A
   support stretched across the grid becomes start gl, length gw. Snaps to openings and
   other shapes stay plain numbers.
-  - **Part 2, a keyguard delivery:** the `__KG_DIMS__` report gives the app only the grid's
-    middle (gcx/gcy). Add its edges so the app can draw a shape whose instruction names
-    them. The names themselves (gw, gh, gl, gr, gt, gb) are already in v99.
+  - **Part 2, a keyguard delivery — code done 20 Nov 2026, not yet delivered:** keyguard
+    v100 (dev) reports the grid's edges as gx0/gx1/gy0/gy1, and the app already snaps to
+    them (release 127). Reaches clinicians with "bump keyguard designer" for v100. The
+    names themselves (gw, gh, gl, gr, gt, gb) are already in v99.
   - **Part 3, the app:** both tabs read and show a named position as its number with a note
     ("= middle of grid"); today a row with any formula is set aside unshown. Dragging off the
     line, nudging or typing a number drops the name for that direction only. Write a name
