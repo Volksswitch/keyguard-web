@@ -52,6 +52,26 @@ quietly waits forever.
   and the grid, and mention the labels.
 - **Why not now:** documents follow the released app; "sync docs" after release 127.
 
+### After release 127: publish the manual's "Pick a different folder…" changes and post the Known Issues entry
+- **Raised:** 2026-11-20 - Ken, after a second clinician's Open Project stopped doing anything
+  in one browser (the browser's memory of her folder had gone bad). The fix is in release 127.
+- **Already done, not published:** the User Manual's .docx (and its generator) now mention
+  **Pick a different folder…** in "Opening a project you already have" and have a
+  Troubleshooting row "The app says it couldn't open your project folder". Backup taken
+  20 Nov 2026.
+- **What's left, once 127 is live:** in the manual, set "Last updated", update the table of
+  contents, publish it (`--only manual --force` if it is the second change that day), check
+  links, report the old copies. Do this in the same "sync docs" as the Snap item above.
+  Then add to the Known Issues page (WordPress page 24563), under "Things that look like
+  faults but aren't", after "The browser asks again…", and update its "Last updated" date:
+  **The app says it couldn't open your project folder.** Now and then the browser's
+  memory of your project folder goes bad, most often after the browser updates itself.
+  Click **Pick a different folder…** in the message and choose the same folder again. Your
+  designs are safe in the folder itself.
+  Show Ken the wording before posting; posting needs his yes.
+- **Why not now:** the documents and the page must describe the released app; Ken is
+  releasing 127 in another session.
+
 ### After release 116: pictures that still show versioned file names
 - **Raised:** 2026-10-26 - the plain file names change (`keyguard.scad`, `keyguard.json`),
   unreleased at the time of writing.
