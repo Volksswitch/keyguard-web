@@ -24,12 +24,12 @@
       "signature": "a5a3e9f6a299a73ceb1a77cd4c928db2da3b27781340fa927a8ec45a391401d2",
       "seconds": 89,
       "video": {
-        "id": 24721,
-        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Keyguard-Designer-1-2-Opening-the-App-and-Starting-a-Project-1.mp4"
+        "id": 25239,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/11/Keyguard-Designer-1-2-Opening-the-App-and-Starting-a-Project.mp4"
       },
       "guide": {
-        "id": 24722,
-        "url": "https://volksswitch.org/wp-content/uploads/2026/10/Keyguard-Designer-1-2-Opening-the-App-and-Starting-a-Project-Guide-1.pdf"
+        "id": 25240,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/11/Keyguard-Designer-1-2-Opening-the-App-and-Starting-a-Project-Guide.pdf"
       },
       "page": {
         "id": 24624,
@@ -184,12 +184,12 @@
       "signature": "db952470bdacd4f05de5720159adc16048931109d667f464afd60faba999907a",
       "seconds": 61,
       "video": {
-        "id": 25214,
-        "url": "https://volksswitch.org/wp-content/uploads/2026/11/Keyguard-Designer-3-2-Placing-Openings-by-Eye-1.mp4"
+        "id": 25241,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/11/Keyguard-Designer-3-2-Placing-Openings-by-Eye.mp4"
       },
       "guide": {
-        "id": 25215,
-        "url": "https://volksswitch.org/wp-content/uploads/2026/11/Keyguard-Designer-3-2-Placing-Openings-by-Eye-Guide-1.pdf"
+        "id": 25242,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/11/Keyguard-Designer-3-2-Placing-Openings-by-Eye-Guide.pdf"
       },
       "page": {
         "id": 24634,
@@ -328,12 +328,12 @@
       "signature": "8fe91ceedb49066fc706a92618f43538c5545ad2e8092b6accbcffe8b0514e85",
       "seconds": 33,
       "video": {
-        "id": 25158,
-        "url": "https://volksswitch.org/wp-content/uploads/2026/11/Keyguard-Designer-4-2-When-a-Keyguard-Update-Is-Offered-1.mp4"
+        "id": 25243,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/11/Keyguard-Designer-4-2-When-a-Keyguard-Update-Is-Offered.mp4"
       },
       "guide": {
-        "id": 25159,
-        "url": "https://volksswitch.org/wp-content/uploads/2026/11/Keyguard-Designer-4-2-When-a-Keyguard-Update-Is-Offered-Guide-1.pdf"
+        "id": 25244,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/11/Keyguard-Designer-4-2-When-a-Keyguard-Update-Is-Offered-Guide.pdf"
       },
       "page": {
         "id": 24643,
@@ -424,12 +424,12 @@
       "signature": "f80adee35b62c33d1f42229a4e8d143f40475d5ab8793b3a8fff860384107d32",
       "seconds": 39,
       "video": {
-        "id": 25220,
-        "url": "https://volksswitch.org/wp-content/uploads/2026/11/Keyguard-Designer-6-3-Getting-IT-on-Board-2.mp4"
+        "id": 25245,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/11/Keyguard-Designer-6-3-Getting-IT-on-Board.mp4"
       },
       "guide": {
-        "id": 25221,
-        "url": "https://volksswitch.org/wp-content/uploads/2026/11/Keyguard-Designer-6-3-Getting-IT-on-Board-Guide-2.pdf"
+        "id": 25246,
+        "url": "https://volksswitch.org/wp-content/uploads/2026/11/Keyguard-Designer-6-3-Getting-IT-on-Board-Guide.pdf"
       },
       "page": {
         "id": 24649,
@@ -667,9 +667,9 @@
     "url": "https://volksswitch.org/wp-content/uploads/2026/11/Learning-the-Keyguard-Designer.pdf"
   },
   "guideBook": {
-    "signature": "21ef7d340f1f3a01d246a37973fba24a194d7da1e783ef05e290277b434b15ab",
-    "id": 25224,
-    "url": "https://volksswitch.org/wp-content/uploads/2026/11/Keyguard-Designer-How-To-Guides-2.pdf"
+    "signature": "c7eacb210f1c8d6121ff234b1dfa7e9be94258d40e3b6f06070f86c0d7d666de",
+    "id": 25247,
+    "url": "https://volksswitch.org/wp-content/uploads/2026/11/Keyguard-Designer-How-To-Guides.pdf"
   },
   "oldCopies": []
 }
