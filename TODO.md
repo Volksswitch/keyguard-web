@@ -22,30 +22,43 @@ quietly waits forever.
 
 ## Open
 
-### Post the Known Issues entry for "couldn't open your project folder"
+### Post the Known Issues entry for "Open Project does nothing"
 - **Raised:** 2026-11-20 - Ken, after a second clinician's Open Project stopped doing anything
   in one browser (the browser's memory of her folder had gone bad). The fix is in release 127,
   now live, and the User Manual describing it was published the same day.
-- **What actually fixed it (Ken, 2026-11-23):** deleting all of the site's data and installing
-  the app again. Release 126 had no way to reach the folder picker past the remembered
-  folder, so **Pick a different folder…** has never been tried on a real broken memory. The
-  entry must not offer it as the only cure.
+- **What fixed it on 20 Nov (Ken's email thread with the clinician, read 2026-11-23):**
+  uninstalling and reinstalling the app, tried first, did NOT help. Deleting the site's data
+  did: in the installed app, menu (⋮) → **App info** → **Cookies and site data** → **Manage
+  on-device site data** → delete `keyguard.volksswitch.org` → **Done** → **Reload** → **Open
+  Project…**. Release 126 had no way to reach the folder picker past the remembered folder, so
+  **Pick a different folder…** has never been tried on a real broken memory.
+- **The remembered folder most likely never answered at all.** Her screenshot after the failed
+  click still read "Click Open Project… to begin." and "last folder: …". On 126 an error would
+  have opened the folder picker, a refusal would have changed "last folder" to "no project
+  folder open", and success would have said "Loading project…". Release 127's "Couldn't open
+  your project folder" message appears only when the browser answers with an error, so the
+  same fault on 127 still looks like nothing happening. The only way past it on 127 is **Pick a
+  different folder…** at the bottom of Recent projects.
 - **What's wanted:** add to the Known Issues page (WordPress page 24563), under "Things that
   look like faults but aren't", after "The browser asks again…", and update its "Last
-  updated" date. Proposed wording, with the proven cure added (2026-11-23):
-  **The app says it couldn't open your project folder.** Now and then the browser's
-  memory of your project folder goes bad, most often after the browser updates itself.
-  Click **Pick a different folder…** and choose the same folder again. If it still won't
-  open, delete the site's data in the browser and install the app again. Your designs are
-  safe in the folder itself.
-  Show Ken the wording before posting; posting needs his yes. Any troubleshooting it
-  offers puts "ask your IT department" last, if at all (Ken, 2026-11-23).
+  updated" date. Proposed wording (2026-11-23):
+  **Open Project… does nothing, or says it couldn't open your project folder.** Now and then,
+  most often right after Chrome updates itself, the browser's memory of your project folder
+  goes bad. Open **Recent projects**, choose its last line, **Pick a different folder…**, and
+  choose your folder again. If that doesn't work, click the app's menu (⋮) and choose **App
+  info** (in a Chrome tab, click the icon at the left end of the address bar), then **Cookies
+  and site data**, then **Manage on-device site data**. Delete **keyguard.volksswitch.org**,
+  click **Done**, then **Reload**, and open your project again. Uninstalling and reinstalling
+  the app doesn't help. Your designs are safe in the folder itself.
+  Show Ken the wording before posting; posting needs his yes. Any troubleshooting it offers
+  puts "ask your IT department" last, if at all (Ken, 2026-11-23).
 - **Why not now:** waiting to hear which step worked for a clinician who emailed on
-  2026-11-23: on release 127, Open Project and her Recent projects entry did nothing at all.
-  Her answer settles whether **Pick a different folder…** works in the field. It may also
-  show whether release 127 still fails silently when Chrome refuses folder access without
-  asking: on `'denied'` the app returns to the start screen (or drops the folder from Recent
-  projects) and says nothing. Changing that is not yet decided.
+  2026-11-23 with the same symptoms on release 127: Open Project and her Recent projects entry
+  did nothing at all. Her answer settles whether **Pick a different folder…** works in the
+  field. Not yet decided: whether the app should stop waiting on a remembered folder that
+  never answers, and speak up when Chrome refuses folder access without asking (on
+  `'denied'` it returns to the start screen, or drops the folder from Recent projects, and
+  says nothing).
 
 ### After release 116: pictures that still show versioned file names
 - **Raised:** 2026-10-26 - the plain file names change (`keyguard.scad`, `keyguard.json`),
