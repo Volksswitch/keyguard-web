@@ -13,6 +13,8 @@ notes, because nothing at this address could have been missed yet.
 
 ## Unreleased (next release)
 
+## Release 128
+
 - **Open Project… no longer does nothing when the browser stops answering about your folder.** Release 127 made the app say so when the browser couldn't open the folder it remembered for you. But the browser can also go quiet without saying anything, and then clicking **Open Project…** or your folder in **Recent projects** still did nothing at all. Now the app shows “Opening” and your folder's name as soon as you click. If the browser hasn't answered within a few seconds, the app tells you it couldn't open the folder and offers **Pick a different folder…** so you can choose it again. And if, after several seconds, the browser still hasn't let the app use your folder, a message says what to do if the browser isn't asking you anything, with a **Pick a different folder…** link of its own. Your designs are safe in the folder the whole time.
 
 ## Release 127
