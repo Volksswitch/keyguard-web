@@ -26,15 +26,26 @@ quietly waits forever.
 - **Raised:** 2026-11-20 - Ken, after a second clinician's Open Project stopped doing anything
   in one browser (the browser's memory of her folder had gone bad). The fix is in release 127,
   now live, and the User Manual describing it was published the same day.
+- **What actually fixed it (Ken, 2026-11-23):** deleting all of the site's data and installing
+  the app again. Release 126 had no way to reach the folder picker past the remembered
+  folder, so **Pick a different folder…** has never been tried on a real broken memory. The
+  entry must not offer it as the only cure.
 - **What's wanted:** add to the Known Issues page (WordPress page 24563), under "Things that
   look like faults but aren't", after "The browser asks again…", and update its "Last
-  updated" date:
+  updated" date. Proposed wording, with the proven cure added (2026-11-23):
   **The app says it couldn't open your project folder.** Now and then the browser's
   memory of your project folder goes bad, most often after the browser updates itself.
-  Click **Pick a different folder…** in the message and choose the same folder again. Your
-  designs are safe in the folder itself.
-  Show Ken the wording before posting; posting needs his yes.
-- **Why not now:** waiting on Ken's yes to the wording.
+  Click **Pick a different folder…** and choose the same folder again. If it still won't
+  open, delete the site's data in the browser and install the app again. Your designs are
+  safe in the folder itself.
+  Show Ken the wording before posting; posting needs his yes. Any troubleshooting it
+  offers puts "ask your IT department" last, if at all (Ken, 2026-11-23).
+- **Why not now:** waiting to hear which step worked for a clinician who emailed on
+  2026-11-23: on release 127, Open Project and her Recent projects entry did nothing at all.
+  Her answer settles whether **Pick a different folder…** works in the field. It may also
+  show whether release 127 still fails silently when Chrome refuses folder access without
+  asking: on `'denied'` the app returns to the start screen (or drops the folder from Recent
+  projects) and says nothing. Changing that is not yet decided.
 
 ### After release 116: pictures that still show versioned file names
 - **Raised:** 2026-10-26 - the plain file names change (`keyguard.scad`, `keyguard.json`),
