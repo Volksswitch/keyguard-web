@@ -55,10 +55,13 @@ quietly waits forever.
 - **Why not now:** waiting to hear which step worked for a clinician who emailed on
   2026-11-23 with the same symptoms on release 127: Open Project and her Recent projects entry
   did nothing at all. Her answer settles whether **Pick a different folder…** works in the
-  field. Not yet decided: whether the app should stop waiting on a remembered folder that
-  never answers, and speak up when Chrome refuses folder access without asking (on
-  `'denied'` it returns to the start screen, or drops the folder from Recent projects, and
-  says nothing).
+  field. Release 128 (unreleased; Ken's yes, 2026-11-23) stops waiting on a remembered folder
+  that never answers: "Opening …" at once, then the notice or a hint with its own **Pick a
+  different folder…** link. After 128 is out, "Open Project… does nothing" no longer
+  describes what clinicians see, so revisit the entry's first words if it is posted after
+  that. Not yet decided: whether the app should explain itself when Chrome refuses folder
+  access without asking (on `'denied'` it returns to the start screen, or drops the folder
+  from Recent projects, and says nothing).
 
 ### After release 116: pictures that still show versioned file names
 - **Raised:** 2026-10-26 - the plain file names change (`keyguard.scad`, `keyguard.json`),

@@ -1792,6 +1792,9 @@ const RELEASE_NOTES = {
     "A shape you line up with the screen or the grid now stays lined up. On the “by eye” tab, when Snap lines a shape up with the middle or an edge of the screen or of the grid, the app remembers the line, not just the number. If you later change the tablet, the padding or the bars, the shape moves with its line instead of staying a fixed distance from the screen's corner. A support drawn from the grid's left edge to its right edge stays exactly as long as the grid is wide. On the “pixels or millimeters” tab, a number that is lined up says so underneath, for example “= middle of grid” or “starts on left edge of grid”. Dragging the shape off its line, nudging it with the arrow keys or typing a number in its place lets go of the line. Lining up with the middle or edges of something else, such as another opening, still saves a plain number. This needs version 100 or later of the keyguard designer file for the grid; with an older one, only the screen's lines are remembered.",
     "Snap no longer lines shapes up with the middle of the keyguard. Everything on the “by eye” tab is measured from the screen, so a shape lined up with the middle of the keyguard was really placed at a distance from the screen's corner, and changing the case opening could leave it off center. When the sides of your case opening are unequal, the two middles are close enough to mistake for each other. Line shapes up with the middle of the screen or the grid instead.",
     "A ridge or support you draw now snaps where it starts. With Snap ticked, the spot where you press to draw a ridge or support lines up with a nearby middle or edge, across and up and down, so a support drawn up from the middle of the screen really sits on that middle. Until now only its length lined up as you drew it, and the bar itself stayed wherever you pressed."
+  ],
+  "128": [
+    "Open Project… no longer does nothing when the browser stops answering about your folder. Release 127 made the app say so when the browser couldn't open the folder it remembered for you. But the browser can also go quiet without saying anything, and then clicking Open Project… or your folder in Recent projects still did nothing at all. Now the app shows “Opening” and your folder's name as soon as you click. If the browser hasn't answered within a few seconds, the app tells you it couldn't open the folder and offers Pick a different folder… so you can choose it again. And if, after several seconds, the browser still hasn't let the app use your folder, a message says what to do if the browser isn't asking you anything, with a Pick a different folder… link of its own. Your designs are safe in the folder the whole time."
   ]
 };
 const RELEASE_DATES = {
@@ -1822,6 +1825,13 @@ const RELEASE_DATES = {
   "127": "2026-11-20"
 };
 const DESIGNER_NOTES = [
+  {
+    "version": 100,
+    "date": "2026-11-20",
+    "notes": [
+      "The designer now tells the Keyguard Designer web app where the edges of the grid are, and where the lines that gt and gb measure lie, so that **Snap** on its “by eye” tab can line openings up with the grid's edges and write gl, gr, gt, gb, gw and gh into the openings it lines up. Nothing about the keyguard changes, and there is nothing different to see in OpenSCAD."
+    ]
+  },
   {
     "version": 99,
     "date": "2026-11-20",
@@ -2624,6 +2634,33 @@ const HANDLE_KEY = 'lastProject';
 const RECENTS_KEY = 'recentProjects';
 const RECENTS_MAX = 8;
 
+// A remembered folder can stop answering altogether. On 20 Nov 2026, right after
+// a Chrome update, a clinician's Open Project did nothing: no error, no question
+// from the browser, no "Loading project…" (her screenshot ruled out each), and
+// only deleting the site's data got her back in. A call that never shows the
+// clinician a question (is permission already granted? are these two folders the
+// same?) should answer at once, so the app stops waiting after FOLDER_ANSWER_MS
+// and treats the folder as one it can't open. requestPermission, which may be
+// showing the browser's question, is never cut short: see askForFolder.
+const FOLDER_ANSWER_MS = 3000;
+function folderAnswer(promise, what) {
+  let timer;
+  const giveUp = new Promise((_, reject) => {
+    timer = setTimeout(() => {
+      const e = new Error(`the browser didn't answer within ${FOLDER_ANSWER_MS / 1000} seconds when ${what}`);
+      e.name = 'TimeoutError';
+      reject(e);
+    }, FOLDER_ANSWER_MS);
+  });
+  return Promise.race([promise, giveUp]).finally(() => clearTimeout(timer));
+}
+// isSameEntry with that limit. A folder that can't compare itself, by an error or
+// by silence, is matched by name, as forgetFolder always did for an error.
+async function sameFolder(a, b) {
+  try { return await folderAnswer(a.isSameEntry(b), 'asked to compare two folders'); }
+  catch { return !!a && !!b && a.name === b.name; }
+}
+
 function idbOpenNamed(name) {
   return new Promise((resolve, reject) => {
     const req = indexedDB.open(name, 1);
@@ -2716,24 +2753,19 @@ async function idbPutRecents(arr) {
 }
 // Move `handle` to the front of the recents list. Dedupe via isSameEntry so
 // the same folder opened twice doesn't show up twice. Capped at RECENTS_MAX.
+// Compared side by side, so a list of folders that won't answer costs one wait,
+// not one each, before the project opens.
 async function pushRecent(handle) {
   const recents = await idbGetRecents();
-  const filtered = [];
-  for (const h of recents) {
-    try { if (await h.isSameEntry(handle)) continue; } catch {}
-    filtered.push(h);
-  }
+  const same = await Promise.all(recents.map(h => sameFolder(h, handle)));
+  const filtered = recents.filter((h, i) => !same[i]);
   filtered.unshift(handle);
   await idbPutRecents(filtered.slice(0, RECENTS_MAX));
 }
 async function removeRecent(handle) {
   const recents = await idbGetRecents();
-  const filtered = [];
-  for (const h of recents) {
-    try { if (await h.isSameEntry(handle)) continue; } catch {}
-    filtered.push(h);
-  }
-  await idbPutRecents(filtered);
+  const same = await Promise.all(recents.map(h => sameFolder(h, handle)));
+  await idbPutRecents(recents.filter((h, i) => !same[i]));
 }
 
 // Return the app to its initial "no project" layout: clear the 3D viewport,
@@ -2778,22 +2810,16 @@ async function resetToNoProject() {
 // one opened and from Recent projects), say so in plain words, and offer the
 // folder picker from the notice itself, whose button click is a fresh user
 // gesture the picker needs. Her designs live in the folder, so nothing is lost.
+// The comparisons run side by side: a folder that has stopped answering may not
+// answer these either, and the notice must not wait on each one in turn.
 async function forgetFolder(handle) {
-  const stored = await idbGetHandle();
-  let same = false;
-  if (stored) {
-    try { same = await stored.isSameEntry(handle); }
-    catch { same = stored.name === handle.name; }
-  }
+  const [stored, recents] = await Promise.all([idbGetHandle(), idbGetRecents()]);
+  const [same, ...match] = await Promise.all([
+    stored ? sameFolder(stored, handle) : false,
+    ...recents.map(h => sameFolder(h, handle)),   // a broken entry is matched by name
+  ]);
   if (same) await idbClearHandle();
-  const recents = await idbGetRecents();
-  const kept = [];
-  for (const h of recents) {
-    let match;
-    try { match = await h.isSameEntry(handle); }
-    catch { match = h.name === handle.name; }   // a broken entry can't compare itself
-    if (!match) kept.push(h);
-  }
+  const kept = recents.filter((h, i) => !match[i]);
   if (kept.length !== recents.length) await idbPutRecents(kept);
 }
 async function folderWontOpen(handle, err, moved = false) {
@@ -2821,6 +2847,36 @@ async function folderWontOpen(handle, err, moved = false) {
   if (pickAgain) await openProject(null, { pick: true });
 }
 
+// requestPermission may be showing the browser's question about the folder, and
+// the clinician may still be reading it, so it is never cut short. But it may
+// also be the call that went quiet on 20 Nov 2026, so after
+// FOLDER_QUESTION_HINT_MS the app says what to do if no question is showing,
+// with a Pick a different folder… link of its own. The Console line matches
+// Recent problems, so a problem report shows that this was the call that waited.
+const FOLDER_QUESTION_HINT_MS = 8000;
+async function askForFolder(handle, seq) {
+  const name = handle.name || 'your project folder';
+  const hint = setTimeout(() => {
+    if (seq !== openSeq) return;
+    logLine(`  The browser hasn't answered about "${name}" after ${FOLDER_QUESTION_HINT_MS / 1000} seconds. ` +
+            `If it isn't asking you anything, it couldn't ask: click "${PICK_DIFFERENT}" and choose the folder again.`);
+    if (!project) setStatus(`Waiting for the browser to let the app use "${tsEsc(name)}". ` +
+      `If it isn't asking you anything, click <a href="#" data-pick-folder>${PICK_DIFFERENT}</a> ` +
+      `and choose the folder again.`, 'rendering');
+  }, FOLDER_QUESTION_HINT_MS);
+  try { return await handle.requestPermission({ mode: 'readwrite' }); }
+  finally { clearTimeout(hint); }
+}
+statusEl.addEventListener('click', (e) => {
+  if (!e.target.closest('[data-pick-folder]')) return;
+  e.preventDefault();
+  openProject(null, { pick: true }).catch(openProjectFailed);
+});
+// Each openProject call takes a number. One overtaken by a newer call while it
+// waited on the browser stops when the browser answers, and leaves the newer
+// call, and whatever folder it opened, alone.
+let openSeq = 0;
+
 async function openProject(presetHandle = null, { pick = false } = {}) {
   if (!window.showDirectoryPicker) {
     alert('This browser does not support the File System Access API. Please use Chrome or Edge.');
@@ -2836,6 +2892,7 @@ async function openProject(presetHandle = null, { pick = false } = {}) {
     if (!proceed) return;
   }
   let dirHandle = presetHandle;
+  const seq = ++openSeq;
   // From the app's memory (Recent projects, or the last folder opened) rather
   // than the folder picker just now: only such a folder is forgotten on failure.
   let remembered = !!presetHandle;
@@ -2843,18 +2900,28 @@ async function openProject(presetHandle = null, { pick = false } = {}) {
   // readwrite permission dance and skip the picker entirely. If denied, drop
   // the dead handle from recents so it stops cluttering the list.
   if (dirHandle) {
+    // Said at once, so a browser that goes quiet no longer looks like a click
+    // that did nothing.
+    if (!project) setStatus(`Opening "${tsEsc(dirHandle.name || 'your project folder')}"…`, 'rendering');
     let perm = 'denied';
     try {
-      perm = await dirHandle.queryPermission({ mode: 'readwrite' });
-      if (perm !== 'granted') perm = await dirHandle.requestPermission({ mode: 'readwrite' });
+      perm = await folderAnswer(dirHandle.queryPermission({ mode: 'readwrite' }),
+                                'asked whether the app may still use the folder');
+      if (perm !== 'granted') perm = await askForFolder(dirHandle, seq);
     } catch (e) {
-      // Not a "Don't allow": the browser could not even ask about this folder.
+      if (seq !== openSeq) return;
+      // Not a "Don't allow": the browser could not even ask about this folder,
+      // or never answered.
       await folderWontOpen(dirHandle, e);
       return;
     }
+    if (seq !== openSeq) return;
     if (perm !== 'granted') {
       logLine('Folder access was not granted — keeping the current project.');
-      if (!project) { await removeRecent(dirHandle); await applyNoProjectUI(); }
+      if (!project) {
+        await removeRecent(dirHandle); await applyNoProjectUI();
+        setStatus('Click <b>Open Project…</b> to begin.');
+      }
       return;
     }
   }
@@ -2868,9 +2935,12 @@ async function openProject(presetHandle = null, { pick = false } = {}) {
   if (!dirHandle && !isChangeProject && !pick) {
     const stored = await idbGetHandle();
     if (stored) {
+      setStatus(`Opening "${tsEsc(stored.name || 'your project folder')}"…`, 'rendering');
       try {
-        let perm = await stored.queryPermission({ mode: 'readwrite' });
-        if (perm !== 'granted') perm = await stored.requestPermission({ mode: 'readwrite' });
+        let perm = await folderAnswer(stored.queryPermission({ mode: 'readwrite' }),
+                                      'asked whether the app may still use the folder');
+        if (perm !== 'granted') perm = await askForFolder(stored, seq);
+        if (seq !== openSeq) return;
         if (perm === 'granted') {
           dirHandle = stored;
           remembered = true;
@@ -2883,6 +2953,7 @@ async function openProject(presetHandle = null, { pick = false } = {}) {
           return;
         }
       } catch (e) {
+        if (seq !== openSeq) return;
         await folderWontOpen(stored, e);
         return;
       }
@@ -6537,12 +6608,8 @@ async function maybeShowChangeProjectMenu() {
   if (!menu || !project) return false;
   const recents = await idbGetRecents();
   // Filter out the currently-open project so the user only sees alternatives.
-  const others = [];
-  for (const h of recents) {
-    let same = false;
-    try { same = await h.isSameEntry(project.dirHandle); } catch {}
-    if (!same) others.push(h);
-  }
+  const same = await Promise.all(recents.map(h => sameFolder(h, project.dirHandle)));
+  const others = recents.filter((h, i) => !same[i]);
   if (!others.length) return false;
   menu.innerHTML = '';
   for (const h of others) {

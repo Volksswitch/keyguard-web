@@ -13,6 +13,8 @@ notes, because nothing at this address could have been missed yet.
 
 ## Unreleased (next release)
 
+- **Open Project… no longer does nothing when the browser stops answering about your folder.** Release 127 made the app say so when the browser couldn't open the folder it remembered for you. But the browser can also go quiet without saying anything, and then clicking **Open Project…** or your folder in **Recent projects** still did nothing at all. Now the app shows “Opening” and your folder's name as soon as you click. If the browser hasn't answered within a few seconds, the app tells you it couldn't open the folder and offers **Pick a different folder…** so you can choose it again. And if, after several seconds, the browser still hasn't let the app use your folder, a message says what to do if the browser isn't asking you anything, with a **Pick a different folder…** link of its own. Your designs are safe in the folder the whole time.
+
 ## Release 127
 
 - **If the app can't open the folder it remembered for you, it now says so and helps you pick it again.** The browser keeps its own memory of your project folder, and once in a while that memory goes bad, most often after a browser update. Until now, clicking **Open Project…** or your folder in **Recent projects** then did nothing at all, and the only cure was to clear the site's data in the browser's settings. Now a message tells you the folder couldn't be opened, the app forgets it, and the message's **Pick a different folder…** button opens the folder picker so you can choose the same folder again. Your designs are safe the whole time: they live in the folder, not in the browser.
