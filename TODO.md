@@ -22,7 +22,7 @@ quietly waits forever.
 
 ## Open
 
-### Post the Known Issues entry for "Open Project does nothing"
+### Post the Known Issues entry for "couldn't open your project folder"
 - **Raised:** 2026-11-20 - Ken, after a second clinician's Open Project stopped doing anything
   in one browser (the browser's memory of her folder had gone bad). The fix is in release 127,
   now live, and the User Manual describing it was published the same day.
@@ -41,25 +41,25 @@ quietly waits forever.
   different folder…** at the bottom of Recent projects.
 - **What's wanted:** add to the Known Issues page (WordPress page 24563), under "Things that
   look like faults but aren't", after "The browser asks again…", and update its "Last
-  updated" date. Proposed wording (2026-11-23):
-  **Open Project… does nothing, or says it couldn't open your project folder.** Now and then,
-  most often right after Chrome updates itself, the browser's memory of your project folder
-  goes bad. Open **Recent projects**, choose its last line, **Pick a different folder…**, and
-  choose your folder again. If that doesn't work, click the app's menu (⋮) and choose **App
-  info** (in a Chrome tab, click the icon at the left end of the address bar), then **Cookies
-  and site data**, then **Manage on-device site data**. Delete **keyguard.volksswitch.org**,
-  click **Done**, then **Reload**, and open your project again. Uninstalling and reinstalling
-  the app doesn't help. Your designs are safe in the folder itself.
+  updated" date. Proposed wording, rewritten for release 128 (2026-11-23), where the app no
+  longer goes quiet but says it couldn't open the folder, or that it is waiting:
+  **The app says it couldn't open your project folder, or that it's waiting for the
+  browser.** Now and then, most often right after Chrome updates itself, the browser's memory
+  of your project folder goes bad. Click **Pick a different folder…** (in the message, or at
+  the bottom of **Recent projects**) and choose your folder again. If that doesn't work, click
+  the app's menu (⋮) and choose **App info** (in a Chrome tab, click the icon at the left end
+  of the address bar), then **Cookies and site data**, then **Manage on-device site data**.
+  Delete **keyguard.volksswitch.org**, click **Done**, then **Reload**, and open your project
+  again. Uninstalling and reinstalling the app doesn't help. Your designs are safe in the
+  folder itself.
   Show Ken the wording before posting; posting needs his yes. Any troubleshooting it offers
   puts "ask your IT department" last, if at all (Ken, 2026-11-23).
 - **Why not now:** waiting to hear which step worked for a clinician who emailed on
   2026-11-23 with the same symptoms on release 127: Open Project and her Recent projects entry
   did nothing at all. Her answer settles whether **Pick a different folder…** works in the
-  field. Release 128 (unreleased; Ken's yes, 2026-11-23) stops waiting on a remembered folder
-  that never answers: "Opening …" at once, then the notice or a hint with its own **Pick a
-  different folder…** link. After 128 is out, "Open Project… does nothing" no longer
-  describes what clinicians see, so revisit the entry's first words if it is posted after
-  that. Not yet decided: whether the app should explain itself when Chrome refuses folder
+  field. Release 128 (released 2026-11-23) stops waiting on a remembered folder that never
+  answers: "Opening …" at once, then the notice or a hint with its own **Pick a different
+  folder…** link. Not yet decided: whether the app should explain itself when Chrome refuses folder
   access without asking (on `'denied'` it returns to the start screen, or drops the folder
   from Recent projects, and says nothing).
 
