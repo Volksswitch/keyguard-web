@@ -22,46 +22,19 @@ quietly waits forever.
 
 ## Open
 
-### Post the Known Issues entry for "couldn't open your project folder"
-- **Raised:** 2026-11-20 - Ken, after a second clinician's Open Project stopped doing anything
-  in one browser (the browser's memory of her folder had gone bad). The fix is in release 127,
-  now live, and the User Manual describing it was published the same day.
-- **What fixed it on 20 Nov (Ken's email thread with the clinician, read 2026-11-23):**
-  uninstalling and reinstalling the app, tried first, did NOT help. Deleting the site's data
-  did: in the installed app, menu (⋮) → **App info** → **Cookies and site data** → **Manage
-  on-device site data** → delete `keyguard.volksswitch.org` → **Done** → **Reload** → **Open
-  Project…**. Release 126 had no way to reach the folder picker past the remembered folder, so
-  **Pick a different folder…** has never been tried on a real broken memory.
-- **The remembered folder most likely never answered at all.** Her screenshot after the failed
-  click still read "Click Open Project… to begin." and "last folder: …". On 126 an error would
-  have opened the folder picker, a refusal would have changed "last folder" to "no project
-  folder open", and success would have said "Loading project…". Release 127's "Couldn't open
-  your project folder" message appears only when the browser answers with an error, so the
-  same fault on 127 still looks like nothing happening. The only way past it on 127 is **Pick a
-  different folder…** at the bottom of Recent projects.
-- **What's wanted:** add to the Known Issues page (WordPress page 24563), under "Things that
-  look like faults but aren't", after "The browser asks again…", and update its "Last
-  updated" date. Proposed wording, rewritten for release 128 (2026-11-23), where the app no
-  longer goes quiet but says it couldn't open the folder, or that it is waiting:
-  **The app says it couldn't open your project folder, or that it's waiting for the
-  browser.** Now and then, most often right after Chrome updates itself, the browser's memory
-  of your project folder goes bad. Click **Pick a different folder…** (in the message, or at
-  the bottom of **Recent projects**) and choose your folder again. If that doesn't work, click
-  the app's menu (⋮) and choose **App info** (in a Chrome tab, click the icon at the left end
-  of the address bar), then **Cookies and site data**, then **Manage on-device site data**.
-  Delete **keyguard.volksswitch.org**, click **Done**, then **Reload**, and open your project
-  again. Uninstalling and reinstalling the app doesn't help. Your designs are safe in the
-  folder itself.
-  Show Ken the wording before posting; posting needs his yes. Any troubleshooting it offers
-  puts "ask your IT department" last, if at all (Ken, 2026-11-23).
-- **Why not now:** waiting to hear which step worked for a clinician who emailed on
-  2026-11-23 with the same symptoms on release 127: Open Project and her Recent projects entry
-  did nothing at all. Her answer settles whether **Pick a different folder…** works in the
-  field. Release 128 (released 2026-11-23) stops waiting on a remembered folder that never
-  answers: "Opening …" at once, then the notice or a hint with its own **Pick a different
-  folder…** link. Not yet decided: whether the app should explain itself when Chrome refuses folder
-  access without asking (on `'denied'` it returns to the start screen, or drops the folder
-  from Recent projects, and says nothing).
+### Explain a folder refusal that Chrome gives without asking
+- **Raised:** 2026-11-23 - while answering a clinician whose Open Project did nothing on
+  release 127. If Chrome refuses folder access without asking her (its **File editing**
+  setting blocked for the site, say), `requestPermission` answers `'denied'` at once and the
+  app treats it as her own "Don't allow": it returns to the start screen, or drops the folder
+  from Recent projects, and says nothing.
+- **What's wanted:** when a refusal comes back too fast to be a person's answer, say that the
+  browser refused without asking and where to look (**App info** > **File editing**), with
+  "ask your IT department" last, if at all (Ken, 2026-11-23).
+- **Why not now:** not seen in the field. The 20 Nov case was a browser that never answered,
+  which release 128 handles. The 23 Nov clinician's answer may show whether this happens,
+  and whether **Pick a different folder…** works on a real broken memory (the Known Issues
+  entry, posted 2026-11-23, offers it first and deleting the site's data second).
 
 ### After release 116: pictures that still show versioned file names
 - **Raised:** 2026-10-26 - the plain file names change (`keyguard.scad`, `keyguard.json`),
