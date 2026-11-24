@@ -13,6 +13,8 @@ notes, because nothing at this address could have been missed yet.
 
 ## Unreleased (next release)
 
+## Release 129
+
 - **The keyguard shown inside its keyguard frame is now a deeper pink.** With a screenshot behind the frame, the lighter pink was hard to make out. Pink highlights on the frame's own openings take the same deeper pink while the keyguard is shown, and highlights on a keyguard by itself are unchanged.
 
 ## Release 128
