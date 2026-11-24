@@ -346,6 +346,8 @@ snap_in_tabs_on_left_and_right_edges_of_keyguard = "yes"; // [yes,no]
 post_tightness_of_fit = 0; //[-10:10]
 post_extension_distance = 4; // [1:5]
 show_keyguard_with_frame = "no"; //[yes,no]
+//swings the keyguard shown with the frame up on its posts, in degrees, to see it go in and out (posts only)
+rotate_keyguard_on_posts = 0; // [0:15:120]
 //adjusts the keyguard height, the larger the number the tighter the fit
 keyguard_vertical_tightness_of_fit = 0; // [-1:.1:1]
 //adjusts the keyguard width, the larger the number the tighter the fit
@@ -585,7 +587,7 @@ if (echo_dims=="yes") echo("__KG_DIMS__", swm=swm, shm=shm, awm=awm, ahm=ahm, sa
 //   tablet selection → screen/case geometry → grid geometry → bar geometry →
 //   cell geometry → opening/addition helpers → mounting geometry → text/SVG helpers
 
-keyguard_designer_version = 101; //*****************************
+keyguard_designer_version = 102; //*****************************
 
 
 // Boolean shorthands for the most-used string comparisons.
@@ -1554,6 +1556,50 @@ snap_in_size = .8;
 snap_in_width = 25;
 post_len = post_extension_distance;
 
+// A keyguard on posts in a keyguard frame, turned 180 degrees (Ken, 24 Nov 2026). Cases
+// that mount the tablet either way up need the keyguard to go into the frame either way
+// round. The frame's top edge has a notch for the post (add_keyguard_frame_post_relief,
+// hole_dia tall, centred on the post line). When nothing is exposed along the top, the
+// post line IS the keyguard's top edge, so the notch reaches post_overhang past the
+// opening. The frame cuts the same notch along its bottom edge, and the keyguard grows by
+// post_overhang along its bottom edge to fill it, so its latch still reaches the frame
+// and the keyguard is the same height whichever way round it goes. post_overhang is 0
+// when an exposed top bar puts the post line at least hole_dia/2 inside the opening: those
+// keyguards turn 180 degrees already, with their post ends in the frame's bottom pockets,
+// and nothing about them changes. The opening becomes taller than keyguard_height by
+// post_overhang at each end; clinicians size these openings by eye.
+kg_post_cl = min(keyguard_height/2,
+                 (expose_upper_command_bar == "yes" && ucbhm > 0) ? ahm/2-sbhm-umbhm-ucbhm :
+                 (expose_upper_message_bar == "yes" && umbhm > 0) ? ahm/2-sbhm-umbhm :
+                 (expose_status_bar == "yes"        && sbhm  > 0) ? ahm/2-sbhm :
+                                                                     keyguard_height/2);
+post_hole_dia = kt - post_tightness_of_fit/10;
+on_frame_posts = has_case && has_frame && mount_keyguard_with=="posts";
+post_overhang = (on_frame_posts) ? max(0, kg_post_cl + post_hole_dia/2 - keyguard_height/2) : 0;
+
+// Exposing a bottom bar cuts a window down through the keyguard's bottom edge, which can
+// leave nothing to carry the bottom latch: with a top bar also exposed it came out as a
+// loose sliver of plastic, attached to nothing (measured 24 Nov 2026). A keyguard on posts
+// then gets latches on its left and right edges instead, with matching grooves in the
+// frame's sides (Ken, 24 Nov 2026), and no bottom latch. The side latches sit on the
+// opening's centre line, so they line up whichever way round the keyguard goes.
+posts_lower_bars = on_frame_posts && ((expose_lower_message_bar=="yes" && lmbhm>0) ||
+                                      (expose_lower_command_bar=="yes" && lcbhm>0));
+side_latches = snap_in_tabs_on_left_and_right_edges_of_keyguard=="yes" &&
+               (mount_keyguard_with=="snap-in tabs" || posts_lower_bars);
+bottom_latch = snap_in_tab_on_bottom_edge_of_keyguard=="yes" && !posts_lower_bars;
+
+// The bottom counterpart of the top bar trim (Ken, 24 Nov 2026). Exposing a bottom bar
+// uncovers everything below it, as exposing a top bar uncovers everything above it, so a
+// keyguard on posts is cut off along the top of its highest exposed bottom bar. Without
+// that, the plastic beside the bar's window was left hanging below the grid as two thin
+// prongs. In screen coordinates, like the bar windows themselves; clamped to the keyguard's
+// own bottom edge. The side latches sit on the centre line, well above it.
+kg_lower_cl = max(-keyguard_height/2,
+                  (expose_lower_message_bar == "yes" && lmbhm > 0) ? -ahm/2+lcbhm+lmbhm :
+                  (expose_lower_command_bar == "yes" && lcbhm > 0) ? -ahm/2+lcbhm :
+                                                                      -keyguard_height/2);
+
 //Braille and cell insert variables
 bsm = Braille_size_multiplier/10; //Braille size multiplier
 braille_a = " abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -2053,7 +2099,12 @@ else if (generate=="keyguard frame" && has_frame && !is_laser_cut){
 	// and it never gets baked into the solid frame or its STL export.
 	if (($preview || show_oa_highlights == "yes" || only_oa_highlights == "yes") && show_keyguard_with_frame == "yes")
 		translate([0,0,-(keyguard_frame_thickness/2-kt/2)])
+		swing_on_posts(rotate_keyguard_on_posts)
 		#keyguard("yes");
+
+	// says so in the Console when the keyguard, swung that far, would run into the frame
+	if (only_oa_highlights != "yes" && show_keyguard_with_frame == "yes")
+		warn_if_swing_hits_frame(rotate_keyguard_on_posts);
 
 	if (only_oa_highlights != "yes") {
 		if (include_screenshot=="yes"){
@@ -2176,7 +2227,9 @@ module keyguard(cheat){
 						difference(){
 							union(){
 								//base object: tablet body slab or case opening along with case additions if any that can be chamfered
-								translate(kg_slide) base_keyguard(kw,kh,kcr,kt,cheat);
+								// grown by post_overhang along its bottom edge only (see post_overhang)
+								translate(kg_slide) translate([0,-post_overhang/2,0])
+								base_keyguard(kw,kh+post_overhang,kcr,kt,cheat);
 													
 								//add slide-in & raised tabs
 								if (has_case && !has_frame && (m_m=="Slide-in Tabs" || m_m=="Raised Tabs")){
@@ -2428,6 +2481,11 @@ module keyguard(cheat){
 				if(has_case && has_frame && mount_keyguard_with=="posts"){
 					translate(kg_slide)
 					trim_keyguard_to_bar();
+				}
+
+				// and below the highest exposed bottom bar (see kg_lower_cl)
+				if(posts_lower_bars){
+					trim_keyguard_to_lower_bar();
 				}
 										
 				//cut away the screen region
@@ -2784,14 +2842,24 @@ module keyguard_frame(cheat){
 			// opening, spanning ONLY the keyguard width (it stops short of the side post
 			// pockets, which remain pockets). It clears the post's protrusion above the
 			// keyguard edge along the keyguard width, opening the frame by hole_dia/2 past the
-			// top edge. There is no mirrored bottom relief: it opened the frame hole_dia/2 below
-			// the keyguard's bottom edge, leaving a gap there for a moderately thick keyguard
-			// (removed 3 Jul 2026). A keyguard turned 180 degrees still seats in the bottom
-			// pockets below whenever its post line lies at least hole_dia/2 inside the opening,
-			// as it does when a top bar is exposed.
+			// top edge.
 			translate(kg_slide)
 			translate([0,post_cl,0])
 			add_keyguard_frame_post_relief(keyguard_width);
+
+			// The same notch along the bottom edge, so a keyguard turned 180 degrees has room
+			// for its post there (Ken, 24 Nov 2026). Cut only when the top notch reaches past
+			// the opening (post_overhang > 0); the keyguard then grows by the same amount along
+			// its bottom edge, which fills this notch and keeps its latch against the frame.
+			// (A bottom notch without that growth left a gap below the keyguard that the latch
+			// could not reach, which is why it was removed on 3 Jul 2026.) Otherwise the post
+			// line lies at least hole_dia/2 inside the opening and a turned keyguard's post
+			// ends simply seat in the bottom pockets below.
+			if (post_overhang > 0){
+				translate(kg_slide)
+				translate([0,-post_cl,0])
+				add_keyguard_frame_post_relief(keyguard_width);
+			}
 
 			// Side post pockets that receive the post's protruding ends: both sides at the
 			// keyguard's top edge, and the same pair mirrored to the bottom (-post_cl), so the
@@ -2908,6 +2976,72 @@ module trim_keyguard_to_bar(){
 
 	//remove top portion of keyguard
 	translate([0,50+post_cl,0])
+	cube([keyguard_width+10,100,kt+10],center=true);
+}
+
+
+// Turns its children (the keyguard shown in its frame) up about the posts' axis by angle
+// degrees, front face rising, the way a keyguard on posts swings in and out of its frame
+// (Ken, 24 Nov 2026). Only for a keyguard on posts; anything else is left where it is.
+// Called in keyguard coordinates, where the posts' axis runs along x at
+// y = kg_slide[1] + kg_post_cl, z = 0.
+module swing_on_posts(angle){
+	axis_y = kg_slide[1] + kg_post_cl;
+	if (on_frame_posts && angle != 0){
+		translate([0,axis_y,0])
+		rotate([-angle,0,0])
+		translate([0,-axis_y,0])
+		children();
+	}
+	else children();
+}
+
+// Would the keyguard, swung angle degrees on its posts, run into the keyguard frame?
+// A side-on estimate, in the plane across the posts: the keyguard's cross-section (from the
+// posts' axis to its bottom edge, its full thickness) is turned about the axis and tested
+// against the frame's border above and below the opening. Chamfers are ignored, so the
+// answer errs towards warning. The latches are left out: they are meant to snap past the
+// frame. Values are relative to the axis, which sits kft/2 - kt/2 below the frame's centre.
+function _swing_hits(angle) =
+	let(
+		axis_y = kg_slide[1] + kg_post_cl,
+		bottom_y = kg_slide[1] - kh/2 - post_overhang,
+		low_y = (posts_lower_bars) ? max(kg_lower_cl, bottom_y) : bottom_y,
+		len_kg = axis_y - low_y,
+		top_open = max(keyguard_height/2, kg_post_cl + post_hole_dia/2),
+		bot_open = (post_overhang > 0) ? kg_post_cl + post_hole_dia/2 : keyguard_height/2,
+		y_top0 = kg_slide[1] + top_open - axis_y,      // frame's top border, from here...
+		y_top1 = fh/2 - axis_y,                        // ...to here
+		y_bot0 = kg_slide[1] - bot_open - axis_y,      // frame's bottom border, from here...
+		y_bot1 = -fh/2 - axis_y,                       // ...to here
+		z_top = keyguard_frame_thickness - kt/2,       // frame's front face
+		z_bot = -kt/2,                                 // frame's back face
+		c = cos(angle), s = sin(angle),
+		tol = 0.1
+	)
+	len([for (a = [0:0.5:len_kg], dz = [-kt/2:kt/4:kt/2])
+		let(y = -a*c + dz*s, z = a*s + dz*c)
+		if (z > z_bot + tol && z < z_top - tol &&
+		    ((y > y_top0 + tol && y < y_top1) || (y < y_bot0 - tol && y > y_bot1))) 1]) > 0;
+
+// The largest whole angle, up to 180, at which the swung keyguard still clears the frame.
+function _swing_clear_to(angle=0) =
+	(angle >= 180) ? 180 :
+	_swing_hits(angle + 1) ? angle : _swing_clear_to(angle + 1);
+
+module warn_if_swing_hits_frame(angle){
+	if (on_frame_posts && angle != 0 && _swing_hits(angle)){
+		echo(str("WARNING: swung ", angle, " degrees on its posts, the keyguard runs into the keyguard frame. ",
+		         "It clears the frame up to about ", _swing_clear_to(), " degrees."));
+	}
+}
+
+// Cuts away the bottom portion of the keyguard below the top of its highest exposed bottom
+// bar, so the bar's window opens onto the bottom edge of the remaining keyguard body,
+// as trim_keyguard_to_bar() does at the top. The cut reaches post_overhang and more below
+// the keyguard, so it also takes the strip that fills the frame's bottom post notch.
+module trim_keyguard_to_lower_bar(){
+	translate([0,kg_lower_cl-50,0])
 	cube([keyguard_width+10,100,kt+10],center=true);
 }
 
@@ -8005,8 +8139,8 @@ module keyguard_underside_trim(cheat){
 
 			translate(unequal_opening){
 				translate(kg_slide)
-				translate([0,0,-kt/2])
-				keyguard_underside_carve(kw,kh,kcr,kt,cheat,lift=ff);
+				translate([0,-post_overhang/2,-kt/2])
+				keyguard_underside_carve(kw,kh+post_overhang,kcr,kt,cheat,lift=ff);
 
 				if(flex && !is_undef(case_additions) && len(case_additions)>0){
 					if(is_v2(case_additions)) apply_flex_height_shapes_v2(case_additions, true, grow=ff); else apply_flex_height_shapes(case_additions, true, grow=ff);
@@ -9098,7 +9232,11 @@ module cut_grid(t=kt){
 // Grooves are centred on the screen area thickness (sat) so that they align with
 // the tabs when sat < kt (screen area thinner than the full keyguard body).
 module snap_in_tab_grooves(){
-	if (mount_keyguard_with=="snap-in tabs"){
+	// the top and bottom grooves stand on the opening's edges, which post_overhang moves
+	// out to the far wall of the post notches (0 unless a keyguard on posts needs it)
+	edge_y = keyguard_height/2 + post_overhang;
+
+	if (mount_keyguard_with=="snap-in tabs" || side_latches){
 		translate([keyguard_width/2-ff,0,-keyguard_frame_thickness/2+sat/2])
 		make_snap_ins(groove_size,groove_width);
 
@@ -9113,18 +9251,18 @@ module snap_in_tab_grooves(){
 		cube([snap_in_size+.5,2,sat-.5],center=true);
 	}
 
-	translate([0,keyguard_height/2-ff,-keyguard_frame_thickness/2+sat/2])
+	translate([0,edge_y-ff,-keyguard_frame_thickness/2+sat/2])
 	rotate([0,0,90])
 	make_snap_ins(groove_size,groove_width);
 
-	translate([0,keyguard_height/2+.6,-keyguard_frame_thickness/2+sat/2-.05-ff])
+	translate([0,edge_y+.6,-keyguard_frame_thickness/2+sat/2-.05-ff])
 	cube([2,snap_in_size+.5,sat-.5],center=true);
 
-	translate([0,-keyguard_height/2+ff,-keyguard_frame_thickness/2+sat/2])
+	translate([0,-edge_y+ff,-keyguard_frame_thickness/2+sat/2])
 	rotate([0,0,-90])
 	make_snap_ins(groove_size,groove_width);
 
-	translate([0,-keyguard_height/2-.6,-keyguard_frame_thickness/2+sat/2-.05-ff])
+	translate([0,-edge_y-.6,-keyguard_frame_thickness/2+sat/2-.05-ff])
 	cube([2,snap_in_size+.5,sat-.5],center=true);
 }
 
@@ -9135,7 +9273,7 @@ module snap_in_tab_grooves(){
 // sits at the screen-area midpoint rather than the overall keyguard midpoint.
 module add_snap_ins(){
 	tab_z = sat/2 - kt/2; // Z offset: 0 when sat==kt, shifts toward screen face when sat<kt
-	if (snap_in_tabs_on_left_and_right_edges_of_keyguard=="yes" && mount_keyguard_with=="snap-in tabs"){
+	if (side_latches){
 		translate([kw/2,0,tab_z])
 		make_snap_ins(snap_in_size,snap_in_width);
 		translate([kw/2+.4,0,tab_z-.5])
@@ -9148,13 +9286,14 @@ module add_snap_ins(){
 		cube([snap_in_size,1.5,sat-1],center=true);
 	}
 
-	if(snap_in_tab_on_bottom_edge_of_keyguard=="yes"){
-		translate([0,-kh/2,tab_z])
+	if(bottom_latch){
+		// on the bottom edge, which grows by post_overhang (see post_overhang)
+		translate([0,-kh/2-post_overhang,tab_z])
 		rotate([0,0,-90])
 		make_snap_ins(snap_in_size,snap_in_width);
 
 		if(mount_keyguard_with=="snap-in tabs"){
-			translate([0,-kh/2-.4,tab_z-.5])
+			translate([0,-kh/2-post_overhang-.4,tab_z-.5])
 			cube([1.5,snap_in_size,sat-1],center=true);
 		}
 	}
@@ -9531,6 +9670,7 @@ module echo_settings(){
 		if (snap_in_tabs_on_left_and_right_edges_of_keyguard != "yes") echo(snap_in_tabs_on_left_and_right_edges_of_keyguard = snap_in_tabs_on_left_and_right_edges_of_keyguard);
 		if (post_tightness_of_fit != 0) echo(post_tightness_of_fit = post_tightness_of_fit);
 		if (post_extension_distance != 4) echo(post_extension_distance = post_extension_distance);
+		if (rotate_keyguard_on_posts != 0) echo(rotate_keyguard_on_posts = rotate_keyguard_on_posts);
 		if (keyguard_vertical_tightness_of_fit != 0) echo(keyguard_vertical_tightness_of_fit = keyguard_vertical_tightness_of_fit);
 		if (keyguard_horizontal_tightness_of_fit != 0) echo(keyguard_horizontal_tightness_of_fit = keyguard_horizontal_tightness_of_fit);
 		if (cut_cell_openings_and_bars_through_frame != "yes") echo(cut_cell_openings_and_bars_through_frame = cut_cell_openings_and_bars_through_frame);
