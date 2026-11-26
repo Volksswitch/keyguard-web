@@ -1798,6 +1798,9 @@ const RELEASE_NOTES = {
   ],
   "129": [
     "The keyguard shown inside its keyguard frame is now a deeper pink. With a screenshot behind the frame, the lighter pink was hard to make out. Pink highlights on the frame's own openings take the same deeper pink while the keyguard is shown, and highlights on a keyguard by itself are unchanged."
+  ],
+  "130": [
+    "The app no longer sits on \"Loading project…\" with nothing to say when the browser stops letting it use your folder. A browser can stop answering about folders altogether, for every folder you choose, and until now the app simply waited. After ten seconds it now tells you what is happening, at the top of the 3D view and in the Console, with a link to the Known issues page, which says how to clear it. It goes on waiting, so a folder that is only slow (a OneDrive file still downloading, say) still opens."
   ]
 };
 const RELEASE_DATES = {
@@ -1830,6 +1833,15 @@ const RELEASE_DATES = {
   "129": "2026-11-24"
 };
 const DESIGNER_NOTES = [
+  {
+    "version": 102,
+    "date": "2026-11-24",
+    "notes": [
+      "**A keyguard on posts with nothing exposed along the top of the screen now goes into its keyguard frame either way round.** Its post sits on the keyguard's own top edge, so the frame has a notch for the post along the top of the keyguard's opening, about half the keyguard's thickness deep. The frame now has the same notch along the bottom, and the keyguard is that much longer at the bottom to fill it, so it fits turned 180 degrees and its latch still reaches the frame either way. The opening in the frame ends up a few millimetres taller than the height you entered. Keyguards that expose a bar along the top of the screen already went in either way round and are unchanged. If you made a keyguard and frame like this, open the design again and export both once you have this version.",
+      "**A keyguard on posts that exposes a bar along the bottom of the screen now has latches on its left and right edges**, with matching grooves in the sides of the keyguard frame, in place of the latch on its bottom edge, and it now ends along the top of the bottom bar, just as it ends along the bottom of a bar exposed at the top. The bottom bar's opening could take away all the plastic under that latch, leaving it as a loose sliver attached to nothing, and the keyguard's sides were left hanging below the bar as two thin prongs. The side latches sit halfway up the sides, so they line up whichever way round the keyguard goes. If you made a keyguard and frame like this, open the design again and export both once you have this version.",
+      "**You can now swing a keyguard on posts up out of its keyguard frame to see how it goes in and out.** With the keyguard shown in its frame, the new setting Rotate keyguard on posts, under Keyguard Frame Info, turns it up on its posts from 0 to 120 degrees, 15 degrees at a time. If the keyguard would run into the frame at the angle you choose, the Console says so and tells you roughly how far it can swing before it does. A keyguard whose post sits on its own top edge usually clears the frame to just past upright. The latches are left out of this check, because they are meant to click past the frame."
+    ]
+  },
   {
     "version": 101,
     "date": "2026-11-24",
@@ -2880,7 +2892,42 @@ async function askForFolder(handle, seq) {
   try { return await handle.requestPermission({ mode: 'readwrite' }); }
   finally { clearTimeout(hint); }
 }
+// A browser can also stop answering about EVERY folder: on 26 Nov 2026 Ken's own
+// Chrome hung on each one, on every site, even one picked a moment before, with no
+// error and no question, so the app sat on "Loading project…" with an empty Console
+// and gave her nothing to try. A Guest window and Edge were fine, and resetting
+// Chrome's settings cured it. These two waits (asking about a folder just picked,
+// and reading a folder's files) are never cut short: a OneDrive file may really be
+// downloading, and Chrome may still be showing its question. But after
+// FOLDER_STALL_MS the app says what is happening and where the cure is written up.
+// The Console line is matched by PROBLEM_RE, so Recent problems and a problem
+// report show which wait it was.
+const FOLDER_STALL_MS = 10000;
+function folderStallHint(name, seq, reading) {
+  return setTimeout(() => {
+    if (seq !== openSeq) return;
+    const secs = FOLDER_STALL_MS / 1000;
+    const known = '<a href="#" data-known-issues>Known issues</a>';
+    if (reading) {
+      logLine(`  The browser hasn't let the app read the files in "${name}" after ${secs} seconds. ` +
+              `It may have stopped letting the app use folders: Known issues, in the ? menu, says what to do.`);
+      setStatus(`The browser hasn't let the app read "${tsEsc(name)}" yet. ` +
+                `If this doesn't finish, see ${known}.`, 'rendering');
+    } else {
+      logLine(`  The browser hasn't let the app use "${name}" after ${secs} seconds. ` +
+              `If it isn't asking you anything, it may have stopped letting the app use folders: ` +
+              `Known issues, in the ? menu, says what to do.`);
+      setStatus(`The browser hasn't let the app use "${tsEsc(name)}" yet. ` +
+                `If it isn't asking you anything, see ${known}.`, 'rendering');
+    }
+  }, FOLDER_STALL_MS);
+}
 statusEl.addEventListener('click', (e) => {
+  if (e.target.closest('[data-known-issues]')) {
+    e.preventDefault();
+    openSite(KNOWN_ISSUES_URL);
+    return;
+  }
   if (!e.target.closest('[data-pick-folder]')) return;
   e.preventDefault();
   openProject(null, { pick: true }).catch(openProjectFailed);
@@ -2985,10 +3032,13 @@ async function openProject(presetHandle = null, { pick = false } = {}) {
       throw e;
     }
     let perm = 'denied';
+    const stall = folderStallHint(dirHandle.name || 'the folder', seq, false);
     try {
       perm = await dirHandle.queryPermission({ mode: 'readwrite' });
       if (perm !== 'granted') perm = await dirHandle.requestPermission({ mode: 'readwrite' });
     } catch {}
+    finally { clearTimeout(stall); }
+    if (seq !== openSeq) return;
     if (perm !== 'granted') {
       // Denied. If a project is already open (this was a "Change Project"
       // attempt) keep it intact and just abort the switch — the user isn't
@@ -3029,6 +3079,7 @@ async function openProject(presetHandle = null, { pick = false } = {}) {
   let oaHash = null;
 
   let readingFile = null;   // set while one file is read: a failure there is that file's, not the folder's
+  const readStall = folderStallHint(dirHandle.name || 'your project folder', seq, true);
   try {
     for await (const [name, handle] of dirHandle.entries()) {
       if (handle.kind !== 'file') continue;       // ignore subfolders for now
@@ -3061,7 +3112,12 @@ async function openProject(presetHandle = null, { pick = false } = {}) {
       return;
     }
     throw e;
+  } finally {
+    clearTimeout(readStall);
   }
+  // Overtaken by a newer Open Project while the browser was slow to hand over the
+  // files: that one owns the screen now.
+  if (seq !== openSeq) return;
   if (!scadName) {
     // A folder with no keyguard file is not necessarily a mistake any more: it
     // is how a clinician starts. Offer to set it up rather than turning her
@@ -8169,8 +8225,12 @@ function setupCheckHTML() {
 }
 
 // ---- Recent problems ----
-const PROBLEM_RE = /\berror\b|failed|failure|out of bounds|out of memory|exception|damaged|couldn.t|could not|cannot|blocked|wasn.t saved/i;
+const PROBLEM_RE = /\berror\b|failed|failure|out of bounds|out of memory|exception|damaged|couldn.t|could not|cannot|blocked|wasn.t saved|hasn.t let the app/i;
 const PROBLEM_WHY = [
+  [/hasn.t let the app/i,
+   'The browser stopped answering when the app asked to use your project folder. If it happens again, '
+   + 'try the same folder in a Chrome Guest window or in Microsoft Edge. If it opens there, Known issues '
+   + 'says how to clear it from your own browser.'],
   [/memory access out of bounds|out of memory/i,
    'The 3D engine ran out of working memory, which can happen on heavy designs. Use Reload the app below, then open your project again.'],
   [/couldn.t check|failed to fetch|networkerror|load failed/i,

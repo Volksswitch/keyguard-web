@@ -13,6 +13,8 @@ notes, because nothing at this address could have been missed yet.
 
 ## Unreleased (next release)
 
+- **The app no longer sits on "Loading project…" with nothing to say when the browser stops letting it use your folder.** A browser can stop answering about folders altogether, for every folder you choose, and until now the app simply waited. After ten seconds it now tells you what is happening, at the top of the 3D view and in the Console, with a link to the Known issues page, which says how to clear it. It goes on waiting, so a folder that is only slow (a OneDrive file still downloading, say) still opens.
+
 ## Release 129
 
 - **The keyguard shown inside its keyguard frame is now a deeper pink.** With a screenshot behind the frame, the lighter pink was hard to make out. Pink highlights on the frame's own openings take the same deeper pink while the keyguard is shown, and highlights on a keyguard by itself are unchanged.
