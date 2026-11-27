@@ -982,7 +982,7 @@
       <button id="oge-add-support" type="button" title="Then click on the keyguard for a 10 mm support, or drag to draw one across an opening">+ Support</button>
       <button id="oge-add-arc" type="button" title="Then click one of the ringed square corners to round it, or drag from it to set how much">+ Rounded corner</button>
       <button id="oge-del" type="button" title="Delete the selected opening(s)">Delete</button>
-      <label id="oge-snap-label" title="Line shapes up with the middle of the screen, the grid or another opening, and their edges with the edges of the screen, the grid, other openings and a keyguard frame’s opening for the keyguard, as you draw, move or size them. A dashed line shows which, and says what it is. Hold Alt to place one freely."><input type="checkbox" id="oge-snap"> Snap</label>
+      <label id="oge-snap-label" title="Line shapes up with the middle of the screen, the grid or another opening, and their edges with the edges of the screen, the grid, other openings, a keyguard frame’s opening for the keyguard and the outside of a keyguard made for a frame, as you draw, move or size them. A dashed line shows which, and says what it is. Hold Alt to place one freely."><input type="checkbox" id="oge-snap"> Snap</label>
     </div>
     <div id="oge-blocked"></div>
    </div>
@@ -1804,6 +1804,9 @@ const RELEASE_NOTES = {
   ],
   "131": [
     "Snap now lines shapes up with the edges of a keyguard frame's opening for the keyguard. When you design a keyguard frame, a shape you draw, move or size on the “by eye” tab lines its left, right, top or bottom edge up with the matching edge of the opening the keyguard sits in, and the dashed line says so: “left edge of the keyguard’s opening”. Its middle is not offered, because it is the middle of the keyguard, which is not a line Snap uses."
+  ],
+  "132": [
+    "Snap now lines shapes up with the outside edges of a keyguard made to sit in a keyguard frame. When you design the keyguard for a frame, a shape you draw, move or size on the “by eye” tab lines its left, right, top or bottom edge up with the matching edge of the keyguard, and the dashed line says so: “left edge of the keyguard”. The keyguard's latches and posts don't count as its edge. These lines follow the keyguard itself, so with a tightness of fit other than 0 they sit a little inside the edges of the frame's opening, which you line up with when you design the frame."
   ]
 };
 const RELEASE_DATES = {
@@ -4726,7 +4729,10 @@ async function doRender() {
 
     const cur = currentFormValues();
     // What this mesh is, so Snap on the by-eye tab knows a frame when it sees one.
-    kgMesh.userData.generate = cur.generate;
+    // allParamValues: have_a_keyguard_frame has no control at most skill levels.
+    const allVals = allParamValues();
+    kgMesh.userData.generate = allVals.generate;
+    kgMesh.userData.hasFrame = allVals.have_a_keyguard_frame === 'yes';
 
     // A nudge back at 0 means keyguard.scad emitted no advice for that axis this
     // render, so its sticky line (if any) is now stale — retire it.
@@ -8078,7 +8084,7 @@ function movesHTML() {
     <h4>Moving and shaping</h4><table>
       ${row('Drag', 'Moves what you drag. Dragging anywhere else turns the keyguard.')}
       ${row('Shift + drag', 'Keeps to a straight line.')}
-      ${row('Snap', 'With Snap ticked, a shape lines its middle up with the middle of the screen, the grid or another opening, and its edges up with the edges of the screen, the grid, other openings and a keyguard frame’s opening for the keyguard, as you draw, move or size it; a dashed line shows which, labeled with what it is. A ridge or support lines up by its ends too. A shape lined up with the screen or the grid stays on that line if you later change the tablet, the padding or the bars; on the pixels or millimeters tab its number says which line. Dragging it off the line, nudging it or typing a number lets go.')}
+      ${row('Snap', 'With Snap ticked, a shape lines its middle up with the middle of the screen, the grid or another opening, and its edges up with the edges of the screen, the grid, other openings, a keyguard frame’s opening for the keyguard and the outside of a keyguard made for a frame, as you draw, move or size it; a dashed line shows which, labeled with what it is. A ridge or support lines up by its ends too. A shape lined up with the screen or the grid stays on that line if you later change the tablet, the padding or the bars; on the pixels or millimeters tab its number says which line. Dragging it off the line, nudging it or typing a number lets go.')}
       ${row('Alt + drag', 'Places the shape freely, without snapping.')}
       ${row(`${k} + drag`, 'Leaves a copy behind and drags the copy.')}
       ${row('Arrow keys', 'Nudge the selection 1 mm. Hold Shift for 10 mm.')}
@@ -9986,6 +9992,9 @@ function ogeSnapLines() {
   // model: its edges only.
   const h = ogeHousingEdges();
   if (h) edges('the keyguard’s opening', h.x0, h.x1, h.y0, h.y1);
+  // A keyguard made for a frame: its outer edges, read off the model the same way.
+  const o = ogeOuterEdges();
+  if (o) edges('the keyguard', o.x0, o.x1, o.y0, o.y1);
   return { xs, ys, ex, ey, names, box: ogeSnapCache.box };
 }
 
@@ -10171,13 +10180,20 @@ function ogeSnapDrawStart(p, g, ev) {
 // not the box around the outline: the pockets for a keyguard's posts open off
 // the sides of the opening and would otherwise move the edge out to theirs.
 // `ogeLoopCache.housing` holds {x0, x1, y0, y1}, or null when there is none.
-let ogeLoopCache = { mesh: null, loops: [], housing: null };
+//
+// Likewise a keyguard made to sit in a frame offers its own outer edges (Ken, 27
+// Nov 2026), so a shape can be lined up with the edge that meets the frame —
+// again edges only, each the longest straight wall on its side, so its latches
+// and posts don't move them. `ogeLoopCache.outer`, or null. Not for half a
+// keyguard, whose cut edge is not an edge of the keyguard.
+let ogeLoopCache = { mesh: null, loops: [], housing: null, outer: null };
 const OGE_FRAME_GENERATES = ['keyguard frame', 'first half of keyguard frame', 'second half of keyguard frame'];
 function ogeHousingEdges() { ogeOpeningBoxes(); return ogeLoopCache.housing; }
+function ogeOuterEdges() { ogeOpeningBoxes(); return ogeLoopCache.outer; }
 function ogeOpeningBoxes() {
   const kg = currentMesh && currentMesh.children
     ? currentMesh.children.find(o => o.isMesh && o.userData.kgBody) : null;
-  if (!kg) { ogeLoopCache = { mesh: null, loops: [], housing: null }; return []; }
+  if (!kg) { ogeLoopCache = { mesh: null, loops: [], housing: null, outer: null }; return []; }
   if (ogeLoopCache.mesh === kg) return ogeLoopCache.loops;
   kg.updateMatrixWorld(true);
   const pos = kg.geometry.getAttribute('position');
@@ -10225,31 +10241,33 @@ function ogeOpeningBoxes() {
   const loops = [...boxes.values()].filter(b =>
     !big(b) &&                                                // the keyguard's own edge
     (b.x1 - b.x0 >= 0.5 || b.y1 - b.y0 >= 0.5));              // slivers aren't openings
-  // A frame's opening for the keyguard: of the outlines that big, the frame's
-  // own edge is the largest, and the opening the next.
-  let housing = null;
-  if (OGE_FRAME_GENERATES.includes(kg.userData.generate)) {
-    const roots = [...boxes].filter(([, b]) => big(b))
-      .sort(([, a], [, b]) => (b.x1 - b.x0) * (b.y1 - b.y0) - (a.x1 - a.x0) * (a.y1 - a.y0));
-    if (roots.length >= 2) {
-      const [r, b] = roots[1];
-      const mx = (b.x0 + b.x1) / 2, my = (b.y0 + b.y1) / 2;
-      // Length of straight wall at each place, to the nearest 0.01 mm, side by side.
-      const runs = { x0: new Map(), x1: new Map(), y0: new Map(), y1: new Map() };
-      const add = (m, v, len) => { const k = Math.round(v * 100); m.set(k, (m.get(k) || 0) + len); };
-      for (const [a, c] of segs) {
-        if (find(key(a)) !== r) continue;
-        const dx = Math.abs(c.x - a.x), dy = Math.abs(c.y - a.y);
-        if (dx < 0.01 && dy > 0) add(a.x < mx ? runs.x0 : runs.x1, (a.x + c.x) / 2, dy);
-        else if (dy < 0.01 && dx > 0) add(a.y < my ? runs.y0 : runs.y1, (a.y + c.y) / 2, dx);
-      }
-      const longest = m => { let best = null, len = 0;
-        for (const [k, l] of m) if (l > len) { len = l; best = k / 100; } return best; };
-      const e = { x0: longest(runs.x0), x1: longest(runs.x1), y0: longest(runs.y0), y1: longest(runs.y1) };
-      if (Object.values(e).every(v => v !== null)) housing = e;
+  // Of the outlines that big, the outside edge is the largest; in a frame, the
+  // opening for the keyguard is the next.
+  const roots = [...boxes].filter(([, b]) => big(b))
+    .sort(([, a], [, b]) => (b.x1 - b.x0) * (b.y1 - b.y0) - (a.x1 - a.x0) * (a.y1 - a.y0));
+  // An outline's four edges, each the longest straight wall on its side; null
+  // if a side has none.
+  const walls = ([r, b]) => {
+    const mx = (b.x0 + b.x1) / 2, my = (b.y0 + b.y1) / 2;
+    // Length of straight wall at each place, to the nearest 0.01 mm, side by side.
+    const runs = { x0: new Map(), x1: new Map(), y0: new Map(), y1: new Map() };
+    const add = (m, v, len) => { const k = Math.round(v * 100); m.set(k, (m.get(k) || 0) + len); };
+    for (const [a, c] of segs) {
+      if (find(key(a)) !== r) continue;
+      const dx = Math.abs(c.x - a.x), dy = Math.abs(c.y - a.y);
+      if (dx < 0.01 && dy > 0) add(a.x < mx ? runs.x0 : runs.x1, (a.x + c.x) / 2, dy);
+      else if (dy < 0.01 && dx > 0) add(a.y < my ? runs.y0 : runs.y1, (a.y + c.y) / 2, dx);
     }
-  }
-  ogeLoopCache = { mesh: kg, loops, housing };
+    const longest = m => { let best = null, len = 0;
+      for (const [k, l] of m) if (l > len) { len = l; best = k / 100; } return best; };
+    const e = { x0: longest(runs.x0), x1: longest(runs.x1), y0: longest(runs.y0), y1: longest(runs.y1) };
+    return Object.values(e).every(v => v !== null) ? e : null;
+  };
+  const housing = OGE_FRAME_GENERATES.includes(kg.userData.generate) && roots.length >= 2
+    ? walls(roots[1]) : null;
+  const outer = kg.userData.generate === 'keyguard' && kg.userData.hasFrame && roots.length >= 1
+    ? walls(roots[0]) : null;
+  ogeLoopCache = { mesh: kg, loops, housing, outer };
   return loops;
 }
 

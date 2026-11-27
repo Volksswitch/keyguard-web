@@ -13,6 +13,8 @@ notes, because nothing at this address could have been missed yet.
 
 ## Unreleased (next release)
 
+- **Snap now lines shapes up with the outside edges of a keyguard made to sit in a keyguard frame.** When you design the keyguard for a frame, a shape you draw, move or size on the “by eye” tab lines its left, right, top or bottom edge up with the matching edge of the keyguard, and the dashed line says so: “left edge of the keyguard”. The keyguard's latches and posts don't count as its edge. These lines follow the keyguard itself, so with a tightness of fit other than 0 they sit a little inside the edges of the frame's opening, which you line up with when you design the frame.
+
 ## Release 131
 
 - **Snap now lines shapes up with the edges of a keyguard frame's opening for the keyguard.** When you design a keyguard frame, a shape you draw, move or size on the “by eye” tab lines its left, right, top or bottom edge up with the matching edge of the opening the keyguard sits in, and the dashed line says so: “left edge of the keyguard’s opening”. Its middle is not offered, because it is the middle of the keyguard, which is not a line Snap uses.
