@@ -20,7 +20,7 @@ from kg_docstyle import DOCUMENTS, HERE, KgDoc, GREY  # noqa: E402
 OUT = sys.argv[1] if len(sys.argv) > 1 else os.path.join(
     DOCUMENTS, 'Keyguard Designer User Manual.docx')
 FIG = os.path.join(HERE, 'figures')
-UPDATED = 'November 20, 2026'
+UPDATED = 'November 27, 2026'
 O_A_PAGE = ('https://volksswitch.org/index.php/volks-devices/customizable-3d-printable-keyguard-for-'
             'grid-based-free-form-and-hybrid-aac-apps-on-tablets/specifying-a-keyguard-for-a-free-form-'
             'or-hybrid-aac-app/putting-instructions-in-the-o_a-file/')
@@ -307,7 +307,8 @@ d.table(['Move', 'What it does'], [
     ['Shift + Ctrl + drag', 'Makes a copy and moves the copy in a straight line'],
     ['Snap', "Tick Snap and, as you draw, move or size a shape, its middle lines up with the middle of "
      "the screen, the grid or another opening, and its edges with the edges of the screen, the "
-     "grid and other openings. A dashed line shows what it lined up with, and its label says what "
+     "grid, other openings, a keyguard frame’s opening for the keyguard and the outside of a "
+     "keyguard made for a frame. A dashed line shows what it lined up with, and its label says what "
      "that line is; the nearest line wins. A ridge or support lines up by its ends too, so a "
      "support can stop exactly at an opening's wall. A shape lined up with the screen or the grid "
      "stays on that line if you later change the tablet, the padding or the bars. Dragging it off "
@@ -514,6 +515,10 @@ d.table(['What you see', 'What to do'], [
     ['The app says it couldn’t open your project folder', 'The browser’s memory of the folder '
      'has gone bad, most often after a browser update. Click Pick a different folder… and choose '
      'the same folder again. Your designs are safe in the folder.'],
+    ['The app says the browser hasn’t let it use your project folder', 'If the browser isn’t '
+     'asking you anything, it may have stopped letting the app use folders. Try the same folder in '
+     'a Chrome Guest window or in Microsoft Edge. If it opens there, Known issues, in the ? menu, '
+     'says how to clear it from your own browser. Your designs are safe in the folder.'],
     ['The keyguard stops updating, and the Console says memory access out of bounds',
      'A large design used up the 3D engine\'s working memory. Click Reload the app on the '
      'Troubleshooting or About tab, then open the project again. Your design is safe.'],

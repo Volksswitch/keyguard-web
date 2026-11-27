@@ -18,7 +18,7 @@ from kg_docstyle import DOCUMENTS, KgDoc, NAVY, GREY  # noqa: E402
 
 OUT = sys.argv[1] if len(sys.argv) > 1 else os.path.join(
     DOCUMENTS, 'Keyguard Designer Quick Reference Card.docx')
-UPDATED = 'November 20, 2026'
+UPDATED = 'November 27, 2026'
 W = [1.6, 5.7]          # two-column tables across the 7.3-inch measure
 
 d = KgDoc(footer='Keyguard Designer Quick Reference', body_pt=10, margin=0.6)
@@ -90,7 +90,8 @@ d.table(['Move', 'What it does'], [
     ['Drag', 'Move what you drag. Dragging anywhere else turns the keyguard.'],
     ['Shift + drag', 'Keep to a straight line.'],
     ['Ctrl + drag', 'Leave a copy behind and drag the copy.'],
-    ['Snap, Alt + drag', 'Tick Snap to line shapes up with the screen, grid and other openings; '
+    ['Snap, Alt + drag', 'Tick Snap to line shapes up with the screen, grid, other openings and the edges '
+     'where a keyguard meets its frame; '
      'a label names the line. Alt places one freely.'],
     ['Arrow keys', 'Nudge 1 mm. Hold Shift for 10 mm.'],
     ['Handles, yellow dot', "Resize (Shift keeps the shape, Ctrl the center; a circle's side "
