@@ -13,6 +13,8 @@ notes, because nothing at this address could have been missed yet.
 
 ## Unreleased (next release)
 
+- **Snap now lines shapes up with the edges of a keyguard frame's opening for the keyguard.** When you design a keyguard frame, a shape you draw, move or size on the “by eye” tab lines its left, right, top or bottom edge up with the matching edge of the opening the keyguard sits in, and the dashed line says so: “left edge of the keyguard’s opening”. Its middle is not offered, because it is the middle of the keyguard, which is not a line Snap uses.
+
 ## Release 130
 
 - **The app no longer sits on "Loading project…" with nothing to say when the browser stops letting it use your folder.** A browser can stop answering about folders altogether, for every folder you choose, and until now the app simply waited. After ten seconds it now tells you what is happening, at the top of the 3D view and in the Console, with a link to the Known issues page, which says how to clear it. It goes on waiting, so a folder that is only slow (a OneDrive file still downloading, say) still opens.
