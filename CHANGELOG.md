@@ -14,6 +14,7 @@ notes, because nothing at this address could have been missed yet.
 ## Unreleased (next release)
 
 - **Snap now finds the opening for the keyguard in every keyguard frame.** Release 131 missed it when the keyguard was much shorter or narrower than the frame, such as a short keyguard slid to the top of a tall case opening, and offered its edges only as “edge of an opening”, with a middle besides. And where the frame has notches for a keyguard's posts, the top or bottom edge it offered was the notch's, a few millimeters out. Now the edges are always exactly where your **keyguard width**, **keyguard height**, **slide keyguard horizontally** and **slide keyguard vertically** put the opening.
+- **Snap now lines shapes up with the true outside edges of a keyguard made for a keyguard frame.** Its left and right edges are where your **keyguard width**, **keyguard horizontal tightness of fit** and **slide keyguard horizontally** put them. Its top and bottom edges now come from the keyguard designer file, exactly as it builds the keyguard. That matters for a keyguard on posts, which the file trims back to the post line at the top and lengthens at the bottom to fill the frame's notch. This needs version 105 or later of the keyguard designer file. With an older one, a keyguard on posts offers only its left and right edges, and any other keyguard offers all four from its settings.
 
 ## Release 132
 
