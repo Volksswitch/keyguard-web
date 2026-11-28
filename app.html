@@ -464,8 +464,12 @@
   #ruler-pop-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.05);
                        display: none; align-items: center; justify-content: center; z-index: 1300; }
   #ruler-pop-overlay.open { display: flex; }
+  /* Not selectable: dragging the pop-up, or a quick second click as it opened,
+     selected all its text (Ken, 28 Nov 2026). The same numbers are in the
+     Console, which has its own Copy button. */
   #ruler-pop { background: #fafafa; border: 1px solid #888; border-radius: 4px;
-               min-width: 300px; max-width: 90vw; box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+               min-width: 300px; max-width: 90vw; box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+               user-select: none; }
   #ruler-pop h3 { margin: 0; padding: 10px 14px; border-bottom: 1px solid #ccc;
                   background: #e8e8e8; font-size: 14px; cursor: move; user-select: none;
                   touch-action: none; }
@@ -12121,7 +12125,12 @@ var rulerBooted = false;
 const rulerBtn   = document.getElementById('ruler-btn');
 const rulerSvg   = document.getElementById('ruler-overlay');
 const rulerPopOv = document.getElementById('ruler-pop-overlay');
-const RULER_PICK_PX  = 6;     // how near an edge the pointer must be, in screen pixels (Ken: try 6)
+// How near an edge the pointer must be, in screen pixels, for the edge to win
+// over the face under it. 6 at first; 3 since 28 Nov 2026, when Ken found faces
+// between two edges hard to pick. Once the cursor became the normal arrow, the
+// point that counts is the arrow's tip, not the middle of a crosshair, and on a
+// face under 12 px across two 6 px edge zones left no face to point at.
+const RULER_PICK_PX  = 3;
 const RULER_CLICK_PX = 4;     // moved further than this between press and release = a drag
 const RULER_PARALLEL_COS = Math.cos(0.5 * Math.PI / 180);   // parallel = within half a degree
 const RULER_SHARP_DEG = 20;   // a crease at least this sharp is an edge
@@ -13181,6 +13190,8 @@ function rulerOpenPop(what, values, subs, note) {
   for (const s of subs) add('rp-sub', s);
   if (note) add('rp-note', note);
   rulerPopOpen = true;
+  const sel = window.getSelection && window.getSelection();
+  if (sel) sel.removeAllRanges();            // nothing left selected from before it opened
   rulerPopOv.classList.add('open');
   rulerPlacePop();
   document.getElementById('ruler-pop-ok').focus();
@@ -13239,8 +13250,17 @@ function rulerClosePop() {
   rulerQueueHover();
 }
 document.getElementById('ruler-pop-ok').addEventListener('click', rulerClosePop);
+// A click on the backdrop dismisses; a drag that starts or ends there does not.
+let rulerPopBackdropDown = null;
+rulerPopOv.addEventListener('pointerdown', e => {
+  rulerPopBackdropDown = e.target === rulerPopOv ? { x: e.clientX, y: e.clientY } : null;
+});
 rulerPopOv.addEventListener('click', e => {
-  if (e.target === rulerPopOv && !rulerPopJustDragged) rulerClosePop();
+  const d = rulerPopBackdropDown;
+  rulerPopBackdropDown = null;
+  if (e.target !== rulerPopOv || rulerPopJustDragged || !d) return;
+  if (Math.hypot(e.clientX - d.x, e.clientY - d.y) > RULER_CLICK_PX) return;
+  rulerClosePop();
 });
 
 // ---- Mouse and keyboard ----------------------------------------------------------
