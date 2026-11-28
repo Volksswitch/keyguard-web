@@ -1862,7 +1862,7 @@ const RELEASE_NOTES = {
     "Snap now lines shapes up with the real top and bottom of a keyguard frame's opening when the keyguard is on posts. On posts, the frame has a notch along the top of the keyguard's opening for the post, and often a matching one along the bottom. They make the opening taller than the keyguard, so a shape lined up with the opening's top or bottom used to stop short of the frame's edge. Now its top and bottom are where the frame is really cut. This needs version 106 or later of the keyguard designer file. With an older one, a frame for a keyguard on posts offers only the left and right edges of the opening."
   ],
   "135": [
-    "A ruler for measuring the keyguard. The new ruler button, to the right of Custom Openings, lets you measure the model on screen. Point at a face, an edge or a curve and it lights up; click it to keep it. After a face, only faces parallel to it light up; after an edge, only parallel edges. Click a second one and a pop-up shows the distance between them in millimeters and in the tablet's screen pixels, with both items still lit; drag the pop-up by its title to move it out of the way. Click a curve, such as the rounded corner of an opening, or the rim or wall of a round one (the funnel of an ambient light sensor opening included), and the pop-up shows its radius and diameter. Each measurement is also written to the Console. You can still drag to turn and move the model between clicks, and clicking the kept item again lets it go. Dismissing the pop-up clears your picks so you can measure again; click the ruler button again, or press Esc, to stop. Pixels need a recent keyguard designer file, and are left out for a distance that runs straight through the keyguard's thickness. Two edges at different heights, such as the top of one side of an opening and the bottom of the other on a sloped wall, show the whole distance and also its two parts: across the screen (with pixels) and through the thickness."
+    "A ruler for measuring the keyguard. The new ruler button, to the right of Custom Openings, lets you measure the model on screen. Point at a face, an edge or a curve and it lights up; click it to keep it. After a face, only faces parallel to it light up; after an edge, only parallel edges. Click a second one and a pop-up shows the distance between them in millimeters and in the tablet's screen pixels, with both items still lit; drag the pop-up by its title to move it out of the way. Click a curve, such as the rounded corner of an opening, the round end of a slot, or the rim or wall of a round opening (slanted walls and the funnel of an ambient light sensor opening included), and the pop-up shows its radius and diameter. Each measurement is also written to the Console. You can still drag to turn and move the model between clicks, and clicking the kept item again lets it go. Dismissing the pop-up clears your picks so you can measure again; click the ruler button again, or press Esc, to stop. Pixels need a recent keyguard designer file, and are left out for a distance that runs straight through the keyguard's thickness. Two edges at different heights, such as the top of one side of an opening and the bottom of the other on a sloped wall, show the whole distance and also its two parts: across the screen (with pixels) and through the thickness."
   ]
 };
 const RELEASE_DATES = {
@@ -12343,6 +12343,32 @@ function rulerAnalyse(geom) {
   const used = new Uint8Array(nS);
   const otherEnd = (s, v) => eA[sharp[s]] === v ? eB[sharp[s]] : eA[sharp[s]];
   const chains = [];
+  // Where three or more creases meet, a chain carries on along the one that
+  // continues it smoothly: a turn of under 25° alongside the same face. The
+  // rim of an opening with a slanted wall has creases running up the wall that
+  // meet it part-way round (eight on the round ends of a slot, 28 Nov 2026);
+  // stopping at each one cut the rim's curves into pieces.
+  const CARRY_COS = Math.cos(25 * Math.PI / 180);
+  const dirFrom = (s, from) => {
+    const to = otherEnd(s, from);
+    const x = V[3 * to] - V[3 * from], y = V[3 * to + 1] - V[3 * from + 1], z = V[3 * to + 2] - V[3 * from + 2];
+    const l = Math.hypot(x, y, z) || 1e-12;
+    return [x / l, y / l, z / l];
+  };
+  const facesOf = s => { const e = sharp[s]; return [faceOf[eT1[e]], eT2[e] >= 0 ? faceOf[eT2[e]] : -1]; };
+  const shareFace = (s, t) => { const a = facesOf(s), b = facesOf(t); return a.some(f => f >= 0 && b.includes(f)); };
+  // The edge among `cands` that continues edge s smoothly through vertex v, or -1.
+  const carryOn = (v, s, cands) => {
+    const din = dirFrom(s, otherEnd(s, v));
+    let best = -1, bestCos = CARRY_COS;
+    for (const t of cands) {
+      if (t === s) continue;
+      const c = rulerDot(din, dirFrom(t, v));
+      if (c >= bestCos && shareFace(s, t)) { bestCos = c; best = t; }
+    }
+    return best;
+  };
+  const unusedAt = v => { const l = []; for (let i = aStart[v]; i < aStart[v + 1]; i++) if (!used[adj[i]]) l.push(adj[i]); return l; };
   const walk = (v0, s0) => {
     const vs = [v0];
     let v = v0, s = s0;
@@ -12351,17 +12377,23 @@ function rulerAnalyse(geom) {
       v = otherEnd(s, v);
       if (v === v0) break;
       vs.push(v);
-      if (deg[v] !== 2) break;
-      let next = -1;
-      for (let i = aStart[v]; i < aStart[v + 1]; i++) if (!used[adj[i]]) { next = adj[i]; break; }
+      const cands = unusedAt(v);
+      const next = deg[v] === 2 ? (cands.length ? cands[0] : -1) : carryOn(v, s, cands);
       if (next < 0) break;
       s = next;
     }
-    return { vs, closed: v === v0 && deg[v0] === 2 };
+    return { vs, closed: v === v0 && (deg[v0] === 2 || carryOn(v0, s, [s0]) === s0) };
   };
   for (let v = 0; v < nV; v++) {
     if (deg[v] === 0 || deg[v] === 2) continue;
-    for (let i = aStart[v]; i < aStart[v + 1]; i++) if (!used[adj[i]]) chains.push(walk(v, adj[i]));
+    for (let i = aStart[v]; i < aStart[v + 1]; i++) {
+      const s = adj[i];
+      if (used[s]) continue;
+      // An edge that some other edge here runs smoothly into is the middle of a
+      // chain, not its start; the walk will come through it from that side.
+      if (unusedAt(v).some(t => t !== s && carryOn(v, t, [s]) === s)) continue;
+      chains.push(walk(v, s));
+    }
   }
   for (let s = 0; s < nS; s++) if (!used[s]) chains.push(walk(eA[sharp[s]], s));
 
@@ -12412,11 +12444,45 @@ function rulerAnalyse(geom) {
     }
     for (let k = 0; k + 1 < r.vs.length; k++) feats[f].segs.push(r.vs[k], r.vs[k + 1]);
   });
-  for (const r of runs) {
-    if (r.kind !== 'arc') continue;
+  // Pieces of one circle that came out in different chains are one curve. On
+  // the ledge of a home button opening the straight slivers between the
+  // quarter circles are not creases at all, so each quarter was a chain of its
+  // own (28 Nov 2026). Join curves of the same radius, in the same plane, whose
+  // centers are within 0.5 mm (or 5% of a large radius) and whose ends come as
+  // close as that.
+  const arcRuns = runs.filter(r => r.kind === 'arc');
+  const apar = arcRuns.map((_, i) => i);
+  const afind = x => { while (apar[x] !== x) { apar[x] = apar[apar[x]]; x = apar[x]; } return x; };
+  const vdist = (a, b) => Math.hypot(V[3 * a] - V[3 * b], V[3 * a + 1] - V[3 * b + 1], V[3 * a + 2] - V[3 * b + 2]);
+  for (let i = 0; i < arcRuns.length; i++) {
+    const A = arcRuns[i].fit;
+    for (let j = i + 1; j < arcRuns.length; j++) {
+      const B = arcRuns[j].fit;
+      const r = (A.r + B.r) / 2, near = Math.max(0.5, r * 0.05);
+      if (Math.abs(A.r - B.r) > Math.max(0.01, r * 0.01)) continue;
+      if (Math.abs(rulerDot(A.n, B.n)) < 0.999) continue;
+      const dc = [B.c[0] - A.c[0], B.c[1] - A.c[1], B.c[2] - A.c[2]];
+      if (Math.hypot(dc[0], dc[1], dc[2]) > near || Math.abs(rulerDot(dc, A.n)) > 0.01) continue;
+      const ea = [arcRuns[i].vs[0], arcRuns[i].vs[arcRuns[i].vs.length - 1]];
+      const eb = [arcRuns[j].vs[0], arcRuns[j].vs[arcRuns[j].vs.length - 1]];
+      if (!ea.some(a => eb.some(b => vdist(a, b) <= near))) continue;
+      const ra = afind(i), rb = afind(j);
+      if (ra !== rb) apar[ra] = rb;
+    }
+  }
+  const arcGroups = new Map();
+  arcRuns.forEach((r, i) => { const g = afind(i); if (!arcGroups.has(g)) arcGroups.set(g, []); arcGroups.get(g).push(r); });
+  for (const g of arcGroups.values()) {
     const segs = [];
-    for (let k = 0; k + 1 < r.vs.length; k++) segs.push(r.vs[k], r.vs[k + 1]);
-    feats.push({ kind: 'arc', segs, c: r.fit.c, n: r.fit.n, r: r.fit.r });
+    let w = 0, rr = 0;
+    const c = [0, 0, 0];
+    for (const r of g) {
+      for (let k = 0; k + 1 < r.vs.length; k++) segs.push(r.vs[k], r.vs[k + 1]);
+      const wk = r.vs.length - 1;
+      w += wk; rr += r.fit.r * wk;
+      for (let k = 0; k < 3; k++) c[k] += r.fit.c[k] * wk;
+    }
+    feats.push({ kind: 'arc', segs, c: c.map(v => v / w), n: g[0].fit.n, r: rr / w });
   }
 
   // Which feature each sharp crease belongs to, and from that which features
@@ -12526,25 +12592,22 @@ function rulerSplitChain(vs, closed, V, out) {
     const c = d[3 * j] * d[3 * k] + d[3 * j + 1] * d[3 * k + 1] + d[3 * j + 2] * d[3 * k + 2];
     return Math.acos(Math.max(-1, Math.min(1, c))) * 180 / Math.PI;
   };
-  // The segments in order. A loop starts just after its sharpest turn, so no
-  // straight side or curve is cut in two by where the walk happened to begin.
-  let order = Array.from({ length: m }, (_, i) => i);
-  if (closed) {
-    let s0 = 0, worst = -1;
-    for (let j = 0; j < m; j++) { const t = turn(j, (j + 1) % m); if (t > worst) { worst = t; s0 = j; } }
-    order = order.map(i => (s0 + 1 + i) % m);
-  }
   // Join segments that carry straight on into SIDES. A model often splits one
   // side of a polygon into two or more collinear pieces (seen on the small
   // circle at the bottom of an ambient light sensor opening, 28 Nov 2026,
   // where every side of the 64-gon came in two halves), and a side, not a
   // piece, is a step round a circle.
-  const sides = [];   // { segs: [segment indices], a, b (end vertex ids), u (unit), len }
-  for (let i = 0; i < m; i++) {
-    const s = order[i];
+  let sides = [];     // { segs: [segment indices], a, b (end vertex ids), u (unit), len }
+  for (let s = 0; s < m; s++) {
     const last = sides[sides.length - 1];
     if (last && turn(last.segs[last.segs.length - 1], s) < 0.3) { last.segs.push(s); last.b = segB(s); }
     else sides.push({ segs: [s], a: segA(s), b: segB(s) });
+  }
+  // A loop's walk began wherever it happened to; a side it cut in two is one side.
+  if (closed && sides.length > 1 && turn(m - 1, 0) < 0.3) {
+    const last = sides.pop();
+    sides[0].segs = [...last.segs, ...sides[0].segs];
+    sides[0].a = last.a;
   }
   for (const sd of sides) {
     const a = sd.a * 3, b = sd.b * 3;
@@ -12558,54 +12621,148 @@ function rulerSplitChain(vs, closed, V, out) {
     const ang = Math.acos(Math.max(-1, Math.min(1, rulerDot(p.u, q.u)))) * 180 / Math.PI;
     return ang <= 20 && Math.max(p.len, q.len) / Math.min(p.len, q.len) <= 2.5 ? 2 : 0;
   };
-  const nP = sides.length;
+  let nP = sides.length;
+  const allVs = list => {                 // every vertex of the listed sides, for drawing
+    const p = [sides[list[0]].a];
+    for (const i of list) for (const s of sides[i].segs) p.push(segB(s));
+    return p;
+  };
+  const corners = list => {               // the corners only, which lie on the circle
+    const p = [sides[list[0]].a];
+    for (const i of list) p.push(sides[i].b);
+    return p;
+  };
+  if (closed) {
+    const Jc = sides.map((sd, i) => joint(sd, sides[(i + 1) % nP]));
+    // A loop that turns gently all the way round may be a whole circle.
+    if (nP >= 6 && Jc.every(j => j === 2)) {
+      const all = sides.map((_, i) => i);
+      const fit = rulerFitCircle(corners(all).slice(0, -1), V, true);
+      if (fit) { out.push({ kind: 'arc', vs: allVs(all), fit }); return; }
+    }
+    // Otherwise start the loop just after a real corner, so that no curve is
+    // cut in two by where the walk happened to begin. Until 28 Nov 2026 it
+    // started after the sharpest turn, which on a shape made only of gentle
+    // turns (the round end of a slot) could fall in the middle of a curve.
+    const c = Jc.indexOf(0);
+    if (c >= 0) sides = [...sides.slice(c + 1), ...sides.slice(0, c + 1)];
+  }
   const J = [];
   for (let i = 0; i + 1 < nP; i++) J.push(joint(sides[i], sides[i + 1]));
-  const allVs = (lo, hi) => {             // every vertex of sides lo..hi, for drawing
-    const p = [sides[lo].a];
-    for (let i = lo; i <= hi; i++) for (const s of sides[i].segs) p.push(segB(s));
-    return p;
+  const range = (lo, hi) => Array.from({ length: hi - lo + 1 }, (_, k) => lo + k);
+
+  // Curves: runs of gentle joints whose corners fit one circle.
+  let arcs = [];      // { list: [side indices, in order], fit }, in order along the chain
+  const fitRun = (lo, hi) => {
+    if (hi - lo + 1 < 3) return;
+    // A straight side of much the same length as the curve's steps can sneak
+    // onto either end, so if the whole run will not fit a circle, try again
+    // without one or two end sides.
+    for (let trim = 0; trim <= 2; trim++) {
+      for (let a = 0; a <= trim; a++) {
+        const l = lo + a, h = hi - (trim - a);
+        if (h - l + 1 < 3) continue;
+        const fit = rulerFitCircle(corners(range(l, h)), V);
+        if (fit) {
+          fitRun(lo, l - 1);
+          arcs.push({ list: range(l, h), fit });
+          fitRun(h + 1, hi);
+          return;
+        }
+      }
+    }
+    // Still no circle: a short straight piece in the middle can join two
+    // curves whose centers are a little apart (the round ends of a home button
+    // opening, 28 Nov 2026). Cut the run at the side whose length is furthest
+    // from the run's usual step and fit each part; the joining below puts the
+    // circle back together across that piece.
+    const lens = range(lo, hi).map(i => sides[i].len).sort((p, q) => p - q);
+    const med = lens[lens.length >> 1];
+    let odd = -1, worst = 0.15;
+    for (let i = lo; i <= hi; i++) {
+      const dev = Math.abs(sides[i].len - med) / med;
+      if (dev > worst) { worst = dev; odd = i; }
+    }
+    if (odd < 0) return;
+    fitRun(lo, odd - 1);
+    fitRun(odd + 1, hi);
   };
-  const corners = (lo, hi) => {           // the corners only, which lie on the circle
-    const p = [sides[lo].a];
-    for (let i = lo; i <= hi; i++) p.push(sides[i].b);
-    return p;
-  };
-  // A loop that turns gently all the way round may be a whole circle.
-  if (closed && nP >= 6 && J.every(j => j === 2) && joint(sides[nP - 1], sides[0]) === 2) {
-    const fit = rulerFitCircle(corners(0, nP - 1).slice(0, -1), V, true);
-    if (fit) { out.push({ kind: 'arc', vs: allVs(0, nP - 1), fit }); return; }
-  }
-  const isArc = new Uint8Array(nP);
   for (let i = 0; i < J.length;) {
     if (J[i] !== 2) { i++; continue; }
     let j = i;
     while (j < J.length && J[j] === 2) j++;
-    // Gentle joints i..j-1 link sides i..j. A straight side of much the same
-    // length as the curve's steps can sneak onto either end, so if the whole run
-    // will not fit a circle, try again without one or two end sides.
-    if (j - i >= 2) {
-      let done = false;
-      for (let trim = 0; trim <= 2 && !done; trim++) {
-        for (let a = 0; a <= trim && !done; a++) {
-          const lo = i + a, hi = j - (trim - a);
-          if (hi - lo + 1 < 3) continue;
-          const fit = rulerFitCircle(corners(lo, hi), V);
-          if (fit) {
-            for (let s = lo; s <= hi; s++) isArc[s] = 1;
-            out.push({ kind: 'arc', vs: allVs(lo, hi), fit });
-            done = true;
-          }
-        }
-      }
-    }
+    fitRun(i, j);                           // gentle joints i..j-1 link sides i..j
     i = j;
   }
-  for (let i = 0; i < nP; i++) if (!isArc[i]) out.push({ kind: 'line', vs: allVs(i, i) });
+
+  // One circle broken by a sliver of straight edge is still one circle. The
+  // round ends of slots and home button openings come out as two quarter
+  // circles with a straight piece 0.1 to 0.3 mm long between them, their
+  // centers that far apart (28 Nov 2026), so only a quarter lit up. Join two
+  // neighboring curves of the same radius, in the same plane, turning the same
+  // way, when no more than a short straight piece lies between them and their
+  // centers are close: both within 0.5 mm, or 5% of the radius on a large
+  // circle. (Comparing the centers' distance with the piece's length instead
+  // failed: a joined curve's center is an average, and a piece can already
+  // have been taken into the curve beside it.)
+  const gapSides = (A, B) => {            // the sides strictly between A and B, going forward
+    const out2 = [];
+    for (let i = (A.list[A.list.length - 1] + 1) % nP; i !== B.list[0]; i = (i + 1) % nP) {
+      if (out2.length > 3) return null;
+      out2.push(i);
+    }
+    return out2;
+  };
+  const sameCircle = (A, B, gap) => {
+    const fa = A.fit, fb = B.fit;
+    const r = (fa.r + fb.r) / 2;
+    if (Math.abs(fa.r - fb.r) > Math.max(0.01, r * 0.01)) return false;
+    if (rulerDot(fa.n, fb.n) < 0.999) return false;            // same plane, same turn
+    const near = Math.max(0.5, r * 0.05);
+    let gl = 0;
+    for (const i of gap) gl += sides[i].len;
+    if (gl > near) return false;
+    if (Math.hypot(fa.c[0] - fb.c[0], fa.c[1] - fb.c[1], fa.c[2] - fb.c[2]) > near) return false;
+    // No sharp corner either side of the straight piece.
+    const ends = [sides[A.list[A.list.length - 1]], ...gap.map(i => sides[i]), sides[B.list[0]]];
+    for (let k = 0; k + 1 < ends.length; k++) {
+      if (Math.acos(Math.max(-1, Math.min(1, rulerDot(ends[k].u, ends[k + 1].u)))) * 180 / Math.PI > 20) return false;
+    }
+    return true;
+  };
+  const join = (A, B, gap) => {
+    const wa = A.list.length, wb = B.list.length;
+    return {
+      list: [...A.list, ...gap, ...B.list],
+      fit: {
+        r: (A.fit.r * wa + B.fit.r * wb) / (wa + wb),
+        n: A.fit.n,
+        c: A.fit.c.map((v, k) => (v + B.fit.c[k]) / 2),
+      },
+    };
+  };
+  for (let k = 0; k + 1 < arcs.length;) {
+    const gap = gapSides(arcs[k], arcs[k + 1]);
+    if (gap && sameCircle(arcs[k], arcs[k + 1], gap)) arcs.splice(k, 2, join(arcs[k], arcs[k + 1], gap));
+    else k++;
+  }
+  // Round the back of a loop: the last curve may run on into the first.
+  if (closed && arcs.length > 1) {
+    const A = arcs[arcs.length - 1], B = arcs[0];
+    const gap = gapSides(A, B);
+    if (gap && sameCircle(A, B, gap)) arcs = [join(A, B, gap), ...arcs.slice(1, -1)];
+  }
+
+  const isArc = new Uint8Array(nP);
+  for (const a of arcs) {
+    for (const i of a.list) isArc[i] = 1;
+    out.push({ kind: 'arc', vs: allVs(a.list), fit: a.fit });
+  }
+  for (let i = 0; i < nP; i++) if (!isArc[i]) out.push({ kind: 'line', vs: allVs([i]) });
 }
 
 // A circle through the given vertices, or null if they do not lie on one (flat
-// to within 0.005 mm, or 0.5% of the radius on a large circle). closedLoop: the points go all the way round.
+// to within 0.005 mm, or 0.1% of the radius on a large circle). closedLoop: the points go all the way round.
 function rulerFitCircle(ids, V, closedLoop = false) {
   const k = ids.length;
   if (k < 4) return null;
@@ -12660,29 +12817,34 @@ function rulerFitCircle(ids, V, closedLoop = false) {
   // A few corners can sit a little inside the true circle where the model was
   // cut across it (four of the 68 round the bottom of an ambient light sensor
   // opening, 0.02 mm in, 28 Nov 2026). Set aside up to a fifth of the corners
-  // that miss, refit to the rest, and require every corner kept to lie on the
-  // circle. Never the two ends of an open run: a straight side that has crept
-  // onto the end of a curve must fail here, so the caller trims it off.
+  // that fall INSIDE it, refit to the rest, and require every corner kept to
+  // lie on the circle. A corner outside it, or at either end of an open run,
+  // fails the fit: that is a different shape (two curves whose centers are a
+  // little apart, or a straight side crept onto the end of a curve), which the
+  // caller then cuts apart. The tolerance is tight because OpenSCAD puts every
+  // corner exactly on its circle: 0.005 mm, or 0.1% of a large radius. (At 0.5%
+  // two quarter circles 0.34 mm apart passed as one 6.51 mm circle.)
   const use = new Uint8Array(k).fill(1);
   let fit = null;
   for (let iter = 0; iter < 3; iter++) {
     fit = solve(use);
     if (!fit || fit.r < 0.01 || fit.r > 10000) return null;
-    const tol = Math.max(0.005, fit.r * 0.005);
+    const tol = Math.max(0.005, fit.r * 0.001);
     if (flat > tol) return null;
-    let bad = 0, endBad = false;
+    let bad = 0, fatal = false;
     for (let i = 0; i < k; i++) {
       if (!use[i]) continue;
-      if (Math.abs(Math.hypot(X[i] - fit.ux, Y[i] - fit.uy) - fit.r) > tol) {
+      const dev = Math.hypot(X[i] - fit.ux, Y[i] - fit.uy) - fit.r;
+      if (Math.abs(dev) > tol) {
         bad++;
-        if (!closedLoop && (i === 0 || i === k - 1)) endBad = true;
+        if (dev > 0 || (!closedLoop && (i === 0 || i === k - 1))) fatal = true;
       }
     }
     if (!bad) break;
-    if (endBad || iter === 2) return null;
+    if (fatal || iter === 2) return null;
     let kept = 0;
     for (let i = 0; i < k; i++) {
-      if (use[i] && Math.abs(Math.hypot(X[i] - fit.ux, Y[i] - fit.uy) - fit.r) > tol) use[i] = 0;
+      if (use[i] && Math.hypot(X[i] - fit.ux, Y[i] - fit.uy) - fit.r < -tol) use[i] = 0;
       kept += use[i];
     }
     if (kept < Math.max(4, Math.ceil(k * 0.8))) return null;
