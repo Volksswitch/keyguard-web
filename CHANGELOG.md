@@ -13,6 +13,8 @@ notes, because nothing at this address could have been missed yet.
 
 ## Unreleased (next release)
 
+- **Snap now lines shapes up with the real top and bottom of a keyguard frame's opening when the keyguard is on posts.** On posts, the frame has a notch along the top of the keyguard's opening for the post, and often a matching one along the bottom. They make the opening taller than the keyguard, so a shape lined up with the opening's top or bottom used to stop short of the frame's edge. Now its top and bottom are where the frame is really cut. This needs version 106 or later of the keyguard designer file. With an older one, a frame for a keyguard on posts offers only the left and right edges of the opening.
+
 ## Release 133
 
 - **Snap now finds the opening for the keyguard in every keyguard frame.** Release 131 missed it when the keyguard was much shorter or narrower than the frame, such as a short keyguard slid to the top of a tall case opening, and offered its edges only as “edge of an opening”, with a middle besides. And where the frame has notches for a keyguard's posts, the top or bottom edge it offered was the notch's, a few millimeters out. Now the edges are always exactly where your **keyguard width**, **keyguard height**, **slide keyguard horizontally** and **slide keyguard vertically** put the opening.

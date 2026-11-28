@@ -1811,6 +1811,9 @@ const RELEASE_NOTES = {
   "133": [
     "Snap now finds the opening for the keyguard in every keyguard frame. Release 131 missed it when the keyguard was much shorter or narrower than the frame, such as a short keyguard slid to the top of a tall case opening, and offered its edges only as “edge of an opening”, with a middle besides. And where the frame has notches for a keyguard's posts, the top or bottom edge it offered was the notch's, a few millimeters out. Now the edges are always exactly where your keyguard width, keyguard height, slide keyguard horizontally and slide keyguard vertically put the opening.",
     "Snap now lines shapes up with the true outside edges of a keyguard made for a keyguard frame. Its left and right edges are where your keyguard width, keyguard horizontal tightness of fit and slide keyguard horizontally put them. Its top and bottom edges now come from the keyguard designer file, exactly as it builds the keyguard. That matters for a keyguard on posts, which the file trims back to the post line at the top and lengthens at the bottom to fill the frame's notch. This needs version 105 or later of the keyguard designer file. With an older one, a keyguard on posts offers only its left and right edges, and any other keyguard offers all four from its settings."
+  ],
+  "134": [
+    "Snap now lines shapes up with the real top and bottom of a keyguard frame's opening when the keyguard is on posts. On posts, the frame has a notch along the top of the keyguard's opening for the post, and often a matching one along the bottom. They make the opening taller than the keyguard, so a shape lined up with the opening's top or bottom used to stop short of the frame's edge. Now its top and bottom are where the frame is really cut. This needs version 106 or later of the keyguard designer file. With an older one, a frame for a keyguard on posts offers only the left and right edges of the opening."
   ]
 };
 const RELEASE_DATES = {
@@ -1847,6 +1850,13 @@ const RELEASE_DATES = {
   "133": "2026-11-27"
 };
 const DESIGNER_NOTES = [
+  {
+    "version": 105,
+    "date": "2026-11-27",
+    "notes": [
+      "The designer now tells the Keyguard Designer web app where the edges of a keyguard made for a keyguard frame are, exactly as it builds the keyguard (including where a keyguard on posts is trimmed to an exposed bar), so that **Snap** on its “by eye” tab can line openings up with them. Nothing about the keyguard changes, and there is nothing different to see in OpenSCAD."
+    ]
+  },
   {
     "version": 104,
     "date": "2026-11-27",
@@ -4548,7 +4558,10 @@ async function doRender() {
         // and the lines the keyguard file's gt and gb name, for named positions.
         // And (keyguard file v105 and later) the outline of a keyguard made for a
         // frame, as the file builds it, trims for posts included: kgx0 … kgy1.
-        for (const k of ['gx0', 'gx1', 'gy0', 'gy1', 'gty', 'gby', 'kgx0', 'kgx1', 'kgy0', 'kgy1']) {
+        // And (v106 and later) a frame's opening for the keyguard as the file cuts
+        // it, notches for the posts included: kox0 … koy1.
+        for (const k of ['gx0', 'gx1', 'gy0', 'gy1', 'gty', 'gby', 'kgx0', 'kgx1', 'kgy0', 'kgy1',
+                         'kox0', 'kox1', 'koy0', 'koy1']) {
           const mk = line.match(new RegExp(`(?:^|[\\s,])${k}\\s*=\\s*(-?\\d+(?:\\.\\d+)?(?:e-?\\d+)?)`));
           if (mk) project.dims[k] = +mk[1];
         }
@@ -4741,10 +4754,14 @@ async function doRender() {
     const allVals = allParamValues();
     kgMesh.userData.generate = allVals.generate;
     kgMesh.userData.hasFrame = allVals.have_a_keyguard_frame === 'yes';
-    // A frame's opening for the keyguard, where keyguard.scad cuts it: keyguard
-    // width by keyguard height, centred where the keyguard is slid to from the
-    // middle of the screen, which is the middle of the model (Ken, 27 Nov 2026).
+    // A frame's opening for the keyguard as the settings place it: keyguard width
+    // by keyguard height, centred where the keyguard is slid to from the middle
+    // of the screen, which is the middle of the model (Ken, 27 Nov 2026). On posts
+    // the frame cuts notches past its top and bottom (see ogeSnapLines), which
+    // only a keyguard file of v106 or later reports; this box still finds the
+    // outline the model has there.
     kgMesh.userData.frameOpening = null;
+    kgMesh.userData.onPosts = allVals.mount_keyguard_with === 'posts';
     // A keyguard made for a frame, for a keyguard file too old to report its
     // outline: what the settings alone fix. Across, keyguard width plus the
     // horizontal tightness of fit, slid; up and down only off posts, since on posts
@@ -10021,28 +10038,40 @@ function ogeSnapLines() {
   }
   // The grid's edges are reported by keyguard file v100 and later.
   if ([d.gx0, d.gx1, d.gy0, d.gy1].every(Number.isFinite)) edges('the grid', d.gx0, d.gx1, d.gy0, d.gy1);
-  // A keyguard frame's opening for the keyguard (Ken, 27 Nov 2026), where the
-  // settings put it: its edges only.
-  const h = ogeHousingEdges();
-  if (h) edges('the keyguard’s opening', h.x0, h.x1, h.y0, h.y1);
-  // A keyguard made for a frame (Ken, 27 Nov 2026): its outer edges, so a shape
-  // can be lined up with the edge that meets the frame. Edges only. Where the
-  // keyguard file reports them (v105 and later), exactly as it builds the
-  // keyguard; otherwise what the settings alone fix (see kgFromSettings). Not for
-  // half a keyguard, whose cut edge is not an edge of the keyguard.
-  const kgm = ogeSnapCache.mesh;
-  if (kgm && kgm.userData.generate === 'keyguard' && kgm.userData.hasFrame) {
-    const o = [d.kgx0, d.kgx1, d.kgy0, d.kgy1].every(Number.isFinite)
-      ? { x0: d.kgx0, x1: d.kgx1, y0: d.kgy0, y1: d.kgy1 } : kgm.userData.kgFromSettings;
+  // The edges of a keyguard and of a frame's opening for it: edges only, and any
+  // side given as null is left out.
+  const sides = (of, o) => {
+    if (!o) return;
     const side = (axis, at, word) => {
       if (at === null || !Number.isFinite(at)) return;
       (axis === 'x' ? ex : ey).push(at);
-      names.push({ axis, at, what: 'edge', word, of: 'the keyguard', rank: 0 });
+      names.push({ axis, at, what: 'edge', word, of, rank: 0 });
     };
-    if (o) {
-      side('x', o.x0, 'left edge'); side('x', o.x1, 'right edge');
-      side('y', o.y0, 'bottom edge'); side('y', o.y1, 'top edge');
-    }
+    side('x', o.x0, 'left edge'); side('x', o.x1, 'right edge');
+    side('y', o.y0, 'bottom edge'); side('y', o.y1, 'top edge');
+  };
+  const kgm = ogeSnapCache.mesh;
+  // A keyguard frame's opening for the keyguard (Ken, 27 Nov 2026), as the
+  // frame is really cut. On posts the frame cuts a notch along the post line,
+  // the keyguard's width across, and when the keyguard is grown to fill it a
+  // matching one along the bottom, so the opening's top and bottom lie past the
+  // keyguard's height: a keyguard file of v106 or later says exactly where. With
+  // an older one, the settings place its left and right edges, and off posts its
+  // top and bottom too; on posts those are left out rather than guessed.
+  if (kgm && kgm.userData.frameOpening) {
+    const f = kgm.userData.frameOpening;
+    sides('the keyguard’s opening', [d.kox0, d.kox1, d.koy0, d.koy1].every(Number.isFinite)
+      ? { x0: d.kox0, x1: d.kox1, y0: d.koy0, y1: d.koy1 }
+      : kgm.userData.onPosts ? { x0: f.x0, x1: f.x1, y0: null, y1: null } : f);
+  }
+  // A keyguard made for a frame (Ken, 27 Nov 2026): its outer edges, so a shape
+  // can be lined up with the edge that meets the frame. Where the keyguard file
+  // reports them (v105 and later), exactly as it builds the keyguard; otherwise
+  // what the settings alone fix (see kgFromSettings). Not for half a keyguard,
+  // whose cut edge is not an edge of the keyguard.
+  if (kgm && kgm.userData.generate === 'keyguard' && kgm.userData.hasFrame) {
+    sides('the keyguard', [d.kgx0, d.kgx1, d.kgy0, d.kgy1].every(Number.isFinite)
+      ? { x0: d.kgx0, x1: d.kgx1, y0: d.kgy0, y1: d.kgy1 } : kgm.userData.kgFromSettings);
   }
   return { xs, ys, ex, ey, names, box: ogeSnapCache.box };
 }
@@ -10223,23 +10252,20 @@ function ogeSnapDrawStart(p, g, ev) {
 //
 // A keyguard frame has one more outline that is not an ordinary opening: the
 // opening the frame houses the keyguard in (Ken, 27 Nov 2026). Its edges are not
-// read off the model: they are where keyguard.scad puts them, worked out from
-// keyguard width and height and the two slide settings when the frame was
-// rendered (userData.frameOpening). The cut around it is wider in places — the
-// notches and pockets for a keyguard's posts open off it — so the outline on the
-// model would put an edge in the wrong place. Only its edges are offered — its
-// middle is the keyguard's, which is not a line (see ogeSnapLines) — and the
-// outline the model has there is left out of the ordinary openings.
-// `ogeLoopCache.housing` holds {x0, x1, y0, y1}, or null when there is none.
+// read off the model — the pockets for a keyguard's posts open off it, so an
+// outline's box would put an edge in the wrong place — but come from the keyguard
+// file and the settings (see ogeSnapLines). Only its edges are offered — its
+// middle is the keyguard's, which is not a line — and the outline the model has
+// there, found by the settings' box for it (userData.frameOpening), is left out
+// of the ordinary openings.
 //
 // (A keyguard made to sit in a frame offers its own outer edges the same way:
 // from the keyguard file and the settings, not the model. See ogeSnapLines.)
-let ogeLoopCache = { mesh: null, loops: [], housing: null };
-function ogeHousingEdges() { ogeOpeningBoxes(); return ogeLoopCache.housing; }
+let ogeLoopCache = { mesh: null, loops: [] };
 function ogeOpeningBoxes() {
   const kg = currentMesh && currentMesh.children
     ? currentMesh.children.find(o => o.isMesh && o.userData.kgBody) : null;
-  if (!kg) { ogeLoopCache = { mesh: null, loops: [], housing: null }; return []; }
+  if (!kg) { ogeLoopCache = { mesh: null, loops: [] }; return []; }
   if (ogeLoopCache.mesh === kg) return ogeLoopCache.loops;
   kg.updateMatrixWorld(true);
   const pos = kg.geometry.getAttribute('position');
@@ -10297,7 +10323,7 @@ function ogeOpeningBoxes() {
   const loops = roots.filter(e => e !== roots[0]).map(([, b]) => b).filter(b =>
     !big(b) && !isHousing(b) &&                               // the keyguard's own edge
     (b.x1 - b.x0 >= 0.5 || b.y1 - b.y0 >= 0.5));              // slivers aren't openings
-  ogeLoopCache = { mesh: kg, loops, housing };
+  ogeLoopCache = { mesh: kg, loops };
   return loops;
 }
 
