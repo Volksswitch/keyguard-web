@@ -13,6 +13,8 @@ notes, because nothing at this address could have been missed yet.
 
 ## Unreleased (next release)
 
+## Release 135
+
 - **A ruler for measuring the keyguard.** The new ruler button, to the right of **Custom Openings**, lets you measure the model on screen. Point at a face, an edge or a curve and it lights up; click it to keep it. After a face, only faces parallel to it light up; after an edge, only parallel edges. Click a second one and a pop-up shows the distance between them in millimeters and in the tablet's screen pixels, with both items still lit; drag the pop-up by its title to move it out of the way. Click a curve, such as the rounded corner of an opening, the round end of a slot, or the rim or wall of a round opening (slanted walls and the funnel of an ambient light sensor opening included), and the pop-up shows its radius and diameter. Each measurement is also written to the Console. You can still drag to turn and move the model between clicks, and clicking the kept item again lets it go. Dismissing the pop-up clears your picks so you can measure again; click the ruler button again, or press Esc, to stop. Pixels need a recent keyguard designer file, and are left out for a distance that runs straight through the keyguard's thickness. Two edges at different heights, such as the top of one side of an opening and the bottom of the other on a sloped wall, show the whole distance and also its two parts: across the screen (with pixels) and through the thickness.
 
 ## Release 134
