@@ -452,6 +452,30 @@
   #confirm-footer button { padding: 4px 14px; font-size: 12px; cursor: pointer; margin-left: 8px; }
   #confirm-ok { font-weight: bold; color: #a33; }
 
+  /* ---------- Ruler (measure) ----------
+     The overlay draws the highlighted edges and curves; the pop-up blocks the
+     app until it is dismissed, with a light backdrop so the two highlighted
+     items still show through. */
+  #ruler-overlay { position: absolute; inset: 0; display: none; z-index: 5;
+                   pointer-events: none; overflow: visible; }
+  #ruler-overlay.on { display: block; }
+  #three-canvas.ruler-on { cursor: crosshair; }
+  #ruler-pop-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.15);
+                       display: none; align-items: center; justify-content: center; z-index: 1300; }
+  #ruler-pop-overlay.open { display: flex; }
+  #ruler-pop { background: #fafafa; border: 1px solid #888; border-radius: 4px;
+               min-width: 300px; max-width: 90vw; box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+  #ruler-pop h3 { margin: 0; padding: 10px 14px; border-bottom: 1px solid #ccc;
+                  background: #e8e8e8; font-size: 14px; }
+  #ruler-pop-body { padding: 14px; font-size: 12px; line-height: 1.5; }
+  #ruler-pop-body .rp-what { margin-bottom: 6px; }
+  #ruler-pop-body .rp-val { font-size: 20px; font-weight: bold; }
+  #ruler-pop-body .rp-sub { font-size: 14px; margin-top: 4px; }
+  #ruler-pop-body .rp-note { color: #666; margin-top: 8px; }
+  #ruler-pop-footer { padding: 8px 14px; border-top: 1px solid #ccc; text-align: right;
+                      background: #f0f0f0; }
+  #ruler-pop-footer button { padding: 4px 18px; font-size: 12px; cursor: pointer; font-weight: bold; }
+
   /* ---------- Designer update modal ---------- */
   #update-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.35);
                     display: none; align-items: center; justify-content: center; z-index: 1150; }
@@ -640,6 +664,9 @@
                each frame so they keep a constant on-screen size at any zoom.
                Ignores the mouse except on a handle, so orbiting still works. -->
           <svg id="oge-overlay"></svg>
+          <!-- The ruler's highlighted edges and curves, drawn as thick lines over
+               the model. Never takes the mouse. -->
+          <svg id="ruler-overlay"></svg>
           <div id="viewport-overlay">
             <div id="viewport-status">Click <b>Open Project…</b> to begin.</div>
           </div>
@@ -724,6 +751,13 @@
               <path d="M3.5 4.5H20.5V19.5H3.5Z"/>
               <path d="M6.5 7.5H11V12H6.5Z"/>
               <circle cx="16" cy="15" r="2.6"/>
+            </svg>
+          </button>
+          <button class="vp-btn" id="ruler-btn" aria-pressed="false"
+                  title="Measure: the distance between two parallel faces or edges, or the radius of a curve">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true">
+              <path d="M2.5 16 16 2.5 21.5 8 8 21.5Z"/>
+              <path d="M6.5 12 9 14.5M9 9.5 10.5 11M11.5 7 14 9.5M14 4.5 15.5 6"/>
             </svg>
           </button>
           <div class="vp-sep" id="openings-sep"></div>
@@ -881,6 +915,15 @@
       <button id="confirm-cancel">Cancel</button>
       <button id="confirm-ok">Discard changes</button>
     </div>
+  </div>
+</div>
+
+<!-- ============ Ruler measurement pop-up ============ -->
+<div id="ruler-pop-overlay">
+  <div id="ruler-pop" role="dialog" aria-labelledby="ruler-pop-title">
+    <h3 id="ruler-pop-title">Measurement</h3>
+    <div id="ruler-pop-body"></div>
+    <div id="ruler-pop-footer"><button id="ruler-pop-ok">OK</button></div>
   </div>
 </div>
 
@@ -1285,6 +1328,7 @@ let gizmoOn = false;
   // ogeBooted is a var declared with that section, so it reads as undefined
   // here on the early frames rather than throwing from its dead zone.
   if (ogeBooted) ogeSyncHandles();
+  if (rulerBooted) rulerSync();   // same pattern: the ruler's edge lines follow the view
   renderer.render(scene, camera);
   if (gizmoOn) renderGizmo();
   requestAnimationFrame(animate);
@@ -1814,6 +1858,9 @@ const RELEASE_NOTES = {
   ],
   "134": [
     "Snap now lines shapes up with the real top and bottom of a keyguard frame's opening when the keyguard is on posts. On posts, the frame has a notch along the top of the keyguard's opening for the post, and often a matching one along the bottom. They make the opening taller than the keyguard, so a shape lined up with the opening's top or bottom used to stop short of the frame's edge. Now its top and bottom are where the frame is really cut. This needs version 106 or later of the keyguard designer file. With an older one, a frame for a keyguard on posts offers only the left and right edges of the opening."
+  ],
+  "135": [
+    "A ruler for measuring the keyguard. The new ruler button, to the right of Custom Openings, lets you measure the model on screen. Point at a face, an edge or a curve and it lights up; click it to keep it. After a face, only faces parallel to it light up; after an edge, only parallel edges. Click a second one and a pop-up shows the distance between them in millimeters and in the tablet's screen pixels. Click a curve, such as the rounded corner of an opening or the wall of a round one, and the pop-up shows its radius and diameter. Each measurement is also written to the Console. You can still drag to turn and move the model between clicks, and clicking the kept item again lets it go. Dismissing the pop-up clears your picks so you can measure again; click the ruler button again, or press Esc, to stop. Pixels need a recent keyguard designer file, and are left out for a distance that runs straight through the keyguard's thickness. Two edges at different heights, such as the top of one side of an opening and the bottom of the other on a sloped wall, show the whole distance and also its two parts: across the screen (with pixels) and through the thickness."
   ]
 };
 const RELEASE_DATES = {
@@ -1851,6 +1898,13 @@ const RELEASE_DATES = {
   "134": "2026-11-27"
 };
 const DESIGNER_NOTES = [
+  {
+    "version": 106,
+    "date": "2026-11-27",
+    "notes": [
+      "The designer now tells the Keyguard Designer web app where the edges of a keyguard frame's opening for the keyguard are, exactly as it cuts them. On a keyguard on posts, the frame's notches for the post make that opening taller than the keyguard, and **Snap** on the app's “by eye” tab now lines openings up with its real top and bottom. Nothing about the keyguard or the frame changes, and there is nothing different to see in OpenSCAD."
+    ]
+  },
   {
     "version": 105,
     "date": "2026-11-27",
@@ -8551,7 +8605,12 @@ function updateOpeningsButton() {
   const ok = !!project && OPENINGS_PARAMS.every(n => !!ogFieldInput(n));
   const disp = ok ? '' : 'none';
   if (ogBtn) ogBtn.style.display = disp;
-  if (ogSep) ogSep.style.display = disp;
+  // The ruler sits between this button and the separator and is there whenever a
+  // project is open, so the separator now follows the project, not this button.
+  if (ogSep) ogSep.style.display = project ? '' : 'none';
+  const rb = document.getElementById('ruler-btn');
+  if (rb) rb.style.display = project ? '' : 'none';
+  if (!project && rulerBooted) rulerSetOn(false);
   if (!ok) closeOpenings(false);
 }
 
@@ -11841,6 +11900,8 @@ document.addEventListener('keyup', e => {
 // ---- Open / close --------------------------------------------------------
 function openOpenings() {
   if (!project) return;
+  // Both use a click on the model, so only one can be on at a time.
+  if (rulerBooted) rulerSetOn(false);
   const vals = currentFormValues();
   const unit   = vals.unit_of_measure_for_screen === 'mm' ? 'mm' : 'px';
   const origin = vals.starting_corner_for_screen_measurements === 'lower-left'
@@ -12028,6 +12089,990 @@ document.addEventListener('keydown', e => {
   });
   document.addEventListener('mouseup', () => { sizing = false; });
 }());
+
+// ===== Ruler: measure between parallel faces or edges, or a curve's radius =====
+// (Ken, 28 Nov 2026.) The ruler button toggles a measuring mode. Pointing at the
+// keyguard highlights the face, edge or curve under the pointer; a left click
+// (press and release without moving — a drag still turns and pans the model)
+// keeps it. After a face only parallel faces highlight, after an edge only
+// parallel edges; a second click on one of those opens a pop-up with the
+// distance in mm and in screen pixels, and writes it to the Console. A click on
+// a curve gives its radius straight away. Clicking the kept item again lets it
+// go. Dismissing the pop-up clears both picks; the mode stays on until the
+// button is clicked again or Esc is pressed.
+//
+// The model is an STL: a heap of triangles that knows nothing of faces, edges
+// or circles. rulerAnalyse() rebuilds them once per render:
+//   * a FACE is a connected patch of triangles lying in one plane;
+//   * an EDGE is a run of collinear segments along a crease of 20° or more
+//     between two faces (shallower creases are the facets of a curved wall);
+//   * a CURVE is a run of three or more crease segments that turn steadily and
+//     whose points fit one circle. OpenSCAD puts every point exactly on the true
+//     circle, so the fitted radius is the designed radius, not an approximation.
+//   * The facets of a curved wall count as that curve (the nearest of the
+//     circular edges it runs between), so pointing at the wall of a round
+//     opening gives its radius too.
+// Model units are millimetres. Pixels are the TABLET's screen pixels, from the
+// screen size the keyguard file reports in both units (swp/swm, shp/shm); an
+// older file that reports only millimetres gets millimetres only.
+var rulerBooted = false;
+const rulerBtn   = document.getElementById('ruler-btn');
+const rulerSvg   = document.getElementById('ruler-overlay');
+const rulerPopOv = document.getElementById('ruler-pop-overlay');
+const RULER_PICK_PX  = 6;     // how near an edge the pointer must be, in screen pixels (Ken: try 6)
+const RULER_CLICK_PX = 4;     // moved further than this between press and release = a drag
+const RULER_PARALLEL_COS = Math.cos(0.5 * Math.PI / 180);   // parallel = within half a degree
+const RULER_SHARP_DEG = 20;   // a crease at least this sharp is an edge
+
+let rulerOn = false;
+let rulerSel = null;          // the kept pick: { kind: 'face' | 'line', id }
+let rulerHover = null;        // what the pointer is on: { kind: 'face' | 'line' | 'arc', id }
+let rulerPopOpen = false;
+let rulerMesh = null;         // the keyguard mesh rulerFeat describes
+let rulerFeat = null;         // rulerAnalyse(rulerMesh.geometry), or { failed: true }
+let rulerMouse = null;        // last pointer position, canvas pixels
+let rulerPickQueued = false;
+let rulerDown = null;         // where the left button went down, while it is down
+let rulerOverlayItems = [];   // [{ fid, color }] edges and curves to draw
+let rulerOverlayDirty = true;
+let rulerLastViewKey = '';
+const rulerGroup = new THREE.Group();   // the face highlights
+rulerGroup.matrixAutoUpdate = false;
+scene.add(rulerGroup);
+const rulerRay = new THREE.Raycaster();
+const rulerMats = [0, 1].map(() => new THREE.MeshBasicMaterial({
+  side: THREE.DoubleSide, depthWrite: false,
+  polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -4,
+}));
+
+// ---- Highlight colors ------------------------------------------------------
+// Two bright colors that stand apart from the model's color and from each
+// other, for normal vision and for the three kinds of color blindness (Machado
+// 2009 simulation, distance in CIELAB). Chosen afresh for whatever item color
+// is in Settings. Bright ones only: a dark highlight on a shaded model reads as
+// a shadow.
+const RULER_PALETTE = ['#FF00FF', '#FFE600', '#0050FF', '#7B00FF', '#FF6A00', '#00C8FF', '#00E000'];
+const RULER_CVD = [
+  null,
+  [[0.152286, 1.052583, -0.204868], [0.114503, 0.786281, 0.099216], [-0.003882, -0.048116, 1.051998]],
+  [[0.367322, 0.860646, -0.227968], [0.280085, 0.672501, 0.047413], [-0.011820, 0.042940, 0.968881]],
+  [[1.255528, -0.076749, -0.178779], [-0.078411, 0.930809, 0.147602], [0.004733, 0.691367, 0.303900]],
+];
+const rulerColorCache = new Map();
+function rulerColors() {
+  const model = (keyguardColorName() || '#40E0D0').toUpperCase();
+  if (rulerColorCache.has(model)) return rulerColorCache.get(model);
+  const lin = hex => {                        // '#RRGGBB' → linear RGB
+    const v = parseInt(hex.slice(1), 16);
+    return [v >> 16 & 255, v >> 8 & 255, v & 255].map(c => {
+      c /= 255;
+      return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+    });
+  };
+  const lab = rgb => {
+    const [r, g, b] = rgb.map(v => Math.min(1, Math.max(0, v)));
+    const X = (0.4124 * r + 0.3576 * g + 0.1805 * b) / 0.95047;
+    const Y = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+    const Z = (0.0193 * r + 0.1192 * g + 0.9505 * b) / 1.08883;
+    const f = t => t > 0.008856 ? Math.cbrt(t) : 7.787 * t + 16 / 116;
+    return [116 * f(Y) - 16, 500 * (f(X) - f(Y)), 200 * (f(Y) - f(Z))];
+  };
+  const sim = (rgb, M) => M ? M.map(r => r[0] * rgb[0] + r[1] * rgb[1] + r[2] * rgb[2]) : rgb;
+  const dE = (a, b, M) => {
+    const A = lab(sim(lin(a), M)), B = lab(sim(lin(b), M));
+    return Math.hypot(A[0] - B[0], A[1] - B[1], A[2] - B[2]);
+  };
+  let best = null;
+  for (const a of RULER_PALETTE) for (const b of RULER_PALETTE) {
+    if (a === b) continue;
+    let s = Infinity;
+    for (const M of RULER_CVD) s = Math.min(s, dE(a, model, M), dE(b, model, M), dE(a, b, M));
+    if (!best || s > best.s) best = { s, pair: [a, b] };
+  }
+  rulerColorCache.set(model, best.pair);
+  return best.pair;
+}
+
+// ---- Reading faces, edges and curves out of the triangles -------------------
+function rulerAnalyse(geom) {
+  const raw = geom.attributes.position.array;
+  const pos = raw instanceof Float32Array ? raw : new Float32Array(raw);
+  const nTri = (pos.length / 9) | 0;
+  const nIn = nTri * 3;
+
+  // Weld: identical corners become one vertex. The STL repeats each shared
+  // corner's exact float, so matching the bits is enough.
+  const bits = new Uint32Array(pos.buffer, pos.byteOffset, nIn * 3);
+  let cap = 1; while (cap < nIn * 2) cap <<= 1;
+  const table = new Int32Array(cap).fill(-1);
+  const vbits = new Uint32Array(nIn * 3);
+  const vid = new Int32Array(nIn);
+  let nV = 0;
+  for (let i = 0; i < nIn; i++) {
+    let a = bits[3 * i], b = bits[3 * i + 1], c = bits[3 * i + 2];
+    if (a === 0x80000000) a = 0;               // -0 is 0
+    if (b === 0x80000000) b = 0;
+    if (c === 0x80000000) c = 0;
+    let h = Math.imul(a ^ (a >>> 15), 0x2c1b3c6d) ^ Math.imul(b ^ (b >>> 15), 0x297a2d39) ^
+            Math.imul(c ^ (c >>> 15), 0x7feb352d);
+    h = (h ^ (h >>> 13)) & (cap - 1);
+    for (;;) {
+      const k = table[h];
+      if (k < 0) {
+        table[h] = nV;
+        vbits[3 * nV] = a; vbits[3 * nV + 1] = b; vbits[3 * nV + 2] = c;
+        vid[i] = nV++;
+        break;
+      }
+      if (vbits[3 * k] === a && vbits[3 * k + 1] === b && vbits[3 * k + 2] === c) { vid[i] = k; break; }
+      h = (h + 1) & (cap - 1);
+    }
+  }
+  const V = new Float64Array(nV * 3);
+  { const fv = new Float32Array(vbits.buffer, 0, nV * 3); for (let i = 0; i < nV * 3; i++) V[i] = fv[i]; }
+
+  // Triangle normals and areas.
+  const tN = new Float64Array(nTri * 3), tA = new Float64Array(nTri);
+  for (let t = 0; t < nTri; t++) {
+    const p = vid[3 * t] * 3, q = vid[3 * t + 1] * 3, r = vid[3 * t + 2] * 3;
+    const ux = V[q] - V[p], uy = V[q + 1] - V[p + 1], uz = V[q + 2] - V[p + 2];
+    const wx = V[r] - V[p], wy = V[r + 1] - V[p + 1], wz = V[r + 2] - V[p + 2];
+    const nx = uy * wz - uz * wy, ny = uz * wx - ux * wz, nz = ux * wy - uy * wx;
+    const l = Math.hypot(nx, ny, nz);
+    tA[t] = l / 2;
+    if (l > 1e-12) { tN[3 * t] = nx / l; tN[3 * t + 1] = ny / l; tN[3 * t + 2] = nz / l; }
+  }
+
+  // Edges, each with the (up to two) triangles that share it.
+  const eMap = new Map();
+  const eA = [], eB = [], eT1 = [], eT2 = [];
+  for (let t = 0; t < nTri; t++) for (let k = 0; k < 3; k++) {
+    const a = vid[3 * t + k], b = vid[3 * t + (k + 1) % 3];
+    if (a === b) continue;
+    const lo = a < b ? a : b, hi = a < b ? b : a;
+    const key = lo * nV + hi;
+    const e = eMap.get(key);
+    if (e === undefined) { eMap.set(key, eA.length); eA.push(lo); eB.push(hi); eT1.push(t); eT2.push(-1); }
+    else if (eT2[e] === -1) eT2[e] = t;
+    else eT2[e] = -2;                           // more than two triangles: treat as a crease
+  }
+  const nE = eA.length;
+
+  // Faces: join neighbouring triangles that lie in one plane.
+  const par = new Int32Array(nTri);
+  for (let i = 0; i < nTri; i++) par[i] = i;
+  const find = x => { while (par[x] !== x) { par[x] = par[par[x]]; x = par[x]; } return x; };
+  const COPLANAR_COS = Math.cos(0.5 * Math.PI / 180);
+  for (let e = 0; e < nE; e++) {
+    const t1 = eT1[e], t2 = eT2[e];
+    if (t2 < 0 || tA[t1] < 1e-10 || tA[t2] < 1e-10) continue;
+    const dot = tN[3 * t1] * tN[3 * t2] + tN[3 * t1 + 1] * tN[3 * t2 + 1] + tN[3 * t1 + 2] * tN[3 * t2 + 2];
+    if (dot < COPLANAR_COS) continue;
+    // The smaller triangle's far corner must lie on the larger one's plane.
+    const big = tA[t1] >= tA[t2] ? t1 : t2, small = big === t1 ? t2 : t1;
+    let far = -1;
+    for (let k = 0; k < 3; k++) { const v = vid[3 * small + k]; if (v !== eA[e] && v !== eB[e]) far = v; }
+    if (far < 0) continue;
+    const p = vid[3 * big] * 3;
+    const d = (V[3 * far] - V[p]) * tN[3 * big] + (V[3 * far + 1] - V[p + 1]) * tN[3 * big + 1] +
+              (V[3 * far + 2] - V[p + 2]) * tN[3 * big + 2];
+    if (Math.abs(d) > 0.002) continue;
+    const ra = find(t1), rb = find(t2);
+    if (ra !== rb) par[ra] = rb;
+  }
+  const faceOf = new Int32Array(nTri);
+  const rootId = new Int32Array(nTri).fill(-1);
+  let nF = 0;
+  for (let t = 0; t < nTri; t++) {
+    const r = find(t);
+    if (rootId[r] < 0) rootId[r] = nF++;
+    faceOf[t] = rootId[r];
+  }
+  const fN = new Float64Array(nF * 3), fP = new Float64Array(nF * 3), fArea = new Float64Array(nF);
+  const fCount = new Int32Array(nF);
+  for (let t = 0; t < nTri; t++) {
+    const f = faceOf[t], a = tA[t];
+    fCount[f]++;
+    fArea[f] += a;
+    for (let k = 0; k < 3; k++) fN[3 * f + k] += tN[3 * t + k] * a;
+    for (let j = 0; j < 3; j++) {
+      const v = vid[3 * t + j] * 3;
+      for (let k = 0; k < 3; k++) fP[3 * f + k] += V[v + k] * a / 3;
+    }
+  }
+  for (let f = 0; f < nF; f++) {
+    const l = Math.hypot(fN[3 * f], fN[3 * f + 1], fN[3 * f + 2]);
+    if (l > 0) for (let k = 0; k < 3; k++) fN[3 * f + k] /= l;
+    if (fArea[f] > 0) for (let k = 0; k < 3; k++) fP[3 * f + k] /= fArea[f];
+  }
+  // Each face's triangles, for drawing its highlight.
+  const fStart = new Int32Array(nF + 1);
+  for (let f = 0; f < nF; f++) fStart[f + 1] = fStart[f] + fCount[f];
+  const fTris = new Int32Array(nTri);
+  { const fill = fStart.slice(0, nF); for (let t = 0; t < nTri; t++) fTris[fill[faceOf[t]]++] = t; }
+
+  // Creases. Sharp ones are edges; shallow ones mark a face as a facet of a
+  // curved wall.
+  const hasSmooth = new Uint8Array(nF);
+  const sharp = [];
+  const SHARP_COS = Math.cos(RULER_SHARP_DEG * Math.PI / 180);
+  for (let e = 0; e < nE; e++) {
+    const t1 = eT1[e], t2 = eT2[e];
+    if (tA[t1] < 1e-10) continue;
+    if (t2 < 0) { sharp.push(e); continue; }
+    if (tA[t2] < 1e-10) continue;
+    const f1 = faceOf[t1], f2 = faceOf[t2];
+    if (f1 === f2) continue;
+    const c = fN[3 * f1] * fN[3 * f2] + fN[3 * f1 + 1] * fN[3 * f2 + 1] + fN[3 * f1 + 2] * fN[3 * f2 + 2];
+    if (c <= SHARP_COS) sharp.push(e);
+    else { hasSmooth[f1] = 1; hasSmooth[f2] = 1; }
+  }
+  const nS = sharp.length;
+
+  // Walk the sharp creases into chains (open, or closed loops).
+  const deg = new Int32Array(nV);
+  for (const e of sharp) { deg[eA[e]]++; deg[eB[e]]++; }
+  const aStart = new Int32Array(nV + 1);
+  for (let v = 0; v < nV; v++) aStart[v + 1] = aStart[v] + deg[v];
+  const adj = new Int32Array(nS * 2);
+  { const fill = aStart.slice(0, nV);
+    for (let s = 0; s < nS; s++) { adj[fill[eA[sharp[s]]]++] = s; adj[fill[eB[sharp[s]]]++] = s; } }
+  const used = new Uint8Array(nS);
+  const otherEnd = (s, v) => eA[sharp[s]] === v ? eB[sharp[s]] : eA[sharp[s]];
+  const chains = [];
+  const walk = (v0, s0) => {
+    const vs = [v0];
+    let v = v0, s = s0;
+    for (;;) {
+      used[s] = 1;
+      v = otherEnd(s, v);
+      if (v === v0) break;
+      vs.push(v);
+      if (deg[v] !== 2) break;
+      let next = -1;
+      for (let i = aStart[v]; i < aStart[v + 1]; i++) if (!used[adj[i]]) { next = adj[i]; break; }
+      if (next < 0) break;
+      s = next;
+    }
+    return { vs, closed: v === v0 && deg[v0] === 2 };
+  };
+  for (let v = 0; v < nV; v++) {
+    if (deg[v] === 0 || deg[v] === 2) continue;
+    for (let i = aStart[v]; i < aStart[v + 1]; i++) if (!used[adj[i]]) chains.push(walk(v, adj[i]));
+  }
+  for (let s = 0; s < nS; s++) if (!used[s]) chains.push(walk(eA[sharp[s]], s));
+
+  // Split each chain into straight runs (edges) and steady turns (curves).
+  const runs = [];
+  for (const ch of chains) rulerSplitChain(ch.vs, ch.closed, V, runs);
+
+  // Edges a third crease meets part-way along come out in pieces: join
+  // collinear pieces that share an end.
+  const lines = runs.filter(r => r.kind === 'line');
+  for (const r of lines) {
+    const a = r.vs[0] * 3, b = r.vs[r.vs.length - 1] * 3;
+    const u = [V[b] - V[a], V[b + 1] - V[a + 1], V[b + 2] - V[a + 2]];
+    const l = Math.hypot(u[0], u[1], u[2]) || 1;
+    r.u = u.map(x => x / l);
+  }
+  const lpar = lines.map((_, i) => i);
+  const lfind = x => { while (lpar[x] !== x) { lpar[x] = lpar[lpar[x]]; x = lpar[x]; } return x; };
+  const endMap = new Map();
+  lines.forEach((r, i) => {
+    for (const v of [r.vs[0], r.vs[r.vs.length - 1]]) {
+      if (!endMap.has(v)) endMap.set(v, []);
+      endMap.get(v).push(i);
+    }
+  });
+  const COLLINEAR_COS = Math.cos(0.3 * Math.PI / 180);
+  for (const ids of endMap.values()) {
+    for (let i = 0; i < ids.length; i++) for (let j = i + 1; j < ids.length; j++) {
+      const a = lines[ids[i]].u, b = lines[ids[j]].u;
+      if (Math.abs(a[0] * b[0] + a[1] * b[1] + a[2] * b[2]) >= COLLINEAR_COS) {
+        const ra = lfind(ids[i]), rb = lfind(ids[j]);
+        if (ra !== rb) lpar[ra] = rb;
+      }
+    }
+  }
+
+  // Features: one per edge or curve, each with its crease segments as vertex pairs.
+  const feats = [];
+  const lineFeat = new Map();
+  lines.forEach((r, i) => {
+    const root = lfind(i);
+    let f = lineFeat.get(root);
+    if (f === undefined) {
+      f = feats.length;
+      lineFeat.set(root, f);
+      const a = r.vs[0] * 3;
+      feats.push({ kind: 'line', segs: [], u: r.u, p: [V[a], V[a + 1], V[a + 2]] });
+    }
+    for (let k = 0; k + 1 < r.vs.length; k++) feats[f].segs.push(r.vs[k], r.vs[k + 1]);
+  });
+  for (const r of runs) {
+    if (r.kind !== 'arc') continue;
+    const segs = [];
+    for (let k = 0; k + 1 < r.vs.length; k++) segs.push(r.vs[k], r.vs[k + 1]);
+    feats.push({ kind: 'arc', segs, c: r.fit.c, n: r.fit.n, r: r.fit.r });
+  }
+
+  // Which feature each sharp crease belongs to, and from that which features
+  // run along each face's border.
+  const featOfEdge = new Int32Array(nE).fill(-1);
+  feats.forEach((ft, fi) => {
+    for (let k = 0; k < ft.segs.length; k += 2) {
+      const a = ft.segs[k], b = ft.segs[k + 1];
+      const e = eMap.get((a < b ? a : b) * nV + (a < b ? b : a));
+      if (e !== undefined) featOfEdge[e] = fi;
+    }
+  });
+  const faceFeats = Array.from({ length: nF }, () => null);
+  for (const e of sharp) {
+    const fi = featOfEdge[e];
+    if (fi < 0) continue;
+    for (const t of [eT1[e], eT2[e]]) {
+      if (t < 0) continue;
+      const f = faceOf[t];
+      if (!faceFeats[f]) faceFeats[f] = new Set();
+      faceFeats[f].add(fi);
+    }
+  }
+
+  // What pointing at each face measures: 1 = the face itself (flat), 2 = a curve
+  // (a facet of a curved wall: shallow creases beside it, and a circular edge
+  // along its border whose circle it stands across rather than lies in),
+  // 0 = nothing (a facet of some other curved shape, such as a sphere).
+  const fKind = new Uint8Array(nF);
+  const fArcs = new Array(nF);
+  const arcFaces = new Map();
+  for (let f = 0; f < nF; f++) {
+    if (fArea[f] < 1e-10) continue;
+    if (!hasSmooth[f]) { fKind[f] = 1; continue; }
+    const set = faceFeats[f];
+    if (!set) continue;
+    const arcs = [];
+    let hasLine = false;
+    for (const fi of set) {
+      const ft = feats[fi];
+      if (ft.kind === 'line') { hasLine = true; continue; }
+      const d = Math.abs(ft.n[0] * fN[3 * f] + ft.n[1] * fN[3 * f + 1] + ft.n[2] * fN[3 * f + 2]);
+      if (d < 0.9) arcs.push(fi);
+    }
+    if (arcs.length) {
+      fKind[f] = 2;
+      fArcs[f] = arcs;
+      for (const fi of arcs) { if (!arcFaces.has(fi)) arcFaces.set(fi, []); arcFaces.get(fi).push(f); }
+    } else if (hasLine) fKind[f] = 1;
+  }
+
+  // Every crease segment that belongs to a feature, by its two vertices, with a
+  // compact list of the vertices involved so picking projects each only once.
+  const slot = new Int32Array(nV).fill(-1);
+  const sv = [];
+  const segS = [], segF = [];
+  feats.forEach((ft, fi) => {
+    for (let k = 0; k < ft.segs.length; k++) {
+      const v = ft.segs[k];
+      if (slot[v] < 0) { slot[v] = sv.length; sv.push(v); }
+    }
+    for (let k = 0; k < ft.segs.length; k += 2) { segS.push(slot[ft.segs[k]], slot[ft.segs[k + 1]]); segF.push(fi); }
+  });
+
+  return {
+    V, pos, faceOf, fN, fP, fKind, fArcs, fStart, fTris, arcFaces, feats,
+    sv: Int32Array.from(sv), segS: Int32Array.from(segS), segF: Int32Array.from(segF),
+    geomCache: new Map(),
+  };
+}
+
+// One chain of crease segments, cut into straight runs and circular runs.
+// `vs` are vertex ids; a closed chain's last segment runs back to vs[0].
+function rulerSplitChain(vs, closed, V, out) {
+  const n = vs.length;
+  const m = closed ? n : n - 1;               // segments
+  if (m < 1) return;
+  const segA = i => vs[i], segB = i => vs[(i + 1) % n];
+  const d = new Float64Array(3 * m), L = new Float64Array(m);
+  for (let i = 0; i < m; i++) {
+    const a = segA(i) * 3, b = segB(i) * 3;
+    const x = V[b] - V[a], y = V[b + 1] - V[a + 1], z = V[b + 2] - V[a + 2];
+    const l = Math.hypot(x, y, z) || 1e-12;
+    L[i] = l; d[3 * i] = x / l; d[3 * i + 1] = y / l; d[3 * i + 2] = z / l;
+  }
+  // Each joint between one segment and the next: 1 straight on, 2 a gentle
+  // turn between segments of much the same length (a step round a circle),
+  // 0 a corner.
+  const nJ = closed ? m : m - 1;
+  const J = new Uint8Array(nJ);
+  for (let j = 0; j < nJ; j++) {
+    const k = (j + 1) % m;
+    const c = d[3 * j] * d[3 * k] + d[3 * j + 1] * d[3 * k + 1] + d[3 * j + 2] * d[3 * k + 2];
+    const ang = Math.acos(Math.max(-1, Math.min(1, c))) * 180 / Math.PI;
+    const ratio = Math.max(L[j], L[k]) / Math.min(L[j], L[k]);
+    J[j] = ang < 0.3 ? 1 : (ang <= 20 && ratio <= 1.6 ? 2 : 0);
+  }
+  let segs, joints;
+  if (closed) {
+    let c0 = J.indexOf(0);
+    if (c0 < 0) {
+      // No corner anywhere: perhaps a whole circle.
+      if (J.indexOf(1) < 0 && m >= 6) {
+        const fit = rulerFitCircle(vs, V);
+        if (fit) { out.push({ kind: 'arc', vs: [...vs, vs[0]], fit }); return; }
+      }
+      c0 = J.indexOf(1);
+      if (c0 < 0) c0 = m - 1;
+    }
+    segs = []; joints = [];
+    for (let i = 1; i <= m; i++) segs.push((c0 + i) % m);
+    for (let i = 1; i < m; i++) joints.push(J[(c0 + i) % m]);
+  } else {
+    segs = Array.from({ length: m }, (_, i) => i);
+    joints = Array.from(J);
+  }
+  const isArc = new Uint8Array(segs.length);
+  const pts = (lo, hi) => { const p = [segA(segs[lo])]; for (let s = lo; s <= hi; s++) p.push(segB(segs[s])); return p; };
+  for (let i = 0; i < joints.length;) {
+    if (joints[i] !== 2) { i++; continue; }
+    let j = i;
+    while (j < joints.length && joints[j] === 2) j++;
+    // Gentle joints i..j-1 link segments i..j. A straight side of much the same
+    // length as the curve's steps can sneak onto either end, so if the whole run
+    // will not fit a circle, try again without one or two end segments.
+    if (j - i >= 2) {
+      let done = false;
+      for (let trim = 0; trim <= 2 && !done; trim++) {
+        for (let a = 0; a <= trim && !done; a++) {
+          const lo = i + a, hi = j - (trim - a);
+          if (hi - lo + 1 < 3) continue;
+          const p = pts(lo, hi);
+          const fit = rulerFitCircle(p, V);
+          if (fit) {
+            for (let s = lo; s <= hi; s++) isArc[s] = 1;
+            out.push({ kind: 'arc', vs: p, fit });
+            done = true;
+          }
+        }
+      }
+    }
+    i = j;
+  }
+  let cur = null;
+  for (let s = 0; s < segs.length; s++) {
+    if (isArc[s]) { if (cur) out.push({ kind: 'line', vs: cur }); cur = null; continue; }
+    if (cur && joints[s - 1] === 1) cur.push(segB(segs[s]));
+    else { if (cur) out.push({ kind: 'line', vs: cur }); cur = [segA(segs[s]), segB(segs[s])]; }
+  }
+  if (cur) out.push({ kind: 'line', vs: cur });
+}
+
+// A circle through the given vertices, or null if they do not lie on one (flat
+// to within 0.005 mm, or 0.5% of the radius on a large circle).
+function rulerFitCircle(ids, V) {
+  const k = ids.length;
+  if (k < 4) return null;
+  let cx = 0, cy = 0, cz = 0;
+  for (const v of ids) { cx += V[3 * v]; cy += V[3 * v + 1]; cz += V[3 * v + 2]; }
+  cx /= k; cy /= k; cz /= k;
+  const P = ids.map(v => [V[3 * v] - cx, V[3 * v + 1] - cy, V[3 * v + 2] - cz]);
+  let nx = 0, ny = 0, nz = 0;
+  for (let i = 0; i + 1 < k; i++) {
+    const a = P[i], b = P[i + 1];
+    nx += a[1] * b[2] - a[2] * b[1]; ny += a[2] * b[0] - a[0] * b[2]; nz += a[0] * b[1] - a[1] * b[0];
+  }
+  const nl = Math.hypot(nx, ny, nz);
+  if (nl < 1e-12) return null;
+  nx /= nl; ny /= nl; nz /= nl;
+  // In-plane axes.
+  let e1 = P[0].slice();
+  const dn = e1[0] * nx + e1[1] * ny + e1[2] * nz;
+  e1 = [e1[0] - dn * nx, e1[1] - dn * ny, e1[2] - dn * nz];
+  const el = Math.hypot(e1[0], e1[1], e1[2]);
+  if (el < 1e-12) return null;
+  e1 = e1.map(x => x / el);
+  const e2 = [ny * e1[2] - nz * e1[1], nz * e1[0] - nx * e1[2], nx * e1[1] - ny * e1[0]];
+  let Sxx = 0, Sxy = 0, Syy = 0, Sx = 0, Sy = 0, Sxz = 0, Syz = 0, Sz = 0, flat = 0;
+  const X = [], Y = [];
+  for (const p of P) {
+    const x = p[0] * e1[0] + p[1] * e1[1] + p[2] * e1[2];
+    const y = p[0] * e2[0] + p[1] * e2[1] + p[2] * e2[2];
+    flat = Math.max(flat, Math.abs(p[0] * nx + p[1] * ny + p[2] * nz));
+    const z = x * x + y * y;
+    X.push(x); Y.push(y);
+    Sxx += x * x; Sxy += x * y; Syy += y * y; Sx += x; Sy += y; Sxz += x * z; Syz += y * z; Sz += z;
+  }
+  // Least squares for x² + y² + A·x + B·y + C = 0 (Kåsa), by Cramer's rule.
+  const M = [[Sxx, Sxy, Sx], [Sxy, Syy, Sy], [Sx, Sy, k]];
+  const R = [-Sxz, -Syz, -Sz];
+  const det3 = m => m[0][0] * (m[1][1] * m[2][2] - m[1][2] * m[2][1]) -
+                    m[0][1] * (m[1][0] * m[2][2] - m[1][2] * m[2][0]) +
+                    m[0][2] * (m[1][0] * m[2][1] - m[1][1] * m[2][0]);
+  const D = det3(M);
+  if (Math.abs(D) < 1e-18) return null;
+  const col = (i) => M.map((row, r) => row.map((v, c) => c === i ? R[r] : v));
+  const A = det3(col(0)) / D, B = det3(col(1)) / D, C = det3(col(2)) / D;
+  const ux = -A / 2, uy = -B / 2;
+  const r2 = ux * ux + uy * uy - C;
+  if (!(r2 > 0)) return null;
+  const r = Math.sqrt(r2);
+  if (r < 0.01 || r > 10000) return null;
+  const tol = Math.max(0.005, r * 0.005);
+  if (flat > tol) return null;
+  for (let i = 0; i < k; i++) if (Math.abs(Math.hypot(X[i] - ux, Y[i] - uy) - r) > tol) return null;
+  return {
+    r,
+    n: [nx, ny, nz],
+    c: [cx + ux * e1[0] + uy * e2[0], cy + ux * e1[1] + uy * e2[1], cz + ux * e1[2] + uy * e2[2]],
+  };
+}
+
+// ---- Finding what is under the pointer ---------------------------------------
+function rulerKgMesh() {
+  if (!currentMesh) return null;
+  let m = null;
+  currentMesh.traverse(o => { if (!m && o.isMesh && o.userData.kgBody && o.geometry &&
+                                   o.geometry.attributes.position) m = o; });
+  return m;
+}
+
+// The features of the model on screen now, worked out the first time they are
+// needed after each render.
+function rulerEnsure() {
+  const m = rulerKgMesh();
+  if (m !== rulerMesh) {
+    rulerMesh = m;
+    rulerFeat = null;
+    rulerSel = null;
+    rulerHover = null;
+    rulerRefresh();
+  }
+  if (m && !rulerFeat) {
+    try { rulerFeat = rulerAnalyse(m.geometry); }
+    catch (e) {
+      rulerFeat = { failed: true };
+      logLine(`Measure: could not read the model's faces and edges (${e.message}).`);
+    }
+  }
+  return rulerFeat && !rulerFeat.failed ? rulerFeat : null;
+}
+
+function rulerSame(a, b) { return !!a && !!b && a.kind === b.kind && a.id === b.id; }
+const rulerDot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+
+// The camera's view as one matrix from model space to canvas pixels.
+function rulerProjector() {
+  const r = canvas.getBoundingClientRect();
+  const M = new THREE.Matrix4()
+    .multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse)
+    .multiply(rulerMesh.matrixWorld);
+  const e = M.elements, W = r.width, H = r.height;
+  return (x, y, z, out, o) => {
+    const cx = e[0] * x + e[4] * y + e[8] * z + e[12];
+    const cy = e[1] * x + e[5] * y + e[9] * z + e[13];
+    const cw = e[3] * x + e[7] * y + e[11] * z + e[15];
+    if (cw <= 1e-6) return false;               // behind the camera
+    out[o] = (cx / cw * 0.5 + 0.5) * W;
+    out[o + 1] = (0.5 - cy / cw * 0.5) * H;
+    return true;
+  };
+}
+
+// True when nothing of the model stands between the camera and point P
+// (model coordinates): an edge round the back must not light up through it.
+function rulerVisible(P) {
+  const wp = new THREE.Vector3(P[0], P[1], P[2]).applyMatrix4(rulerMesh.matrixWorld);
+  const cam = camera.getWorldPosition(new THREE.Vector3());
+  const dir = wp.clone().sub(cam);
+  const dist = dir.length();
+  rulerRay.set(cam, dir.normalize());
+  rulerRay.far = dist + 1;
+  const hit = rulerRay.intersectObject(rulerMesh, false)[0];
+  return !hit || hit.distance >= dist - Math.max(0.05, dist * 0.002);
+}
+
+// What the pointer at canvas pixel (x, y) would highlight, given what is kept.
+function rulerPick(x, y) {
+  const F = rulerEnsure();
+  if (!F || !rulerMesh) return null;
+  const sel = rulerSel;
+
+  // Edges and curves first: they are thin, so within RULER_PICK_PX of one wins
+  // over the face beneath the pointer.
+  if (!sel || sel.kind === 'line') {
+    const proj = rulerProjector();
+    const ns = F.sv.length;
+    const S = new Float64Array(ns * 2), ok = new Uint8Array(ns);
+    for (let i = 0; i < ns; i++) {
+      const v = F.sv[i] * 3;
+      ok[i] = proj(F.V[v], F.V[v + 1], F.V[v + 2], S, 2 * i) ? 1 : 0;
+    }
+    const selU = sel ? F.feats[sel.id].u : null;
+    const cands = [];
+    for (let s = 0; s < F.segF.length; s++) {
+      const fi = F.segF[s];
+      if (sel) {
+        const ft = F.feats[fi];
+        if (ft.kind !== 'line') continue;
+        if (fi !== sel.id && Math.abs(rulerDot(ft.u, selU)) < RULER_PARALLEL_COS) continue;
+      }
+      const a = F.segS[2 * s], b = F.segS[2 * s + 1];
+      if (!ok[a] || !ok[b]) continue;
+      const ax = S[2 * a], ay = S[2 * a + 1], bx = S[2 * b], by = S[2 * b + 1];
+      const dx = bx - ax, dy = by - ay, l2 = dx * dx + dy * dy;
+      let t = l2 > 0 ? ((x - ax) * dx + (y - ay) * dy) / l2 : 0;
+      t = Math.max(0, Math.min(1, t));
+      const dd = Math.hypot(ax + t * dx - x, ay + t * dy - y);
+      if (dd <= RULER_PICK_PX) cands.push({ s, t, dd });
+    }
+    cands.sort((p, q) => p.dd - q.dd);
+    for (const c of cands.slice(0, 8)) {
+      const va = F.sv[F.segS[2 * c.s]] * 3, vb = F.sv[F.segS[2 * c.s + 1]] * 3;
+      const P = [0, 1, 2].map(k => F.V[va + k] + c.t * (F.V[vb + k] - F.V[va + k]));
+      if (rulerVisible(P)) { const fi = F.segF[c.s]; return { kind: F.feats[fi].kind, id: fi }; }
+    }
+  }
+  if (sel && sel.kind === 'line') return null;
+
+  // Otherwise the face under the pointer.
+  const r = canvas.getBoundingClientRect();
+  rulerRay.setFromCamera(new THREE.Vector2(x / r.width * 2 - 1, -(y / r.height) * 2 + 1), camera);
+  rulerRay.far = Infinity;
+  const hit = rulerRay.intersectObject(rulerMesh, false)[0];
+  if (!hit || hit.faceIndex == null) return null;
+  const f = F.faceOf[hit.faceIndex];
+  const kind = F.fKind[f];
+  if (sel) {   // a face is kept: only it and faces parallel to it
+    if (kind !== 1) return null;
+    if (f === sel.id) return { kind: 'face', id: f };
+    const n = [F.fN[3 * f], F.fN[3 * f + 1], F.fN[3 * f + 2]];
+    const m = [F.fN[3 * sel.id], F.fN[3 * sel.id + 1], F.fN[3 * sel.id + 2]];
+    return Math.abs(rulerDot(n, m)) >= RULER_PARALLEL_COS ? { kind: 'face', id: f } : null;
+  }
+  if (kind === 1) return { kind: 'face', id: f };
+  if (kind === 2) {
+    // A curved wall: the circular edge along it nearest the pointer.
+    const p = rulerMesh.worldToLocal(hit.point.clone());
+    let best = null, bestD = Infinity;
+    for (const fi of F.fArcs[f]) {
+      const a = F.feats[fi];
+      const d = Math.abs(a.n[0] * (p.x - a.c[0]) + a.n[1] * (p.y - a.c[1]) + a.n[2] * (p.z - a.c[2]));
+      if (d < bestD) { bestD = d; best = fi; }
+    }
+    return best == null ? null : { kind: 'arc', id: best };
+  }
+  return null;
+}
+
+// ---- Drawing the highlights ---------------------------------------------------
+function rulerFaceGeom(F, key, faces) {
+  let g = F.geomCache.get(key);
+  if (g) return g;
+  let n = 0;
+  for (const f of faces) n += F.fStart[f + 1] - F.fStart[f];
+  const out = new Float32Array(n * 9);
+  let o = 0;
+  for (const f of faces) {
+    for (let i = F.fStart[f]; i < F.fStart[f + 1]; i++) {
+      const t = F.fTris[i];
+      out.set(F.pos.subarray(9 * t, 9 * t + 9), o);
+      o += 9;
+    }
+  }
+  g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(out, 3));
+  F.geomCache.set(key, g);
+  return g;
+}
+
+// Rebuild the highlights from rulerSel and rulerHover. The kept item, and the
+// first item pointed at, are in the first color; the second item is in the second.
+function rulerRefresh() {
+  while (rulerGroup.children.length) rulerGroup.remove(rulerGroup.children[0]);
+  rulerOverlayItems = [];
+  rulerOverlayDirty = true;
+  const F = rulerFeat && !rulerFeat.failed ? rulerFeat : null;
+  if (!rulerOn || !F || !rulerMesh) return;
+  const cols = rulerColors();
+  rulerMats[0].color.set(cols[0]);
+  rulerMats[1].color.set(cols[1]);
+  rulerGroup.matrix.copy(rulerMesh.matrixWorld);
+  rulerGroup.matrixWorldNeedsUpdate = true;
+  const items = [];
+  if (rulerSel) items.push([rulerSel, 0]);
+  if (rulerHover && !rulerSame(rulerHover, rulerSel)) items.push([rulerHover, rulerSel ? 1 : 0]);
+  for (const [it, ci] of items) {
+    if (it.kind === 'face' || it.kind === 'arc') {
+      const faces = it.kind === 'face' ? [it.id] : (F.arcFaces.get(it.id) || []);
+      if (faces.length) {
+        const mesh = new THREE.Mesh(rulerFaceGeom(F, it.kind + it.id, faces), rulerMats[ci]);
+        mesh.renderOrder = 2;
+        mesh.raycast = () => {};              // never in the way of a pick
+        rulerGroup.add(mesh);
+      }
+    }
+    if (it.kind === 'line' || it.kind === 'arc') rulerOverlayItems.push({ fid: it.id, color: cols[ci] });
+  }
+}
+
+// Every frame: redraw the edge and curve lines when the view or the picks changed.
+function rulerSync() {
+  if (rulerOn && rulerMesh && rulerKgMesh() !== rulerMesh) {
+    // A new render replaced the model: picks on the old one mean nothing now.
+    rulerEnsure();
+    if (!rulerPopOpen) rulerQueueHover();
+  }
+  if (!rulerOn || !rulerOverlayItems.length || !rulerFeat || rulerFeat.failed) {
+    if (rulerSvg.firstChild) while (rulerSvg.firstChild) rulerSvg.removeChild(rulerSvg.firstChild);
+    return;
+  }
+  const vrect = viewport.getBoundingClientRect();
+  const rect = canvas.getBoundingClientRect();
+  const key = camera.matrixWorld.elements.join(',') + '|' + camera.projectionMatrix.elements.join(',') +
+              `|${rect.left},${rect.top},${rect.width},${rect.height},${vrect.left},${vrect.top}`;
+  if (!rulerOverlayDirty && key === rulerLastViewKey) return;
+  rulerOverlayDirty = false;
+  rulerLastViewKey = key;
+  const ox = rect.left - vrect.left, oy = rect.top - vrect.top;
+  rulerSvg.setAttribute('viewBox', `0 0 ${vrect.width} ${vrect.height}`);
+  rulerSvg.setAttribute('width', vrect.width);
+  rulerSvg.setAttribute('height', vrect.height);
+  while (rulerSvg.firstChild) rulerSvg.removeChild(rulerSvg.firstChild);
+  const proj = rulerProjector();
+  const F = rulerFeat, q = [0, 0, 0, 0];
+  const NS = 'http://www.w3.org/2000/svg';
+  for (const it of rulerOverlayItems) {
+    const ft = F.feats[it.fid];
+    let d = '';
+    for (let k = 0; k < ft.segs.length; k += 2) {
+      const a = ft.segs[k] * 3, b = ft.segs[k + 1] * 3;
+      if (!proj(F.V[a], F.V[a + 1], F.V[a + 2], q, 0) || !proj(F.V[b], F.V[b + 1], F.V[b + 2], q, 2)) continue;
+      d += `M${(q[0] + ox).toFixed(1)} ${(q[1] + oy).toFixed(1)}L${(q[2] + ox).toFixed(1)} ${(q[3] + oy).toFixed(1)}`;
+    }
+    if (!d) continue;
+    // A dark halo under the color keeps the line visible on any model color.
+    for (const [stroke, w] of [['rgba(0,0,0,0.55)', 7], [it.color, 4]]) {
+      const p = document.createElementNS(NS, 'path');
+      p.setAttribute('d', d);
+      p.setAttribute('fill', 'none');
+      p.setAttribute('stroke', stroke);
+      p.setAttribute('stroke-width', w);
+      p.setAttribute('stroke-linecap', 'round');
+      p.setAttribute('stroke-linejoin', 'round');
+      rulerSvg.appendChild(p);
+    }
+  }
+}
+
+// ---- The measurement -----------------------------------------------------------
+// Screen pixels per millimetre across and up the screen, or null for a keyguard
+// file too old to report the screen size in pixels.
+function rulerScale() {
+  const d = project && project.dims;
+  if (d && d.swp > 0 && d.shp > 0 && d.swm > 0 && d.shm > 0) return { sx: d.swp / d.swm, sy: d.shp / d.shm };
+  return null;
+}
+const RULER_NO_PX_OLD = 'Pixels are not shown: this keyguard file is too old to report the screen size in pixels.';
+
+function rulerShowDistance(a, b) {
+  const F = rulerFeat;
+  let vec, what;
+  if (a.kind === 'face') {
+    const n = [F.fN[3 * a.id], F.fN[3 * a.id + 1], F.fN[3 * a.id + 2]];
+    const w = [0, 1, 2].map(k => F.fP[3 * b.id + k] - F.fP[3 * a.id + k]);
+    const t = rulerDot(n, w);
+    vec = n.map(x => x * t);
+    what = 'faces';
+  } else {
+    const A = F.feats[a.id], B = F.feats[b.id];
+    const w = [0, 1, 2].map(k => B.p[k] - A.p[k]);
+    const t = rulerDot(w, A.u);
+    vec = w.map((x, k) => x - t * A.u[k]);
+    what = 'edges';
+  }
+  // Screen pixels only exist across the screen (the model's X and Y). A distance
+  // straight through the keyguard's thickness has none; one that runs partly
+  // across and partly through (two edges at different heights, as on an
+  // opening's sloped wall) is shown whole and also split into the two parts,
+  // the across-the-screen part with its pixels.
+  const s = rulerScale();
+  const mm = Math.hypot(vec[0], vec[1], vec[2]);
+  const across = Math.hypot(vec[0], vec[1]), through = Math.abs(vec[2]);
+  const tol = Math.max(0.01, mm * 0.01);
+  const acrossPx = s ? Math.round(Math.hypot(vec[0] * s.sx, vec[1] * s.sy)) : null;
+  const title = `Distance between the two parallel ${what}`;
+  const log = `Measure: distance between the two parallel ${what} = ${mm.toFixed(2)} mm`;
+  if (through <= tol) {                         // across the screen
+    logLine(log + (s ? ` (${acrossPx} px)` : ' (no pixel size)'));
+    rulerOpenPop(title, [`${mm.toFixed(2)} mm`, ...(s ? [`${acrossPx} px`] : [])], [],
+                 s ? null : RULER_NO_PX_OLD);
+  } else if (across <= tol) {                   // straight through the thickness
+    logLine(log + ' (through the thickness, so no pixel size)');
+    rulerOpenPop(title, [`${mm.toFixed(2)} mm`], [],
+                 'This distance runs through the keyguard\'s thickness, not across the ' +
+                 'screen, so it has no size in screen pixels.');
+  } else {                                      // partly each
+    const acrossText = `${across.toFixed(2)} mm` + (s ? `, ${acrossPx} px` : '');
+    logLine(log + ` (across the screen ${acrossText}; through the thickness ${through.toFixed(2)} mm)`);
+    rulerOpenPop(title, [`${mm.toFixed(2)} mm`],
+                 [`Across the screen: ${acrossText.replace(', ', ' · ')}`,
+                  `Through the thickness: ${through.toFixed(2)} mm`],
+                 `The two ${what} are at different heights in the keyguard, so the distance ` +
+                 'between them runs partly across the screen and partly through the thickness.' +
+                 (s ? '' : ' ' + RULER_NO_PX_OLD));
+  }
+}
+
+function rulerShowRadius(fi) {
+  const a = rulerFeat.feats[fi];
+  // A circle lying flat across the screen has a size in pixels; one standing
+  // up through the keyguard does not.
+  const s = rulerScale();
+  let why = null, k = null;
+  if (!s) why = RULER_NO_PX_OLD;
+  else if (Math.abs(a.n[2]) < 0.999) why = 'Pixels are not shown: this curve does not lie flat across the screen.';
+  else k = (s.sx + s.sy) / 2;
+  const r = a.r;
+  const px = v => k != null ? ` (${Math.round(v * k)} px)` : '';
+  logLine(`Measure: curve radius = ${r.toFixed(2)} mm${px(r)}, diameter = ${(2 * r).toFixed(2)} mm${px(2 * r)}` +
+          (k == null ? ' (no pixel size)' : ''));
+  rulerOpenPop('Radius of the curve',
+               [`${r.toFixed(2)} mm`, ...(k != null ? [`${Math.round(r * k)} px`] : [])],
+               [`Diameter: ${(2 * r).toFixed(2)} mm${k != null ? ` · ${Math.round(2 * r * k)} px` : ''}`],
+               why);
+}
+
+function rulerOpenPop(what, values, subs, note) {
+  const body = document.getElementById('ruler-pop-body');
+  body.textContent = '';
+  const add = (cls, text) => { const d = document.createElement('div'); d.className = cls; d.textContent = text; body.appendChild(d); };
+  add('rp-what', what);
+  add('rp-val', values.join('  ·  '));
+  for (const s of subs) add('rp-sub', s);
+  if (note) add('rp-note', note);
+  rulerPopOpen = true;
+  rulerPopOv.classList.add('open');
+  document.getElementById('ruler-pop-ok').focus();
+}
+
+// Dismissing the pop-up lets go of the picks; the ruler stays on.
+function rulerClosePop() {
+  if (!rulerPopOpen) return;
+  rulerPopOpen = false;
+  rulerPopOv.classList.remove('open');
+  rulerSel = null;
+  rulerHover = null;
+  rulerRefresh();
+  rulerQueueHover();
+}
+document.getElementById('ruler-pop-ok').addEventListener('click', rulerClosePop);
+rulerPopOv.addEventListener('click', e => { if (e.target === rulerPopOv) rulerClosePop(); });
+
+// ---- Mouse and keyboard ----------------------------------------------------------
+function rulerQueueHover() {
+  if (rulerPickQueued) return;
+  rulerPickQueued = true;
+  requestAnimationFrame(() => {
+    rulerPickQueued = false;
+    if (!rulerOn || rulerPopOpen || !rulerMouse || rulerDown) return;
+    const h = rulerPick(rulerMouse.x, rulerMouse.y);
+    if (!rulerSame(h, rulerHover) && (h || rulerHover)) { rulerHover = h; rulerRefresh(); }
+  });
+}
+
+function rulerClick() {
+  if (!rulerMouse) return;
+  const h = rulerPick(rulerMouse.x, rulerMouse.y);
+  if (!h) return;
+  rulerHover = h;
+  if (!rulerSel) {
+    if (h.kind === 'arc') { rulerRefresh(); rulerShowRadius(h.id); return; }
+    rulerSel = h;
+    rulerRefresh();
+    return;
+  }
+  if (rulerSame(h, rulerSel)) {               // clicked the kept item again: let it go
+    rulerSel = null;
+    rulerRefresh();
+    return;
+  }
+  rulerRefresh();
+  rulerShowDistance(rulerSel, h);
+}
+
+canvas.addEventListener('pointermove', ev => {
+  if (!rulerOn) return;
+  const r = canvas.getBoundingClientRect();
+  rulerMouse = { x: ev.clientX - r.left, y: ev.clientY - r.top };
+  if (ev.buttons) return;                      // turning or panning: look again on release
+  rulerQueueHover();
+});
+canvas.addEventListener('pointerleave', () => {
+  if (!rulerOn || rulerDown) return;
+  rulerMouse = null;
+  if (rulerHover) { rulerHover = null; rulerRefresh(); }
+});
+canvas.addEventListener('pointerdown', ev => {
+  if (!rulerOn || ev.button !== 0) return;
+  rulerDown = { x: ev.clientX, y: ev.clientY };
+}, true);
+window.addEventListener('pointerup', ev => {
+  if (!rulerOn || ev.button !== 0 || !rulerDown) return;
+  const moved = Math.hypot(ev.clientX - rulerDown.x, ev.clientY - rulerDown.y);
+  rulerDown = null;
+  if (rulerPopOpen) return;
+  const r = canvas.getBoundingClientRect();
+  rulerMouse = { x: ev.clientX - r.left, y: ev.clientY - r.top };
+  if (moved <= RULER_CLICK_PX) rulerClick();
+  else rulerQueueHover();
+});
+canvas.addEventListener('wheel', () => { if (rulerOn) rulerQueueHover(); }, { passive: true });
+
+// Esc closes the pop-up first; with no pop-up it turns the ruler off — unless
+// some other window is up, which the Esc belongs to.
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape') return;
+  if (rulerPopOpen) { e.preventDefault(); e.stopImmediatePropagation(); rulerClosePop(); return; }
+  if (rulerOn && !document.querySelector('[id$="-overlay"].open') &&
+      !ogPanel.classList.contains('open')) rulerSetOn(false);
+}, true);
+
+async function rulerSetOn(on) {
+  if (on === rulerOn) return;
+  if (on) {
+    if (!project) return;
+    if (ogPanel.classList.contains('open')) {
+      await ogRequestClose();                  // may ask about unsaved openings
+      if (ogPanel.classList.contains('open')) return;
+    }
+    if (!rulerKgMesh()) {
+      logLine('Measure: there is no 3D model on screen to measure. (The ruler measures the 3D ' +
+              'model, not the flat laser-cut layer.)');
+      return;
+    }
+    rulerOn = true;
+    rulerBtn.classList.add('active');
+    rulerBtn.setAttribute('aria-pressed', 'true');
+    canvas.classList.add('ruler-on');
+    rulerSvg.classList.add('on');
+    logLine('Measure: point at a face, an edge or a curve and click it. Click the ruler ' +
+            'button again, or press Esc, to stop measuring.');
+    rulerEnsure();
+    rulerQueueHover();
+  } else {
+    rulerOn = false;
+    rulerSel = null;
+    rulerHover = null;
+    rulerDown = null;
+    if (rulerPopOpen) { rulerPopOpen = false; rulerPopOv.classList.remove('open'); }
+    rulerRefresh();
+    rulerBtn.classList.remove('active');
+    rulerBtn.setAttribute('aria-pressed', 'false');
+    canvas.classList.remove('ruler-on');
+    rulerSvg.classList.remove('on');
+  }
+}
+rulerBtn.addEventListener('click', () => rulerSetOn(!rulerOn));
+rulerBooted = true;
 
 updateOpeningsButton();
 

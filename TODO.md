@@ -22,6 +22,16 @@ quietly waits forever.
 
 ## Open
 
+### Ruler: spacing between round openings
+- **Raised:** 2026-11-28 - while designing the ruler (measure) button. The ruler measures
+  between two parallel faces, between two parallel edges, and the radius of a curve. It
+  cannot measure from the center of one circle to the center of another, or from a circle's
+  center to an edge.
+- **What's wanted:** center-to-center spacing between round openings (and probably
+  center-to-edge), in millimeters and pixels, in the same pop-up and Console line.
+- **Why not now:** Ken, 2026-11-28: "put on the to do list". The first version covers the
+  three measurements he asked for; this waits until he has used it.
+
 ### Explain a folder refusal that Chrome gives without asking
 - **Raised:** 2026-11-23 - while answering a clinician whose Open Project did nothing on
   release 127. If Chrome refuses folder access without asking her (its **File editing**
