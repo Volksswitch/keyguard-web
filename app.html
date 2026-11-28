@@ -459,14 +459,16 @@
   #ruler-overlay { position: absolute; inset: 0; display: none; z-index: 5;
                    pointer-events: none; overflow: visible; }
   #ruler-overlay.on { display: block; }
-  #three-canvas.ruler-on { cursor: crosshair; }
-  #ruler-pop-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.15);
+  /* The backdrop is barely tinted: the two highlighted items stay plainly
+     visible under it while the pop-up is up. Drag the pop-up by its title. */
+  #ruler-pop-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.05);
                        display: none; align-items: center; justify-content: center; z-index: 1300; }
   #ruler-pop-overlay.open { display: flex; }
   #ruler-pop { background: #fafafa; border: 1px solid #888; border-radius: 4px;
                min-width: 300px; max-width: 90vw; box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
   #ruler-pop h3 { margin: 0; padding: 10px 14px; border-bottom: 1px solid #ccc;
-                  background: #e8e8e8; font-size: 14px; }
+                  background: #e8e8e8; font-size: 14px; cursor: move; user-select: none;
+                  touch-action: none; }
   #ruler-pop-body { padding: 14px; font-size: 12px; line-height: 1.5; }
   #ruler-pop-body .rp-what { margin-bottom: 6px; }
   #ruler-pop-body .rp-val { font-size: 20px; font-weight: bold; }
@@ -1860,7 +1862,7 @@ const RELEASE_NOTES = {
     "Snap now lines shapes up with the real top and bottom of a keyguard frame's opening when the keyguard is on posts. On posts, the frame has a notch along the top of the keyguard's opening for the post, and often a matching one along the bottom. They make the opening taller than the keyguard, so a shape lined up with the opening's top or bottom used to stop short of the frame's edge. Now its top and bottom are where the frame is really cut. This needs version 106 or later of the keyguard designer file. With an older one, a frame for a keyguard on posts offers only the left and right edges of the opening."
   ],
   "135": [
-    "A ruler for measuring the keyguard. The new ruler button, to the right of Custom Openings, lets you measure the model on screen. Point at a face, an edge or a curve and it lights up; click it to keep it. After a face, only faces parallel to it light up; after an edge, only parallel edges. Click a second one and a pop-up shows the distance between them in millimeters and in the tablet's screen pixels. Click a curve, such as the rounded corner of an opening or the wall of a round one, and the pop-up shows its radius and diameter. Each measurement is also written to the Console. You can still drag to turn and move the model between clicks, and clicking the kept item again lets it go. Dismissing the pop-up clears your picks so you can measure again; click the ruler button again, or press Esc, to stop. Pixels need a recent keyguard designer file, and are left out for a distance that runs straight through the keyguard's thickness. Two edges at different heights, such as the top of one side of an opening and the bottom of the other on a sloped wall, show the whole distance and also its two parts: across the screen (with pixels) and through the thickness."
+    "A ruler for measuring the keyguard. The new ruler button, to the right of Custom Openings, lets you measure the model on screen. Point at a face, an edge or a curve and it lights up; click it to keep it. After a face, only faces parallel to it light up; after an edge, only parallel edges. Click a second one and a pop-up shows the distance between them in millimeters and in the tablet's screen pixels, with both items still lit; drag the pop-up by its title to move it out of the way. Click a curve, such as the rounded corner of an opening, or the rim or wall of a round one (the funnel of an ambient light sensor opening included), and the pop-up shows its radius and diameter. Each measurement is also written to the Console. You can still drag to turn and move the model between clicks, and clicking the kept item again lets it go. Dismissing the pop-up clears your picks so you can measure again; click the ruler button again, or press Esc, to stop. Pixels need a recent keyguard designer file, and are left out for a distance that runs straight through the keyguard's thickness. Two edges at different heights, such as the top of one side of an opening and the bottom of the other on a sloped wall, show the whole distance and also its two parts: across the screen (with pixels) and through the thickness."
   ]
 };
 const RELEASE_DATES = {
@@ -12314,6 +12316,7 @@ function rulerAnalyse(geom) {
   // Creases. Sharp ones are edges; shallow ones mark a face as a facet of a
   // curved wall.
   const hasSmooth = new Uint8Array(nF);
+  const smoothPairs = [];                       // [f1, f2, f1, f2, ...] across shallow creases
   const sharp = [];
   const SHARP_COS = Math.cos(RULER_SHARP_DEG * Math.PI / 180);
   for (let e = 0; e < nE; e++) {
@@ -12325,7 +12328,7 @@ function rulerAnalyse(geom) {
     if (f1 === f2) continue;
     const c = fN[3 * f1] * fN[3 * f2] + fN[3 * f1 + 1] * fN[3 * f2 + 1] + fN[3 * f1 + 2] * fN[3 * f2 + 2];
     if (c <= SHARP_COS) sharp.push(e);
-    else { hasSmooth[f1] = 1; hasSmooth[f2] = 1; }
+    else { hasSmooth[f1] = 1; hasSmooth[f2] = 1; smoothPairs.push(f1, f2); }
   }
   const nS = sharp.length;
 
@@ -12458,11 +12461,31 @@ function rulerAnalyse(geom) {
       const d = Math.abs(ft.n[0] * fN[3 * f] + ft.n[1] * fN[3 * f + 1] + ft.n[2] * fN[3 * f + 2]);
       if (d < 0.9) arcs.push(fi);
     }
-    if (arcs.length) {
-      fKind[f] = 2;
-      fArcs[f] = arcs;
-      for (const fi of arcs) { if (!arcFaces.has(fi)) arcFaces.set(fi, []); arcFaces.get(fi).push(f); }
-    } else if (hasLine) fKind[f] = 1;
+    if (arcs.length) { fKind[f] = 2; fArcs[f] = arcs; }
+    else if (hasLine) fKind[f] = 1;
+  }
+  // A facet of a curved wall with no circular edge along its own border (a
+  // sliver in the middle of a funnel's wall, say) belongs to the same curve as
+  // the neighbor it meets across a shallow crease, if it leans at the same angle
+  // to that curve, which is what makes it part of the same wall.
+  for (let pass = 0, changed = true; changed && pass < 64; pass++) {
+    changed = false;
+    for (let i = 0; i < smoothPairs.length; i += 2) {
+      for (const [a, b] of [[smoothPairs[i], smoothPairs[i + 1]], [smoothPairs[i + 1], smoothPairs[i]]]) {
+        if (fKind[a] !== 0 || fArea[a] < 1e-10 || fKind[b] !== 2) continue;
+        const ax = feats[fArcs[b][0]].n;
+        const ka = Math.abs(ax[0] * fN[3 * a] + ax[1] * fN[3 * a + 1] + ax[2] * fN[3 * a + 2]);
+        const kb = Math.abs(ax[0] * fN[3 * b] + ax[1] * fN[3 * b + 1] + ax[2] * fN[3 * b + 2]);
+        if (Math.abs(ka - kb) > 0.05) continue;
+        fKind[a] = 2;
+        fArcs[a] = fArcs[b].slice();
+        changed = true;
+      }
+    }
+  }
+  for (let f = 0; f < nF; f++) {
+    if (fKind[f] !== 2) continue;
+    for (const fi of fArcs[f]) { if (!arcFaces.has(fi)) arcFaces.set(fi, []); arcFaces.get(fi).push(f); }
   }
 
   // Every crease segment that belongs to a feature, by its two vertices, with a
@@ -12492,64 +12515,85 @@ function rulerSplitChain(vs, closed, V, out) {
   const m = closed ? n : n - 1;               // segments
   if (m < 1) return;
   const segA = i => vs[i], segB = i => vs[(i + 1) % n];
-  const d = new Float64Array(3 * m), L = new Float64Array(m);
+  const d = new Float64Array(3 * m);
   for (let i = 0; i < m; i++) {
     const a = segA(i) * 3, b = segB(i) * 3;
     const x = V[b] - V[a], y = V[b + 1] - V[a + 1], z = V[b + 2] - V[a + 2];
     const l = Math.hypot(x, y, z) || 1e-12;
-    L[i] = l; d[3 * i] = x / l; d[3 * i + 1] = y / l; d[3 * i + 2] = z / l;
+    d[3 * i] = x / l; d[3 * i + 1] = y / l; d[3 * i + 2] = z / l;
   }
-  // Each joint between one segment and the next: 1 straight on, 2 a gentle
-  // turn between segments of much the same length (a step round a circle),
-  // 0 a corner.
-  const nJ = closed ? m : m - 1;
-  const J = new Uint8Array(nJ);
-  for (let j = 0; j < nJ; j++) {
-    const k = (j + 1) % m;
+  const turn = (j, k) => {
     const c = d[3 * j] * d[3 * k] + d[3 * j + 1] * d[3 * k + 1] + d[3 * j + 2] * d[3 * k + 2];
-    const ang = Math.acos(Math.max(-1, Math.min(1, c))) * 180 / Math.PI;
-    const ratio = Math.max(L[j], L[k]) / Math.min(L[j], L[k]);
-    J[j] = ang < 0.3 ? 1 : (ang <= 20 && ratio <= 1.6 ? 2 : 0);
-  }
-  let segs, joints;
+    return Math.acos(Math.max(-1, Math.min(1, c))) * 180 / Math.PI;
+  };
+  // The segments in order. A loop starts just after its sharpest turn, so no
+  // straight side or curve is cut in two by where the walk happened to begin.
+  let order = Array.from({ length: m }, (_, i) => i);
   if (closed) {
-    let c0 = J.indexOf(0);
-    if (c0 < 0) {
-      // No corner anywhere: perhaps a whole circle.
-      if (J.indexOf(1) < 0 && m >= 6) {
-        const fit = rulerFitCircle(vs, V);
-        if (fit) { out.push({ kind: 'arc', vs: [...vs, vs[0]], fit }); return; }
-      }
-      c0 = J.indexOf(1);
-      if (c0 < 0) c0 = m - 1;
-    }
-    segs = []; joints = [];
-    for (let i = 1; i <= m; i++) segs.push((c0 + i) % m);
-    for (let i = 1; i < m; i++) joints.push(J[(c0 + i) % m]);
-  } else {
-    segs = Array.from({ length: m }, (_, i) => i);
-    joints = Array.from(J);
+    let s0 = 0, worst = -1;
+    for (let j = 0; j < m; j++) { const t = turn(j, (j + 1) % m); if (t > worst) { worst = t; s0 = j; } }
+    order = order.map(i => (s0 + 1 + i) % m);
   }
-  const isArc = new Uint8Array(segs.length);
-  const pts = (lo, hi) => { const p = [segA(segs[lo])]; for (let s = lo; s <= hi; s++) p.push(segB(segs[s])); return p; };
-  for (let i = 0; i < joints.length;) {
-    if (joints[i] !== 2) { i++; continue; }
+  // Join segments that carry straight on into SIDES. A model often splits one
+  // side of a polygon into two or more collinear pieces (seen on the small
+  // circle at the bottom of an ambient light sensor opening, 28 Nov 2026,
+  // where every side of the 64-gon came in two halves), and a side, not a
+  // piece, is a step round a circle.
+  const sides = [];   // { segs: [segment indices], a, b (end vertex ids), u (unit), len }
+  for (let i = 0; i < m; i++) {
+    const s = order[i];
+    const last = sides[sides.length - 1];
+    if (last && turn(last.segs[last.segs.length - 1], s) < 0.3) { last.segs.push(s); last.b = segB(s); }
+    else sides.push({ segs: [s], a: segA(s), b: segB(s) });
+  }
+  for (const sd of sides) {
+    const a = sd.a * 3, b = sd.b * 3;
+    const x = V[b] - V[a], y = V[b + 1] - V[a + 1], z = V[b + 2] - V[a + 2];
+    sd.len = Math.hypot(x, y, z) || 1e-12;
+    sd.u = [x / sd.len, y / sd.len, z / sd.len];
+  }
+  // Each joint between one side and the next: 2 a gentle turn between sides of
+  // much the same length (a step round a circle), 0 a corner.
+  const joint = (p, q) => {
+    const ang = Math.acos(Math.max(-1, Math.min(1, rulerDot(p.u, q.u)))) * 180 / Math.PI;
+    return ang <= 20 && Math.max(p.len, q.len) / Math.min(p.len, q.len) <= 2.5 ? 2 : 0;
+  };
+  const nP = sides.length;
+  const J = [];
+  for (let i = 0; i + 1 < nP; i++) J.push(joint(sides[i], sides[i + 1]));
+  const allVs = (lo, hi) => {             // every vertex of sides lo..hi, for drawing
+    const p = [sides[lo].a];
+    for (let i = lo; i <= hi; i++) for (const s of sides[i].segs) p.push(segB(s));
+    return p;
+  };
+  const corners = (lo, hi) => {           // the corners only, which lie on the circle
+    const p = [sides[lo].a];
+    for (let i = lo; i <= hi; i++) p.push(sides[i].b);
+    return p;
+  };
+  // A loop that turns gently all the way round may be a whole circle.
+  if (closed && nP >= 6 && J.every(j => j === 2) && joint(sides[nP - 1], sides[0]) === 2) {
+    const fit = rulerFitCircle(corners(0, nP - 1).slice(0, -1), V, true);
+    if (fit) { out.push({ kind: 'arc', vs: allVs(0, nP - 1), fit }); return; }
+  }
+  const isArc = new Uint8Array(nP);
+  for (let i = 0; i < J.length;) {
+    if (J[i] !== 2) { i++; continue; }
     let j = i;
-    while (j < joints.length && joints[j] === 2) j++;
-    // Gentle joints i..j-1 link segments i..j. A straight side of much the same
+    while (j < J.length && J[j] === 2) j++;
+    // Gentle joints i..j-1 link sides i..j. A straight side of much the same
     // length as the curve's steps can sneak onto either end, so if the whole run
-    // will not fit a circle, try again without one or two end segments.
+    // will not fit a circle, try again without one or two end sides.
     if (j - i >= 2) {
       let done = false;
       for (let trim = 0; trim <= 2 && !done; trim++) {
         for (let a = 0; a <= trim && !done; a++) {
           const lo = i + a, hi = j - (trim - a);
           if (hi - lo + 1 < 3) continue;
-          const p = pts(lo, hi);
-          const fit = rulerFitCircle(p, V);
+          const fit = rulerFitCircle(corners(lo, hi), V);
           if (fit) {
             for (let s = lo; s <= hi; s++) isArc[s] = 1;
-            out.push({ kind: 'arc', vs: p, fit });
+            out.push({ kind: 'arc', vs: allVs(lo, hi), fit });
             done = true;
           }
         }
@@ -12557,18 +12601,12 @@ function rulerSplitChain(vs, closed, V, out) {
     }
     i = j;
   }
-  let cur = null;
-  for (let s = 0; s < segs.length; s++) {
-    if (isArc[s]) { if (cur) out.push({ kind: 'line', vs: cur }); cur = null; continue; }
-    if (cur && joints[s - 1] === 1) cur.push(segB(segs[s]));
-    else { if (cur) out.push({ kind: 'line', vs: cur }); cur = [segA(segs[s]), segB(segs[s])]; }
-  }
-  if (cur) out.push({ kind: 'line', vs: cur });
+  for (let i = 0; i < nP; i++) if (!isArc[i]) out.push({ kind: 'line', vs: allVs(i, i) });
 }
 
 // A circle through the given vertices, or null if they do not lie on one (flat
-// to within 0.005 mm, or 0.5% of the radius on a large circle).
-function rulerFitCircle(ids, V) {
+// to within 0.005 mm, or 0.5% of the radius on a large circle). closedLoop: the points go all the way round.
+function rulerFitCircle(ids, V, closedLoop = false) {
   const k = ids.length;
   if (k < 4) return null;
   let cx = 0, cy = 0, cz = 0;
@@ -12591,34 +12629,65 @@ function rulerFitCircle(ids, V) {
   if (el < 1e-12) return null;
   e1 = e1.map(x => x / el);
   const e2 = [ny * e1[2] - nz * e1[1], nz * e1[0] - nx * e1[2], nx * e1[1] - ny * e1[0]];
-  let Sxx = 0, Sxy = 0, Syy = 0, Sx = 0, Sy = 0, Sxz = 0, Syz = 0, Sz = 0, flat = 0;
+  let flat = 0;
   const X = [], Y = [];
   for (const p of P) {
-    const x = p[0] * e1[0] + p[1] * e1[1] + p[2] * e1[2];
-    const y = p[0] * e2[0] + p[1] * e2[1] + p[2] * e2[2];
+    X.push(p[0] * e1[0] + p[1] * e1[1] + p[2] * e1[2]);
+    Y.push(p[0] * e2[0] + p[1] * e2[1] + p[2] * e2[2]);
     flat = Math.max(flat, Math.abs(p[0] * nx + p[1] * ny + p[2] * nz));
-    const z = x * x + y * y;
-    X.push(x); Y.push(y);
-    Sxx += x * x; Sxy += x * y; Syy += y * y; Sx += x; Sy += y; Sxz += x * z; Syz += y * z; Sz += z;
   }
-  // Least squares for x² + y² + A·x + B·y + C = 0 (Kåsa), by Cramer's rule.
-  const M = [[Sxx, Sxy, Sx], [Sxy, Syy, Sy], [Sx, Sy, k]];
-  const R = [-Sxz, -Syz, -Sz];
+  // Least squares for x² + y² + A·x + B·y + C = 0 (Kåsa), by Cramer's rule,
+  // over the points still in use.
   const det3 = m => m[0][0] * (m[1][1] * m[2][2] - m[1][2] * m[2][1]) -
                     m[0][1] * (m[1][0] * m[2][2] - m[1][2] * m[2][0]) +
                     m[0][2] * (m[1][0] * m[2][1] - m[1][1] * m[2][0]);
-  const D = det3(M);
-  if (Math.abs(D) < 1e-18) return null;
-  const col = (i) => M.map((row, r) => row.map((v, c) => c === i ? R[r] : v));
-  const A = det3(col(0)) / D, B = det3(col(1)) / D, C = det3(col(2)) / D;
-  const ux = -A / 2, uy = -B / 2;
-  const r2 = ux * ux + uy * uy - C;
-  if (!(r2 > 0)) return null;
-  const r = Math.sqrt(r2);
-  if (r < 0.01 || r > 10000) return null;
-  const tol = Math.max(0.005, r * 0.005);
-  if (flat > tol) return null;
-  for (let i = 0; i < k; i++) if (Math.abs(Math.hypot(X[i] - ux, Y[i] - uy) - r) > tol) return null;
+  const solve = use => {
+    let Sxx = 0, Sxy = 0, Syy = 0, Sx = 0, Sy = 0, Sxz = 0, Syz = 0, Sz = 0, N = 0;
+    for (let i = 0; i < k; i++) {
+      if (!use[i]) continue;
+      const x = X[i], y = Y[i], z = x * x + y * y;
+      Sxx += x * x; Sxy += x * y; Syy += y * y; Sx += x; Sy += y; Sxz += x * z; Syz += y * z; Sz += z; N++;
+    }
+    const M = [[Sxx, Sxy, Sx], [Sxy, Syy, Sy], [Sx, Sy, N]];
+    const R = [-Sxz, -Syz, -Sz];
+    const D = det3(M);
+    if (Math.abs(D) < 1e-18) return null;
+    const col = (i) => M.map((row, r) => row.map((v, c) => c === i ? R[r] : v));
+    const A = det3(col(0)) / D, B = det3(col(1)) / D, C = det3(col(2)) / D;
+    const ux = -A / 2, uy = -B / 2, r2 = ux * ux + uy * uy - C;
+    return r2 > 0 ? { ux, uy, r: Math.sqrt(r2) } : null;
+  };
+  // A few corners can sit a little inside the true circle where the model was
+  // cut across it (four of the 68 round the bottom of an ambient light sensor
+  // opening, 0.02 mm in, 28 Nov 2026). Set aside up to a fifth of the corners
+  // that miss, refit to the rest, and require every corner kept to lie on the
+  // circle. Never the two ends of an open run: a straight side that has crept
+  // onto the end of a curve must fail here, so the caller trims it off.
+  const use = new Uint8Array(k).fill(1);
+  let fit = null;
+  for (let iter = 0; iter < 3; iter++) {
+    fit = solve(use);
+    if (!fit || fit.r < 0.01 || fit.r > 10000) return null;
+    const tol = Math.max(0.005, fit.r * 0.005);
+    if (flat > tol) return null;
+    let bad = 0, endBad = false;
+    for (let i = 0; i < k; i++) {
+      if (!use[i]) continue;
+      if (Math.abs(Math.hypot(X[i] - fit.ux, Y[i] - fit.uy) - fit.r) > tol) {
+        bad++;
+        if (!closedLoop && (i === 0 || i === k - 1)) endBad = true;
+      }
+    }
+    if (!bad) break;
+    if (endBad || iter === 2) return null;
+    let kept = 0;
+    for (let i = 0; i < k; i++) {
+      if (use[i] && Math.abs(Math.hypot(X[i] - fit.ux, Y[i] - fit.uy) - fit.r) > tol) use[i] = 0;
+      kept += use[i];
+    }
+    if (kept < Math.max(4, Math.ceil(k * 0.8))) return null;
+  }
+  const { ux, uy, r } = fit;
   return {
     r,
     n: [nx, ny, nz],
@@ -12951,8 +13020,51 @@ function rulerOpenPop(what, values, subs, note) {
   if (note) add('rp-note', note);
   rulerPopOpen = true;
   rulerPopOv.classList.add('open');
+  rulerPlacePop();
   document.getElementById('ruler-pop-ok').focus();
 }
+
+// The pop-up can be dragged by its title bar, out of the way of what was
+// measured, and opens where it was last left for the rest of the visit.
+let rulerPopPos = null;          // { left, top } in window pixels, or null = centered
+let rulerPopDrag = null;
+let rulerPopJustDragged = false;
+function rulerPlacePop() {
+  const pop = document.getElementById('ruler-pop');
+  if (!rulerPopPos) { pop.style.position = ''; pop.style.left = ''; pop.style.top = ''; return; }
+  const w = pop.offsetWidth, h = pop.offsetHeight;
+  const left = Math.max(0, Math.min(rulerPopPos.left, window.innerWidth - w));
+  const top = Math.max(0, Math.min(rulerPopPos.top, window.innerHeight - h));
+  pop.style.position = 'absolute';
+  pop.style.left = left + 'px';
+  pop.style.top = top + 'px';
+}
+(function () {
+  const pop = document.getElementById('ruler-pop');
+  const bar = document.getElementById('ruler-pop-title');
+  bar.addEventListener('pointerdown', e => {
+    if (e.button !== 0) return;
+    const r = pop.getBoundingClientRect();
+    rulerPopDrag = { dx: e.clientX - r.left, dy: e.clientY - r.top, moved: false };
+    bar.setPointerCapture(e.pointerId);
+    e.preventDefault();
+  });
+  bar.addEventListener('pointermove', e => {
+    if (!rulerPopDrag) return;
+    rulerPopDrag.moved = true;
+    rulerPopPos = { left: e.clientX - rulerPopDrag.dx, top: e.clientY - rulerPopDrag.dy };
+    rulerPlacePop();
+  });
+  const end = () => {
+    if (!rulerPopDrag) return;
+    // A drag that ends over the backdrop must not count as a click on it.
+    rulerPopJustDragged = rulerPopDrag.moved;
+    rulerPopDrag = null;
+    setTimeout(() => { rulerPopJustDragged = false; }, 0);
+  };
+  bar.addEventListener('pointerup', end);
+  bar.addEventListener('pointercancel', end);
+}());
 
 // Dismissing the pop-up lets go of the picks; the ruler stays on.
 function rulerClosePop() {
@@ -12965,7 +13077,9 @@ function rulerClosePop() {
   rulerQueueHover();
 }
 document.getElementById('ruler-pop-ok').addEventListener('click', rulerClosePop);
-rulerPopOv.addEventListener('click', e => { if (e.target === rulerPopOv) rulerClosePop(); });
+rulerPopOv.addEventListener('click', e => {
+  if (e.target === rulerPopOv && !rulerPopJustDragged) rulerClosePop();
+});
 
 // ---- Mouse and keyboard ----------------------------------------------------------
 function rulerQueueHover() {
@@ -13007,7 +13121,9 @@ canvas.addEventListener('pointermove', ev => {
   rulerQueueHover();
 });
 canvas.addEventListener('pointerleave', () => {
-  if (!rulerOn || rulerDown) return;
+  // The pop-up covering the model also counts as leaving it; the second item
+  // must stay lit until the pop-up is dismissed (Ken, 28 Nov 2026).
+  if (!rulerOn || rulerDown || rulerPopOpen) return;
   rulerMouse = null;
   if (rulerHover) { rulerHover = null; rulerRefresh(); }
 });
@@ -13052,7 +13168,6 @@ async function rulerSetOn(on) {
     rulerOn = true;
     rulerBtn.classList.add('active');
     rulerBtn.setAttribute('aria-pressed', 'true');
-    canvas.classList.add('ruler-on');
     rulerSvg.classList.add('on');
     logLine('Measure: point at a face, an edge or a curve and click it. Click the ruler ' +
             'button again, or press Esc, to stop measuring.');
@@ -13067,7 +13182,6 @@ async function rulerSetOn(on) {
     rulerRefresh();
     rulerBtn.classList.remove('active');
     rulerBtn.setAttribute('aria-pressed', 'false');
-    canvas.classList.remove('ruler-on');
     rulerSvg.classList.remove('on');
   }
 }
